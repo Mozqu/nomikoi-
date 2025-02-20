@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 346 77% 49%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 9%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 0 0% 9%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 346 77% 49%;
+    --radius: 0.5rem;
+    --neon-blue: #00fff7;
+    --neon-purple: #8a2be2;
+    --neon-pink: #ff00d4;
+  }
+}
+
+@layer components {
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 20px currentColor;
+  }
+  .neon-border {
+    box-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
+  }
+  .neon-glow-card {
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5), 0 0 20px rgba(0, 255, 255, 0.3), 0 0 30px rgba(0, 255, 255, 0.1);
+  }
+  .neon-glow-red {
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.3), 0 0 30px rgba(255, 0, 0, 0.1);
+  }
+  .neon-glow-green {
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5), 0 0 20px rgba(0, 255, 0, 0.3), 0 0 30px rgba(0, 255, 0, 0.1);
+  }
+  .neon-text-white {
+    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff, 0 0 20px #fff;
+  }
+  .neon-text-blue {
+    text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff, 0 0 20px #00ffff;
+  }
+  .neon-text-gray {
+    text-shadow: 0 0 5px #aaa, 0 0 10px #aaa;
+  }
+}
+
+.cyberpunk-bg {
+  background-image: radial-gradient(circle at 50% 50%, rgba(138, 43, 226, 0.3) 0%, transparent 100%),
+    radial-gradient(circle at 100% 0%, rgba(0, 255, 255, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 0% 100%, rgba(255, 0, 255, 0.3) 0%, transparent 50%), var(--tw-gradient-stops);
+  background-size: 100% 100%, 50% 50%, 50% 50%, 10px 10px;
+  animation: cyberpunk-bg 15s linear infinite;
+}
+
+@keyframes cyberpunk-bg {
+  0% {
+    background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%;
+  }
+  100% {
+    background-position: 0% 0%, 100% 0%, 0% 100%, 10px 10px;
+  }
+}
+
+.bg-cyber-grid {
+  background-image: linear-gradient(to right, rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-gradient-neon {
+  background: linear-gradient(45deg, theme('colors.neon-blue'), theme('colors.neon-purple'), theme('colors.neon-pink'));
+}
+
+.bg-card {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.neon-gradient {
+  background: linear-gradient(to right, var(--neon-pink), var(--neon-blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.neon-bg {
+  background-image: linear-gradient(to bottom right, rgb(0 255 247 / 0.7), rgb(138 43 226 / 0.7), rgb(255 0 212 / 0.7));
+  backdrop-filter: blur(5px);
+}
+.neon-border {
+  background-image: linear-gradient(to bottom right, rgb(0 255 247 / 0.7), rgb(138 43 226 / 0.7), rgb(255 0 212 / 0.7));
+}
+
+
+.default-bg {
+  background: black;
+  color: white;
+}
+
+.bg-pink {
+  background: var(--neon-pink);
+}
+
+
+
+
+@keyframes neon-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}

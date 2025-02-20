@@ -1,0 +1,36 @@
+answers: {
+    favorite_alcohol: {
+        drinking_location_preference: string[]
+        favorite_alcohol: string[]
+        dislike_alcohol: string[]
+
+
+
+    }
+
+    acceptable_drinking_habit: {
+        personal_alcohol_strength: number
+        drink_turns_red: number
+        drink_until_blackout: number
+        forget_after_drinking: number
+        overdrink_often: number
+        talk_to_neighbors: number
+        sleepy_after_drinking: number   
+        lose_items_when_drunk: number
+        negative_emotions_when_drunk: number
+        cry_when_drunk: number
+        laugh_uncontrollably_when_drunk: number
+        regret_texting_when_drunk: number
+
+    }
+
+    way_of_drinking: {
+        ideal_drinking_time: number
+        drinking_amount: number
+        drinking_frequency: number
+        food_pairing_importance: number
+        alcohol_quality_preference: number
+        party_drink_preference: number  
+    }
+
+}
