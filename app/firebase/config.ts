@@ -2,9 +2,9 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getAnalytics } from "firebase/analytics";
 
 // Import the functions you need from the SDKs you need
-import { getAnalytics } from "firebase/analytics";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -21,26 +21,29 @@ const firebaseConfig = {
 };
 
 // Firebaseの初期化を条件付きで行う
-let app;
-let auth;
-let db;
-let analytics;
+let app = null;
+let auth = null;
+let db = null;
+let analytics = null;
+let storage = null;
 
 if (typeof window !== 'undefined') {
-  // クライアントサイドの場合のみ初期化
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-  analytics = getAnalytics(app);
-} else {
-  // サーバーサイドの場合
-  app = null;
-  auth = null;
-  db = null;
-  analytics = null;
+  try {
+    // クライアントサイドの場合のみ初期化
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+    // analyticsはオプショナルに
+    try {
+      analytics = getAnalytics(app);
+    } catch (error) {
+      console.warn('Analytics initialization failed:', error);
+      analytics = null;
+    }
+  } catch (error) {
+    console.error('Firebase initialization error:', error);
+  }
 }
-
-// 各サービスのインスタンスを取得
-const storage = getStorage(app);
 
 export { app, auth, db, analytics, storage }; 
