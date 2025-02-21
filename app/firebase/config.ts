@@ -20,14 +20,27 @@ const firebaseConfig = {
   measurementId: "G-F4SJ6WDG04"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+// Firebaseの初期化を条件付きで行う
+let app;
+let auth;
+let db;
+let analytics;
 
+if (typeof window !== 'undefined') {
+  // クライアントサイドの場合のみ初期化
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  analytics = getAnalytics(app);
+} else {
+  // サーバーサイドの場合
+  app = null;
+  auth = null;
+  db = null;
+  analytics = null;
+}
 
 // 各サービスのインスタンスを取得
-const auth = getAuth(app);
-const db = getFirestore(app);
 const storage = getStorage(app);
 
-export { auth, db, storage }; 
+export { app, auth, db, analytics, storage }; 
