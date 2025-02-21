@@ -218,10 +218,11 @@ export default function RegisterPage() {
 }
 
 // 質問表示コンポーネント
-function QuestionStep({ question, onNext, nextStep, prevStep }: { question: Question; onNext?: () => void; nextStep: () => void; prevStep: () => void }) {
+function QuestionStep({ question, nextStep, prevStep }: { question: Question; nextStep: () => void; prevStep: () => void }) {
   const { register, watch } = useFormContext()
   const value = watch(question.id)
   const [isValid, setIsValid] = useState(false)
+  const [handleSubmitFn, setHandleSubmitFn] = useState<(data: any, redirectUrl: string) => Promise<void>>()
 
   return (
     <motion.div
@@ -244,6 +245,7 @@ function QuestionStep({ question, onNext, nextStep, prevStep }: { question: Ques
           nextStep={nextStep}
           isValid={isValid}
           redirectUrl="/register/favorite_alcohol"
+          showNextButton={true}
         />
 
         {question.warning && (
@@ -253,18 +255,6 @@ function QuestionStep({ question, onNext, nextStep, prevStep }: { question: Ques
             ))}
           </div>
         )}
-      </div>
-
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm">
-        <div className="container max-w-lg mx-auto">
-          <Button
-            onClick={() => onNext?.()}
-            disabled={!isValid}
-            className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
-          >
-            次へ
-          </Button>
-        </div>
       </div>
     </motion.div>
   )

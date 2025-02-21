@@ -1,4 +1,3 @@
-/*
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
@@ -13,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { useWatch } from 'react-hook-form'
 import { useFormContext } from 'react-hook-form'
 import { checkListItem, radioItem, toggleListItem } from "@/types/questions"
+import { lastDayOfDecade } from 'date-fns'
 
 interface AlcoholPreference {
   mainSelected: number;
@@ -29,11 +29,11 @@ interface QuestionRendererProps {
   questions: Question[];
   currentQuestionId: string;
   onPrevious: () => void;
-  onNext: () => void;
+  nextStep: () => void;
   isValid: boolean;
   redirectUrl?: string;
-  isLastStep: boolean;
-  nextStep: () => void;
+  isLastStep?: boolean;
+  showNextButton?: boolean;
 }
 
 export function QuestionRenderer({ 
@@ -46,8 +46,8 @@ export function QuestionRenderer({
   currentQuestionId,
   isValid,
   redirectUrl,
-  isLastStep,
   nextStep,
+  showNextButton
 }: QuestionRendererProps) {
   const router = useRouter()
   const [openPopup, setOpenPopup] = useState<string | null>(null)
@@ -57,6 +57,12 @@ export function QuestionRenderer({
   >({})
   const { watch } = useFormContext()
   const watchedValue = watch(question.id);  // 追加：値を直接監視
+  
+  // isLastStepを計算
+  const isLastStep = useMemo(() => {
+    const currentIndex = questions.findIndex(q => q.id === currentQuestionId);
+    return currentIndex === questions.length - 1;
+  }, [questions, currentQuestionId]);
 
   useEffect(() => {
     if (question.type === 'checkbox') {
@@ -76,25 +82,9 @@ export function QuestionRenderer({
         isLastStep,
         nextStep 
       });
-
-      if (watchedValue && isValid) {
-        console.log('Valid value selected, proceeding to next step');
-        nextStep();
-      }
     }
-  }, [question.type, question.id, selectedItems, alcoholPreferences, watchedValue, setIsValid, isLastStep, nextStep]);
 
-  useEffect(() => {
-    // 最後の質問かどうかをチェック
-    const isLastQuestion = questions.findIndex(q => q.id === currentQuestionId) === questions.length - 1;
-    
-    if (isLastQuestion && isValid) {
-      const formData = watch();
-      if (redirectUrl) {  // redirectUrlが存在する場合のみ実行
-        handleSubmit(formData, redirectUrl);
-      }
-    }
-  }, [currentQuestionId, questions, isValid, watch, redirectUrl]);
+  }, [question.type, question.id, selectedItems, alcoholPreferences, watchedValue, setIsValid, isLastStep]);
 
   const toggleMainPreference = (name: string) => {
     const newValue = alcoholPreferences[name]?.mainSelected === 1 ? 0 : 1;
@@ -199,10 +189,8 @@ export function QuestionRenderer({
         updatedAt: new Date()
       }
 
-      console.log(answers)
+      router.push(redirectUrl);
 
-      await updateDoc(doc(db, "users", auth.currentUser.uid), userData)
-      router.push(redirectUrl)
     } catch (error) {
       console.error("プロフィールの更新に失敗しました:", error)
       alert("プロフィールの更新に失敗しました。もう一度お試しください。")
@@ -253,6 +241,26 @@ export function QuestionRenderer({
               </div>
             );
           })}
+          {showNextButton && (
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm">
+              <div className="container max-w-lg mx-auto">
+                <Button
+                  onClick={async () => {
+                    if (isLastStep && redirectUrl) {
+                      const formData = watch();
+                      await handleSubmit(formData, redirectUrl);
+                    } else {
+                      nextStep();
+                    }
+                  }}
+                  disabled={!isValid}
+                  className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                >
+                  次へ
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )
 
@@ -285,6 +293,26 @@ export function QuestionRenderer({
               </label>
             );
           })}
+          {showNextButton && (
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm">
+              <div className="container max-w-lg mx-auto">
+                <Button
+                  onClick={async () => {
+                    if (isLastStep && redirectUrl) {
+                      const formData = watch();
+                      await handleSubmit(formData, redirectUrl);
+                    } else {
+                      nextStep();
+                    }
+                  }}
+                  disabled={!isValid}
+                  className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                >
+                  次へ
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )
 
@@ -292,7 +320,6 @@ export function QuestionRenderer({
       return (
         <div className="flex flex-wrap gap-4">
           {Array.isArray(question.options) && question.options.map((option: toggleListItem, index: number) => {
-            console.log(option)
             const uniqueKey = `${question.id}-toggle-${option.name || ''}-${index}`;
             const isSelected = alcoholPreferences[option.name as string]?.mainSelected === 1 || 
               Object.values(alcoholPreferences[option.name as string]?.subtypes || {}).some(v => v === 1);
@@ -313,20 +340,101 @@ export function QuestionRenderer({
                     transition-colors cursor-pointer`}
                 >
                   {option.name}
+                  {option.subtypes?.length && (
+                    <ChevronDown className={`w-4 h-4 transition-transform ${openPopup === option.name ? 'rotate-180' : ''}`} />
+                  )}
                   <IconComponent
                     className={`w-4 h-4 transition-all ${
                       isSelected ? "fill-pink-500 text-pink-500" : "text-gray-400"
                     }`}
                   />
                 </button>
+
+                {/* サブタイプのモーダル */}
+                <AnimatePresence>
+                  {openPopup === option.name && option.subtypes && (
+                    <>
+                      {/* オーバーレイ背景 */}
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
+                        onClick={() => setOpenPopup(null)}
+                      />
+
+                      {/* モーダルコンテンツ */}
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="fixed inset-0 flex items-center justify-center z-[101]"
+                        onClick={() => setOpenPopup(null)}
+                      >
+                        <div 
+                          className="w-[90%] max-w-md p-6 bg-gray-900 rounded-xl shadow-xl border border-gray-700"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="mb-4 text-lg font-medium">{option.name}を選択</div>
+                          <div className="flex flex-wrap gap-3 max-h-[60vh] overflow-y-auto">
+                            {option.subtypes.map((subtype, subIndex) => {
+                              const isSubtypeSelected = alcoholPreferences[option.name as string]?.subtypes?.[subtype] === 1;
+                              return (
+                                <button
+                                  key={`${uniqueKey}-sub-${subIndex}`}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    togglePreference(option.name as string, subtype);
+                                  }}
+                                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 
+                                    ${isSubtypeSelected ? "border-pink-500" : "border-gray-600 hover:border-gray-400"}
+                                    transition-colors cursor-pointer`}
+                                >
+                                  <span>{subtype}</span>
+                                  <IconComponent
+                                    className={`w-4 h-4 transition-all ${
+                                      isSubtypeSelected ? "fill-pink-500 text-pink-500" : "text-gray-400"
+                                    }`}
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
             )
           })}
+          {showNextButton && (
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm">
+              <div className="container max-w-lg mx-auto">
+                <Button
+                  onClick={async () => {
+                    if (isLastStep && redirectUrl) {
+                      const formData = watch();
+                      await handleSubmit(formData, redirectUrl);
+                    } else {
+                      nextStep();
+                    }
+                  }}
+                  disabled={!isValid}
+                  className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                >
+                  次へ
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       );
 
     default:
       return null;
   }
+
 }
-  */
+  

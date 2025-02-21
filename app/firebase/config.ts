@@ -4,21 +4,26 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // Import the functions you need from the SDKs you need
-//import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyBmexIsxeS66Kg3pZ1Tu4FWyJWL0YoRH1U",
-  authDomain: "nomikoi-v0-dev.firebaseapp.com",
-  projectId: "nomikoi-v0-dev",
-  storageBucket: "nomikoi-v0-dev.firebasestorage.app",
-  messagingSenderId: "857964305442",
-  appId: "1:857964305442:web:36c75ff6855e5303373e7b"
+  apiKey: "AIzaSyBGZ602gpybqLGh4kgnkN8fQnR1CEJzKpY",
+  authDomain: "nomikoi.firebaseapp.com",
+  projectId: "nomikoi",
+  storageBucket: "nomikoi.firebasestorage.app",
+  messagingSenderId: "76587219288",
+  appId: "1:76587219288:web:d8c45009b475619cedcd2d",
+  measurementId: "G-F4SJ6WDG04"
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
 
 // 各サービスのインスタンスを取得
 const auth = getAuth(app);
