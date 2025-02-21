@@ -1,20 +1,22 @@
 export type QuestionType = 'radio' | 'date' | 'text' | 'textarea' | 'number' | 'checklist' | 'checkbox' | 'toggleList'
 
+export type QuestionOption = {
+  label: string;
+  value: number;
+};
+
 export type radioItem = {
   [key: string]: number;
 };
 
-export type checkListItem = {
-  name?: string;
-  subtypes?: string[];
-};
+export type checkListItem = string;
 
 export type toggleListItem = {
-  name?: string;
+  name: string;
   subtypes?: string[];
 };
 
-export type QuestionOptions = string[] | toggleListItem[] | radioItem | checkListItem[];
+export type QuestionOptions = string[] | toggleListItem[] | radioItem | checkListItem[] | QuestionOption[];
 
 export interface Question {
   id: string;

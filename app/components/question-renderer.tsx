@@ -1,3 +1,4 @@
+/*
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
@@ -221,8 +222,8 @@ export function QuestionRenderer({
     case 'checklist':
       return (
         <div className="flex flex-wrap gap-4">
-          {Array.isArray(question.options) && question.options.map((option: string | checkListItem, index: number) => {
-            const optionValue = typeof option === 'string' ? option : (option.name || '');
+          {Array.isArray(question.options) && (question.options as string[]).map((option, index: number) => {
+            const optionValue = typeof option === 'string' ? option : '';
             const isSelected = selectedItems.includes(optionValue);
             const uniqueKey = `${question.id}-${optionValue}-${index}`;
 
@@ -235,23 +236,17 @@ export function QuestionRenderer({
                     const newValue = currentValue.includes(optionValue)
                       ? currentValue.filter(v => v !== optionValue)
                       : [...currentValue, optionValue];
-                    
                     setSelectedItems(newValue);
-                    console.log(('next'))
                     register(question.id).onChange({ target: { value: newValue } });
                   }}
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 
-                    ${isSelected
-                      ? "border-pink-500"
-                      : "border-gray-600 hover:border-gray-400"
-                    } transition-colors cursor-pointer`}
+                    ${isSelected ? "border-pink-500" : "border-gray-600 hover:border-gray-400"}
+                    transition-colors cursor-pointer`}
                 >
                   <span>{optionValue}</span>
                   <IconComponent
                     className={`w-4 h-4 transition-all ${
-                      isSelected
-                        ? "fill-pink-500 text-pink-500"
-                        : "text-gray-400"
+                      isSelected ? "fill-pink-500 text-pink-500" : "text-gray-400"
                     }`}
                   />
                 </button>
@@ -334,3 +329,4 @@ export function QuestionRenderer({
       return null;
   }
 }
+  */
