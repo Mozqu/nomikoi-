@@ -12,7 +12,7 @@ export default function BottomNav() {
   const uid = auth.currentUser?.uid
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 p-4 z-30">
+    <nav className="left-0 right-0 p-2 z-30">
       <div className="flex justify-around items-center max-w-md mx-auto backdrop-blur-md rounded-full px-4 py-2 border border-white/10 shadow-[0_0_20px_rgba(111,44,255,0.15)]" style={{ background: 'rgba(0, 0, 0, 0.5)' }}>
         <Link href="/discover">
           <Button variant="ghost" className={`text-[${pathname === '/discover' ? '#ff2e93' : '#c2b5ff'}] hover:text-[#ff2e93]/80 hover:bg-white/5`}>

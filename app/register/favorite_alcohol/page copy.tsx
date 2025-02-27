@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useId } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useForm, FormProvider, useFormContext } from "react-hook-form"
 import { ChevronLeft, Heart, X, ChevronDown } from "lucide-react"
@@ -201,17 +201,16 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [step, setStep] = useState(0)
-  const totalSteps = Object.keys(questions).length
+  const [step, setStep] = useState(0)  // 0をウェルカムステップに
+  const totalSteps = Object.keys(questions).length  // 質問の総数を動的に取得
   const methods = useForm<FormData>({
     defaultValues: {
       drinking_location_preference: [],
       favorite_alcohol: {},
       dislike_alcohol: {}
-    },
-    mode: 'onChange'  // フォームの検証モードを追加
+    }
   })
-  const { handleSubmit, watch, getValues } = methods  // getValuesを追加
+  const { handleSubmit, watch } = methods
 
   // 開発環境でのみデバッグログを表示
   if (process.env.NODE_ENV === 'development') {
@@ -219,28 +218,15 @@ export default function RegisterPage() {
 }
 
   const nextStep = () => {
-    // フォームの現在の値を保存
-    const currentValues = getValues()
-    const nextStepNumber = Math.min(step + 1, totalSteps)
-    
-    // QuestionRendererを再初期化
-    setStep(0)
-    setTimeout(() => {
-      setStep(nextStepNumber)
-    }, 0)
-
+    if (step === totalSteps && questions[step].type === 'toggleList') {
+      handleSubmit((data: FormData) => {})()
+      return
+    }
+    setStep((prev) => Math.min(prev + 1, totalSteps))
   }
 
   const prevStep = () => {
-    // フォームの現在の値を保存
-    const currentValues = getValues()
-    const prevStepNumber = Math.max(step - 1, 1)
-    
-    // QuestionRendererを再初期化
-    setStep(0)
-    setTimeout(() => {
-      setStep(prevStepNumber)
-    }, 0)
+    setStep((prev) => Math.max(prev - 1, 1))
   }
 
   return (
@@ -255,13 +241,11 @@ export default function RegisterPage() {
             {/* Progress Bar */}
             <div className="w-full">
               <div className="flex items-center mb-2">
-                {/* 戻るとチェックが外れる。現状修正できないので放置
                 {step > 1 && (
                   <button onClick={prevStep} className="p-2 -ml-2">
                     <ChevronLeft className="w-6 h-6" />
                   </button>
                 )}
-                */}
                 <div className="flex-1 text-center text-sm text-gray-400">
                   {step}/{totalSteps}
                 </div>
@@ -293,37 +277,18 @@ export default function RegisterPage() {
 }
 
 const handleSubmitForm = async (data: any, redirectUrl: string, isLastStep: boolean, router: any) => {
-
   if (!auth.currentUser) {
     console.error("ユーザーがログインしていません");
     return;
   }
-
-  let favorite_alcohol: string[] = []
-  let dislike_alcohol: string[] = []
-
-  for (const key in data.dislike_alcohol) {
-    data.dislike_alcohol[key].subtypes.forEach((subtype: string) => {
-      dislike_alcohol.push(subtype)
-    })
-  }
-
-  for (const key in data.favorite_alcohol) {
-    data.favorite_alcohol[key].subtypes.forEach((subtype: string) => {
-      favorite_alcohol.push(subtype)
-    })
-  }
-
-  console.log("favorite_alcohol", favorite_alcohol)
-  console.log("dislike_alcohol", dislike_alcohol)
 
   try {
     // データを配列形式に整形
     const answers = {
       favorite_alcohol: {
         drinking_location_preference: data.drinking_location_preference || [],
-        favorite_alcohol: (favorite_alcohol || []),
-        dislike_alcohol: (dislike_alcohol || [])
+        favorite_alcohol: Object.keys(data.favorite_alcohol || {}),
+        dislike_alcohol: Object.keys(data.dislike_alcohol || [])
       }
     }
 
@@ -336,7 +301,6 @@ const handleSubmitForm = async (data: any, redirectUrl: string, isLastStep: bool
 
       const userDocRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userDocRef, userData, { merge: true });
-      router.push('/register/acceptable_drinking_habit')
     }
   } catch (error) {
     console.error("データの保存に失敗しました:", error);
@@ -370,6 +334,10 @@ function QuestionStep({
   const [alcoholPreferences, setAlcoholPreferences] = useState<
     Record<string, AlcoholPreference>
   >({})
+
+  useEffect(() => {
+    console.log("formdata", FormData)
+  }, [FormData])
   //　手動追加分
   const totalSteps = Object.keys(questions).length
   const currentQuestionNumber = Object.entries(questions).find(
@@ -402,43 +370,28 @@ function QuestionStep({
     }
   }, [question.type, selectedItems, alcoholPreferences, value]);
 
-  useEffect(() => {
-  }, [isValid])
-
-  useEffect(() => {
-    console.log("isLastStep", isLastStep)
-    setOpenPopup(null)
-  }, [isLastStep])
-
   const toggleMainPreference = (name: string) => {
-    const isCurrentlySelected = alcoholPreferences[name]?.subtypes !== undefined;
-    
-    const currentValues = watch(question.id) || {};  // 現在の値を取得
-    const newPreferences = { ...currentValues };     // 既存の値をコピー
-    
-    if (isCurrentlySelected) {
-      delete newPreferences[name];
-    } else {
-      newPreferences[name] = {
-        subtypes: [name]
-      };
-    }
+    const newPreferences = {
+      ...alcoholPreferences,
+      [name]: {
+        subtypes: []  // 空の配列として初期化
+      }
+    };
     
     setAlcoholPreferences(newPreferences);
     setValue(question.id, newPreferences, { shouldValidate: true });
   }
 
   const togglePreference = (name: string, subtype: string) => {
-    const currentValues = watch(question.id) || {};  // 現在の値を取得
     const currentSubtypes = alcoholPreferences[name]?.subtypes || [];
     const newSubtypes = currentSubtypes.includes(subtype)
       ? currentSubtypes.filter(item => item !== subtype)
       : [...currentSubtypes, subtype];
     
     const newPreferences = {
-      ...currentValues,                              // 既存の値を保持
+      ...alcoholPreferences,
       [name]: {
-        subtypes: newSubtypes
+        subtypes: newSubtypes  // 文字列の配列として管理
       }
     };
 
@@ -582,15 +535,13 @@ function QuestionStep({
                             <div className="flex justify-between items-center mb-4">
                               <div className="text-lg font-medium">{option.name}を選択</div>
                               {option.subtypes.length > 0 && (
-                                // トグルバッジ
                                 <button
                                   onClick={() => {
 
                                     const allSelected = option.subtypes.every(
                                       subtype => alcoholPreferences[option.name as string]?.subtypes?.includes(subtype)
                                     );
-
-                                    console.log("before", alcoholPreferences)
+                                    
                                     const newSubtypes = allSelected ? [] : [...option.subtypes];
                                     const newPreferences = {
                                       ...alcoholPreferences,
@@ -598,10 +549,9 @@ function QuestionStep({
                                         subtypes: newSubtypes
                                       }
                                     };
-                                    console.log('after', newPreferences)
 
                                     setAlcoholPreferences(newPreferences);
-                                    setValue(question.id, newPreferences, { shouldValidate: true });
+
                                     console.log("formdata", watch())
                                   }}
                                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 
@@ -611,7 +561,7 @@ function QuestionStep({
                                       ) ? getBorderStyle(question.id) : "border-gray-600 hover:border-gray-400"}
                                     transition-colors cursor-pointer`}
                                 >
-                                  {question.id === 'dislike_alcohol' ? "全部。" : "全部！"}
+                                  {question.id === 'dislike_alcohol' ? "全部苦手" : "全部好き！"}
                                   <IconComponent
                                     className={`w-4 h-4 transition-all ${
                                       option.subtypes.every(
@@ -661,11 +611,9 @@ function QuestionStep({
               <Button
                 onClick={async () => {
                   console.log("formdata", watch())
-                  console.log("isLastStep", isLastStep)
                   if (isLastStep) {
                     const formData = watch();
-                    console.log("formData", formData)
-                    await handleSubmitForm(formData, '/register/' + auth?.currentUser?.uid, isLastStep, router);
+                    await handleSubmitForm(formData, '/register/acceptable_drinking_habit', isLastStep, router);
                   } else {
                     nextStep()
                   }

@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from "firebase/analytics";
 
@@ -22,8 +22,8 @@ const firebaseConfig = {
 
 // Firebaseの初期化を条件付きで行う
 let app = null;
-let auth = null;
-let db = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
 let analytics = null;
 let storage = null;
 

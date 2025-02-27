@@ -1,0 +1,11 @@
+.checklist-item {
+    border: 2px solid #666;
+}
+.checklist-item:hover {
+    border: 2px solid #888;
+}
+
+input.checklist-item:checked {
+    border: 2px solid #ff00d4;
+    color: #ff00d4;
+}
