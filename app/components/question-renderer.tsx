@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Input } from "@/components/ui/input"
 import { Question, QuestionType } from "@/types/questions"
 import { ChevronDown, Heart, X } from "lucide-react"
-import { doc, updateDoc } from "firebase/firestore"
+import { doc, updateDoc, setDoc } from "firebase/firestore"
 import { auth, db } from "@/app/firebase/config"
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import { useWatch } from 'react-hook-form'
 import { useFormContext } from 'react-hook-form'
 import { checkListItem, radioItem, toggleListItem } from "@/types/questions"
 import { lastDayOfDecade } from 'date-fns'
+import { Firestore } from 'firebase/firestore'
 
 interface AlcoholPreference {
   mainSelected: number;
@@ -29,11 +30,11 @@ interface QuestionRendererProps {
   questions: Question[];
   currentQuestionId: string;
   onPrevious: () => void;
-  nextStep: () => void;
   isValid: boolean;
   redirectUrl?: string;
   isLastStep?: boolean;
   showNextButton?: boolean;
+  onNext: () => void;
 }
 
 export function QuestionRenderer({ 
@@ -41,13 +42,14 @@ export function QuestionRenderer({
   register, 
   value,
   setIsValid,
+
   onSubmit,
   questions,
   currentQuestionId,
   isValid,
   redirectUrl,
-  nextStep,
-  showNextButton
+  showNextButton,
+  onNext
 }: QuestionRendererProps) {
   const router = useRouter()
   const [openPopup, setOpenPopup] = useState<string | null>(null)
@@ -60,6 +62,7 @@ export function QuestionRenderer({
   
   // isLastStepを計算
   const isLastStep = useMemo(() => {
+    if (!questions || !currentQuestionId) return false;
     const currentIndex = questions.findIndex(q => q.id === currentQuestionId);
     return currentIndex === questions.length - 1;
   }, [questions, currentQuestionId]);
@@ -76,12 +79,6 @@ export function QuestionRenderer({
     } else if (question.type === 'radio') {
       const isValidValue = !!watchedValue;
       setIsValid(isValidValue);
-      console.log('Radio validation:', { 
-        value: watchedValue, 
-        isValid: isValidValue,
-        isLastStep,
-        nextStep 
-      });
     }
 
   }, [question.type, question.id, selectedItems, alcoholPreferences, watchedValue, setIsValid, isLastStep]);
@@ -129,11 +126,14 @@ export function QuestionRenderer({
     setIsValid(hasCheckedSubtypes);
   }
 
-  
   const IconComponent = question.id === 'dislike_alcohol' ? X : Heart;
 
   const handleSubmit = async (data: any, redirectUrl: string) => {
-    if (!auth.currentUser) return;
+    console.log("handleSubmit", data)
+    if (!auth.currentUser) {
+      console.error("ユーザーがログインしていません");
+      return;
+    }
 
     const { alcoholPreferences = {} } = data;  // デフォルト値を設定
 
@@ -183,28 +183,29 @@ export function QuestionRenderer({
         )
       }
 
-      const userData = {
-        answers,
-        drinkingProfileCompleted: true,
-        updatedAt: new Date()
+      if (auth.currentUser && isLastStep) {
+
+        const userData = {
+          answers,
+          drinkingProfileCompleted: true,
+          updatedAt: new Date()
+        }
+
+        // Firebaseにデータを保存
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        await setDoc(userDocRef, userData, { merge: true });
+        
+        console.log("データが正常に保存されました"); // デバッグ用
+
+        router.push(redirectUrl);
+
       }
-
-      router.push(redirectUrl);
-
     } catch (error) {
-      console.error("プロフィールの更新に失敗しました:", error)
+      console.error("データの保存に失敗しました:", error); // エラーの詳細を確認
       alert("プロフィールの更新に失敗しました。もう一度お試しください。")
     }
   }
-
-
-  // ラジオボタンの onChange ハンドラーも追加
-  const handleRadioChange = (value: string) => {
-    register(question.id).onChange({ target: { value } });
-    console.log(value)
-    setIsValid(true);  // ラジオボタン選択時のバリデーション
-  };
-
+  
   switch (question.type) {
     case 'checkbox':
     case 'checklist':
@@ -246,12 +247,8 @@ export function QuestionRenderer({
               <div className="container max-w-lg mx-auto">
                 <Button
                   onClick={async () => {
-                    if (isLastStep && redirectUrl) {
-                      const formData = watch();
-                      await handleSubmit(formData, redirectUrl);
-                    } else {
-                      nextStep();
-                    }
+                    const formData = watch();
+                    await handleSubmit(formData, redirectUrl || '/login');
                   }}
                   disabled={!isValid}
                   className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
@@ -265,6 +262,7 @@ export function QuestionRenderer({
       )
 
     case 'radio':
+      console.log("radio")
       return (
         <div className="space-y-4">
           {Object.entries(question.options as radioItem).map(([label, value], index) => {
@@ -280,39 +278,44 @@ export function QuestionRenderer({
                   value={value}
                   {...register(question.id, {
                     onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                      console.log('Radio onChange event:', {
-                        value: e.target.value,
-                        questionId: question.id
-                      });
                       setIsValid(!!e.target.value);
                     }
                   })}
+                    onClick={() => {
+                      if (isLastStep) {
+                        const formData = watch();
+                        handleSubmit(formData, redirectUrl || '/login');
+                      } else {
+                        onNext()
+                      }
+                  }}
+                  id="test-radio"
                   className="w-5 h-5 border-2 border-white rounded-full accent-pink-500"
                 />
                 <span className="text-lg">{label}</span>
               </label>
             );
           })}
-          {showNextButton && (
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm">
-              <div className="container max-w-lg mx-auto">
-                <Button
-                  onClick={async () => {
-                    if (isLastStep && redirectUrl) {
-                      const formData = watch();
-                      await handleSubmit(formData, redirectUrl);
-                    } else {
-                      nextStep();
-                    }
-                  }}
-                  disabled={!isValid}
-                  className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
-                >
-                  次へ
-                </Button>
-              </div>
+          
+          
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm">
+            <div className="container max-w-lg mx-auto">
+              <Button
+                onClick={async () => {
+                  if (isLastStep) {
+                    const formData = watch();
+                    await handleSubmit(formData, redirectUrl || '/login');
+                  } else {
+                    nextStep()
+                  }
+                }}
+                disabled={!isValid}
+                className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+              >
+                次へ
+              </Button>
             </div>
-          )}
+          </div>      
         </div>
       )
 
@@ -369,12 +372,9 @@ export function QuestionRenderer({
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         className="fixed inset-0 flex items-center justify-center z-[101]"
-                        onClick={() => setOpenPopup(null)}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <div 
-                          className="w-[90%] max-w-md p-6 bg-gray-900 rounded-xl shadow-xl border border-gray-700"
-                          onClick={(e) => e.stopPropagation()}
-                        >
+                        <div className="w-[90%] max-w-md p-6 bg-gray-900 rounded-xl shadow-xl border border-gray-700">
                           <div className="mb-4 text-lg font-medium">{option.name}を選択</div>
                           <div className="flex flex-wrap gap-3 max-h-[60vh] overflow-y-auto">
                             {option.subtypes.map((subtype, subIndex) => {
@@ -414,11 +414,11 @@ export function QuestionRenderer({
               <div className="container max-w-lg mx-auto">
                 <Button
                   onClick={async () => {
-                    if (isLastStep && redirectUrl) {
+                    if (isLastStep) {
                       const formData = watch();
-                      await handleSubmit(formData, redirectUrl);
+                      await handleSubmit(formData, redirectUrl || '/login');
                     } else {
-                      nextStep();
+                      nextStep()
                     }
                   }}
                   disabled={!isValid}

@@ -103,6 +103,10 @@
   background-image: linear-gradient(to bottom right, rgb(0 255 247 / 0.7), rgb(138 43 226 / 0.7), rgb(255 0 212 / 0.7));
   backdrop-filter: blur(5px);
 }
+.shadow-black-bg {
+  background-image: linear-gradient(to bottom, rgb(0 0 0 / 0.0), rgb(0 0 0 / 0.5));
+  backdrop-filter: blur(3px);
+}
 .neon-border {
   background-image: linear-gradient(to bottom right, rgb(0 255 247 / 0.7), rgb(138 43 226 / 0.7), rgb(255 0 212 / 0.7));
 }

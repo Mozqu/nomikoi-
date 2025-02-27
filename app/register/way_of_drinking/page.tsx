@@ -3,32 +3,23 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useForm, FormProvider, useFormContext } from "react-hook-form"
-import { ChevronLeft, Heart, X, ChevronDown } from "lucide-react"
+import { ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useRouter } from "next/navigation"
-import { doc, updateDoc } from "firebase/firestore"
+import { doc, setDoc, updateDoc } from "firebase/firestore"
 import { auth, db } from "@/app/firebase/config"
 import { QuestionRenderer } from "@/app/components/question-renderer"
 import type { Question, radioItem } from "@/types/questions"
+import { Island_Moments } from "next/font/google"
 
 type FormData = {
   ideal_drinking_time: string;
+  drinking_amount: string;
   drinking_frequency: string;
-  drinking_location_preference: string[];
-  drinking_capacity: string;
-  alcohol_tolerance: string;
-  drinking_behavior: string[];
-  partner_tolerance: string[];
-  favorite_alcohol: Record<string, { 
-    mainSelected: number; 
-    subtypes: Record<string, number> 
-  }>;
-}
-
-interface AlcoholType {
-  name: string;
-  subtypes?: string[];
+  food_pairing_importance: string;
+  alcohol_quality_preference: string;
+  party_drink_preference: string;
 }
 
 // optionsの型を変換する関数
@@ -80,7 +71,7 @@ const questions: Record<number, Question> = {
   },
   4: {
     "id": "food_pairing_importance",
-    "title": "食事との相性は重視する？（ペアリング重視度）",
+    "title": "食事との相性は重視する？",
     "options": {
       "あまり気にしない": 1,
       "不味くなければ": 2,
@@ -92,7 +83,7 @@ const questions: Record<number, Question> = {
   },
   5: {
     "id": "alcohol_quality_preference",
-    "title": "お酒の味や品質はこだわる？（味わい志向）",
+    "title": "お酒の味や品質はこだわる？",
     "options": {
       "あまり気にしない": 1,
       "不味くなければいい": 2,
@@ -104,7 +95,7 @@ const questions: Record<number, Question> = {
   },
   6: {
     "id": "party_drink_preference",
-    "title": "パーティードリンクは楽しめる？（ノリ優先度）",
+    "title": "パーティードリンク(ショット等)は楽しめる？",
     "options": {
       "飲みたくない": 1,
       "できれば飲みたくない": 2,
@@ -151,15 +142,12 @@ export default function RegisterPage() {
   const totalSteps = Object.keys(questions).length  // 質問の総数を動的に取得
   const methods = useForm<FormData>({
     defaultValues: {
-      
       ideal_drinking_time: '',
+      drinking_amount: '',
       drinking_frequency: '',
-      drinking_location_preference: [],
-      drinking_capacity: '',
-      alcohol_tolerance: '',
-      drinking_behavior: [],
-      partner_tolerance: [],
-      favorite_alcohol: {}
+      food_pairing_importance: '',
+      alcohol_quality_preference: '',
+      party_drink_preference: ''
     }
   })
  
@@ -217,12 +205,76 @@ export default function RegisterPage() {
   )
 }
 
+const handleSubmitForm = async (data: any, redirectUrl: string, isLastStep: boolean, router: any) => {
+  console.log("handleSubmit", data)
+  if (!auth.currentUser) {
+    console.error("ユーザーがログインしていません");
+    return;
+  }
+
+  const { alcoholPreferences = {} } = data;  // デフォルト値を設定
+
+  try {
+    // DB構造に合わせてデータを整形
+    const answers = {
+      way_of_drinking: {
+        ideal_drinking_time: Number(data.ideal_drinking_time) || 0,
+        drinking_amount: Number(data.drinking_amount) || 0,
+        drinking_frequency: Number(data.drinking_frequency) || 0,
+        food_pairing_importance: Number(data.food_pairing_importance) || 0,
+        alcohol_quality_preference: Number(data.alcohol_quality_preference) || 0,
+        party_drink_preference: Number(data.party_drink_preference) || 0
+      }
+    }
+
+    if (auth.currentUser && isLastStep) {
+
+      const userData = {
+        answers,
+        drinkingProfileCompleted: true,
+        updatedAt: new Date()
+      }
+
+      // Firebaseにデータを保存
+      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      await setDoc(userDocRef, userData, { merge: true });
+      
+      console.log("データが正常に保存されました"); // デバッグ用
+
+      router.push(redirectUrl);
+
+    }
+  } catch (error) {
+    console.error("データの保存に失敗しました:", error); // エラーの詳細を確認
+    alert("プロフィールの更新に失敗しました。もう一度お試しください。")
+  }
+}
+
+
+
 // 質問表示コンポーネント
-function QuestionStep({ question, nextStep, prevStep }: { question: Question; nextStep: () => void; prevStep: () => void }) {
-  const { register, watch } = useFormContext()
+function QuestionStep({ 
+  question, 
+  onNext,
+  nextStep,
+  prevStep 
+}: { 
+  question: Question; 
+  onNext?: () => void;
+  nextStep: () => void;
+  prevStep: () => void;
+}) {
+  const { register, watch } = useFormContext()  // methodsの代わりにuseFormContextを使用
   const value = watch(question.id)
   const [isValid, setIsValid] = useState(false)
-  const [handleSubmitFn, setHandleSubmitFn] = useState<(data: any, redirectUrl: string) => Promise<void>>()
+  const totalSteps = Object.keys(questions).length
+  const currentQuestionNumber = Object.entries(questions).find(
+    ([_, q]) => q.id === question.id
+  )?.[0]
+  const isLastStep = Number(currentQuestionNumber) === totalSteps
+  const router = useRouter()
+
+  const formData = watch();
 
   return (
     <motion.div
@@ -234,19 +286,53 @@ function QuestionStep({ question, nextStep, prevStep }: { question: Question; ne
       <h1 className="text-2xl font-bold mt-6 mb-6">{question.title}</h1>
 
       <div className="flex-1 overflow-y-auto pb-24">
-        <QuestionRenderer 
-          question={question} 
-          register={register} 
-          value={value}
-          setIsValid={setIsValid}
-          questions={Object.values(questions)}
-          currentQuestionId={question.id}
-          onPrevious={prevStep}
-          nextStep={nextStep}
-          isValid={isValid}
-          redirectUrl="/register/favorite_alcohol"
-          showNextButton={true}
-        />
+      <div className="space-y-4">
+          {Object.entries(question.options as radioItem).map(([label, value], index) => {
+            const uniqueKey = `${question.id}-radio-${label}-${index}`;
+            return (
+              
+              <label
+                key={uniqueKey}
+                className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-4 hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                <input
+                  type="radio"
+                  value={value}
+                  {...register(question.id, {
+                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                      setIsValid(!!e.target.value);
+                    }
+                  })}
+                  id="test-radio"
+                  className="w-5 h-5 border-2 border-white rounded-full accent-pink-500"
+                />
+                <span className="text-lg">{label}</span>
+              </label>
+            );
+          })}
+          
+        
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm">
+            <div className="container max-w-lg mx-auto">
+              <Button
+                onClick={async () => {
+                  console.log(watch())
+                  if (isLastStep) {
+                    const formData = watch();
+                    await handleSubmitForm(formData, '/register/favorite_alcohol', isLastStep, router);
+                  } else {
+                    console.log(formData)
+                    nextStep()
+                  }
+                }}
+                disabled={!isValid}
+                className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+              >
+                次へ
+              </Button>
+            </div>
+          </div>      
+        </div>
 
         {question.warning && (
           <div className="text-sm text-gray-400 space-y-2 mt-4">

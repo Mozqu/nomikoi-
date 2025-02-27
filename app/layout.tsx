@@ -20,6 +20,7 @@ export default function RootLayout({
     <html lang="ja">
       <body className={`${inter.className} default-bg overscroll-none`}>
         <AuthCheck>
+          
           <ClientLayout>{children}</ClientLayout>
         </AuthCheck>
       </body>
