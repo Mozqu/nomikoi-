@@ -336,7 +336,7 @@ const handleSubmitForm = async (data: any, redirectUrl: string, isLastStep: bool
 
       const userDocRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userDocRef, userData, { merge: true });
-      router.push('/register/acceptable_drinking_habit')
+      router.push(redirectUrl)
     }
   } catch (error) {
     console.error("データの保存に失敗しました:", error);
