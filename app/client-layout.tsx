@@ -15,7 +15,7 @@ export default function ClientLayout({
 
   return (
     <div className="w-full h-screen flex flex-col ">
-      <div id="content" className="flex-1 flex flex-col">
+      <div id="content" className="flex-1 flex flex-col overflow-hidden">
         {children}
       </div>
       <div id="nav-container" className="z-10 sticky bottom-0">

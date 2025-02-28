@@ -1,6 +1,11 @@
 import Image from 'next/image'
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Badge } from '../ui/badge';
+import Flicking, { MoveEvent, WillChangeEvent } from "@egjs/react-flicking";
+import "@egjs/react-flicking/dist/flicking.css";
+
+
+const flicking = new Flicking("#el", { circular: true });
 
 const profileData: ProfileData = {
     name: "Yuki",
@@ -54,105 +59,77 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
       setIsExpanded(!isExpanded);
       console.log(isExpanded);
     };
+
+
     return (
-        <div className="w-full h-full">
-            <div className="w-full h-full rounded-2xl relative flex flex-col overflow-hidden">
-                
-                <a href={"/profile/" + userData?.uid} 
-                    className="w-full flex-1" 
+        <div id="card-container" className="w-full h-full overflow-hidden rounded-2xl relative" onClick={() => console.log("clicked")}>
+
+
+                <div id="el" className="absolute flex flex-col bottom-0"
+
                     style={{
-                        transform: isExpanded ? "translate(0, 0)" : "translate(50px, 50px)",
-                        width: "100%", 
-                        flex: isExpanded ? 1 : 0,
-                        transition: "all 0.5s ease-in-out",
-                    }}/>
-                
-                <div
-                    style={{
-                        transition: "all 0.5s ease-in-out",
-                        flex: isExpanded ? 0 : 1,
-                        background: "rgba(0, 0, 0, 0.4)",
-                        margin: isExpanded ? "0.5rem" : "0",
-                        color: "#eee",
+                        top: isExpanded ? 0 : "0",
                     }}
-                    className={`shadow-black-bg p-4 rounded-2xl ${isExpanded ? "expanded-card" : ""}`}
                     >
-                    
-                    {/* show contents */}
-                    <div onClick={() => handleClick()}>
-                        <p className=" text-2xl">
-                            {userData?.name || "Loading..."} (
-                                {calculateAge(userData?.birthday) || ""}
-                            )
-                        </p>
-                        <p className=" text-xl">
-                            性別: {userData?.gender || "Loading..."}
-                        </p>
-                        <p className=" text-xl">
-                            身長: {userData?.height || "Loading..."}
-                        </p>
+                    <div style={{
+                        transition: "all 0.5s ease-in-out",
+                        flex: isExpanded ? 1 : 0,
+                    }}>
 
                     </div>
+                    <div
+                        style={{
+                            transition: "all 0.5s ease-in-out",
+                            flex: isExpanded ? 0 : 1,
+                            background: "rgba(0, 0, 0, 0.4)",
+                            margin: isExpanded ? "0.5rem" : "0rem",
+                            color: "#eee",
+                            zIndex: 1,
+                            
+                        }}
+                        className={`shadow-black-bg p-4 rounded-2xl ${isExpanded ? "expanded-card" : ""}`}
+                        >
+                        
+                        {/* show contents */}
+                        <div 
+                            className=""
+                            style={{
+                                transition: "all 0.5s ease-in-out",
+                            }}
+                            onClick={() => handleClick()}>
+                            <p className=" text-2xl">
+                                {userData?.name || "Loading..."} (
+                                    {calculateAge(userData?.birthday) || ""}
+                                )
+                            </p>
+                            <p className=" text-xl">
+                                性別: {userData?.gender || "Loading..."}
+                            </p>
+                            <p className=" text-xl">
+                                身長: {userData?.height || "Loading..."}
+                            </p>
 
-                    {/* hide contents */}
-                    <div style={{
-                        height: isExpanded ? "0px" : "500px",
-                        overflow: isExpanded ? "hidden" : "visible",
-                        transition: "all 0.5s ease-in-out",
-                        }}>
-                        <section 
-                            className="space-y-3 m-4" 
+                        </div>
 
-                            >
+                        {/* hide contents */}
+                        <div style={{
+                            height: isExpanded ? "0px" : "500px",
+                            overflow: isExpanded ? "hidden" : "scroll",
+                            transition: "all 0.5s ease-in-out",
+                            }}>
+                            <section 
+                                className="space-y-3 m-4" 
 
-                            <h2 className="text-xl font-semibold">好きなお酒</h2>
-                            <div className="flex flex-wrap gap-2">
-                                {userData?.answers?.favorite_alcohol ? 
-                                    Object.entries(userData.answers.favorite_alcohol.favorite_alcohol || {}).map(([alcoholName, details]) => (
-                                    <Badge
-                                        key={alcoholName + "name"}
-                                        variant="secondary"
-                                        className=" border-white/20 bg-white/5"
-                                    >
-                                        {details}
-                                    </Badge>
-                                    ))
-                                : 
-                                    <p className="text-[#c2b5ff]">データがありません</p>
-                                }
-                            </div>
-                        </section>
-
-                            {/* 苦手なお酒 */}
-                        <section className="m-4 space-y-3">
-                            <h2 className="text-xl font-semibold">苦手なお酒</h2>
-                            <div className="flex flex-wrap gap-2">
-                            {userData?.answers?.favorite_alcohol ? 
-                                Object.entries(userData.answers.favorite_alcohol.dislike_alcohol || {}).map(([alcoholName, details]) => (
-                                <Badge
-                                    key={alcoholName + "name"}
-                                    variant="secondary"
-                                    className="text-white border-white/20 bg-white/5"
                                 >
-                                    {details}
-                                </Badge>
-                                ))
-                            : 
-                                <p className="text-[#c2b5ff]">データがありません</p>
-                            }
-                            </div>
-                        </section>
 
-                        {/* お気に入りのバー */}
-                        <section className="m-4 space-y-3">
-                                <h2 className="text-xl font-semibold">よく飲むお店</h2>
+                                <h2 className="text-xl font-semibold">好きなお酒</h2>
                                 <div className="flex flex-wrap gap-2">
                                     {userData?.answers?.favorite_alcohol ? 
-                                        Object.entries(userData.answers.favorite_alcohol.drinking_location_preference || {}).map(([alcoholName, details]) => (
+                                        Object.entries(userData.answers.favorite_alcohol.favorite_alcohol || {}).map(([alcoholName, details]) => (
                                         <Badge
                                             key={alcoholName + "name"}
                                             variant="secondary"
-                                            className="text-white border-white/20 bg-white/5"
+                                            className=" border-white/20 bg-white/5"
                                         >
                                             {details}
                                         </Badge>
@@ -160,24 +137,95 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                     : 
                                         <p className="text-[#c2b5ff]">データがありません</p>
                                     }
-
                                 </div>
-                        </section>
+                            </section>
+
+                                {/* 苦手なお酒 */}
+                            <section className="m-4 space-y-3">
+                                <h2 className="text-xl font-semibold">苦手なお酒</h2>
+                                <div className="flex flex-wrap gap-2">
+                                {userData?.answers?.favorite_alcohol ? 
+                                    Object.entries(userData.answers.favorite_alcohol.dislike_alcohol || {}).map(([alcoholName, details]) => (
+                                    <Badge
+                                        key={alcoholName + "name"}
+                                        variant="secondary"
+                                        className="text-white border-white/20 bg-white/5"
+                                    >
+                                        {details}
+                                    </Badge>
+                                    ))
+                                : 
+                                    <p className="text-[#c2b5ff]">データがありません</p>
+                                }
+                                </div>
+                            </section>
+
+                            {/* お気に入りのバー */}
+                            <section className="m-4 space-y-3">
+                                    <h2 className="text-xl font-semibold">よく飲むお店</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {userData?.answers?.favorite_alcohol ? 
+                                            Object.entries(userData.answers.favorite_alcohol.drinking_location_preference || {}).map(([alcoholName, details]) => (
+                                            <Badge
+                                                key={alcoholName + "name"}
+                                                variant="secondary"
+                                                className="text-white border-white/20 bg-white/5"
+                                            >
+                                                {details}
+                                            </Badge>
+                                            ))
+                                        : 
+                                            <p className="text-[#c2b5ff]">データがありません</p>
+                                        }
+
+                                    </div>
+                            </section>
+                            <div className="h-[100vh] w-full"></div>
+                        </div>
+                        
+
+
                     </div>
-                    
-
-
                 </div>
 
-                <Image
-                src="/OIP.jpeg"
-                alt="Profile"
-                width={500}
-                height={500}
-                className="absolute top-0 left-0 w-full h-full object-cover rounded-2xl"
-                style={{ zIndex: -1 }}
-                />
-            </div>
+                <Flicking
+                    viewportTag="div"
+                    cameraTag="div"
+                    cameraClass=""
+                    renderOnSameKey={false}
+                    align="center"
+                    onMove={(e: MoveEvent) => {}}
+                    onWillChange={(e: WillChangeEvent) => {}}
+                    horizontal={true}
+                    circular={false}
+                    className="object-cover rounded-2xl"
+                    style={{ zIndex: 0, height: "100%" }}
+                    onClick={() => console.log("clicked")}
+                >
+                    <Image
+                        src="/OIP.jpeg"
+                        alt="Profile"
+                        width={500}
+                        height={500}
+
+                    />
+                    
+                    <Image
+                        src="/persona/men/restaurant_owner.jpg"
+                        alt="Profile"
+                        width={500}
+                        height={500}
+                    />
+                    <Image
+                        src="/persona/women/sampleWoman.jpeg"
+                        alt="Profile"
+                        width={500}
+                        height={500}
+                    />
+
+                </Flicking>
+
+
         </div>
     )
 }

@@ -131,7 +131,7 @@ export default function ProfilePage() {
       </div>
 
       {/* プロフィール画像 */}
-      <div className="w-full p-2 flex-1">
+      <div className="w-full p-2 flex-1 overflow-hidden">
         <ProfileCard 
           userData={userData}
           isOwnProfile={isOwnProfile}
