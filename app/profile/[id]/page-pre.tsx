@@ -29,23 +29,7 @@ interface ProfileData {
   }[]
 }
 
-const profileData: ProfileData = {
-  name: "Yuki",
-  age: 24,
-  gender: "女性",
-  height: "165 cm",
-  about: "新しい人と出会うのが好きです。お酒を飲みながら楽しい会話ができたらいいなと思います。",
-  interests: ["ダンス", "料理", "ジャズ", "映画", "時々飲む"],
-  favoriteBars: ["Bar Neon", "Space Lab"],
-  imageUrl: "/persona/men/restaurant_owner.jpg",
-  personalityTraits: [
-    { name: "外向性", value: 80 },
-    { name: "協調性", value: 90 },
-    { name: "勤勉性", value: 70 },
-    { name: "創造性", value: 85 },
-    { name: "冒険心", value: 75 },
-  ]
-}
+
 
 function calculateAge(birthday: any) {
   if (!birthday) return null;
@@ -147,7 +131,6 @@ export default function ProfilePage() {
             priority
           />
           <div className="fixed inset-0 " />
-
         </div>
 
 

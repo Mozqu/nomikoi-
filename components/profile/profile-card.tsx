@@ -2,6 +2,8 @@ import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react';
 import { Badge } from '../ui/badge';
 import Flicking, { MoveEvent, WillChangeEvent } from "@egjs/react-flicking";
+import { motion } from "framer-motion"
+
 import "@egjs/react-flicking/dist/flicking.css";
 
 
@@ -62,10 +64,21 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
 
 
     return (
-        <div id="card-container" className="w-full h-full overflow-hidden rounded-2xl relative" onClick={() => console.log("clicked")}>
+        <motion.div
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            id="card-container" 
+            className="w-full h-full overflow-hidden rounded-2xl relative" 
+            onClick={() => console.log("clicked")}>
 
 
-                <div id="el" className="absolute flex flex-col bottom-0"
+                <motion.div 
+                    id="el" 
+                    className="absolute flex flex-col bottom-0"
+                    initial={{ opacity: 0, y: 100 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
 
                     style={{
                         top: isExpanded ? 0 : "0",
@@ -85,7 +98,6 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                             margin: isExpanded ? "0.5rem" : "0rem",
                             color: "#eee",
                             zIndex: 1,
-                            
                         }}
                         className={`shadow-black-bg p-4 rounded-2xl ${isExpanded ? "expanded-card" : ""}`}
                         >
@@ -186,7 +198,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
 
 
                     </div>
-                </div>
+                </motion.div>
 
                 <Flicking
                     viewportTag="div"
@@ -207,7 +219,9 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                         alt="Profile"
                         width={500}
                         height={500}
-
+                        style={{
+                            objectFit: "cover",
+                        }}
                     />
                     
                     <Image
@@ -215,17 +229,23 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                         alt="Profile"
                         width={500}
                         height={500}
+                        style={{
+                            objectFit: "cover",
+                        }}
                     />
                     <Image
                         src="/persona/women/sampleWoman.jpeg"
                         alt="Profile"
                         width={500}
                         height={500}
+                        style={{
+                            objectFit: "cover",
+                        }}
                     />
 
                 </Flicking>
 
 
-        </div>
+        </motion.div>
     )
 }
