@@ -133,7 +133,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       className="w-full flex flex-col items-center justify-center text-center space-y-6"
     >
       <h1 className="text-3xl font-bold">
-        次に、質問に答えて<br />
+        質問に答えて<br />
         あなたのプロフィールを<br />
         作成しましょう
       </h1>
