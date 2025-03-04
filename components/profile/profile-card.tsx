@@ -5,27 +5,8 @@ import Flicking, { MoveEvent, WillChangeEvent } from "@egjs/react-flicking";
 import { motion } from "framer-motion"
 
 import "@egjs/react-flicking/dist/flicking.css";
+import { Radar, PolarAngleAxis, PolarGrid, RadarChart, ResponsiveContainer } from 'recharts';
 
-
-const flicking = new Flicking("#el", { circular: true });
-
-const profileData: ProfileData = {
-    name: "Yuki",
-    age: 24,
-    gender: "女性",
-    height: "165 cm",
-    about: "新しい人と出会うのが好きです。お酒を飲みながら楽しい会話ができたらいいなと思います。",
-    interests: ["ダンス", "料理", "ジャズ", "映画", "時々飲む"],
-    favoriteBars: ["Bar Neon", "Space Lab"],
-    imageUrl: "/persona/men/restaurant_owner.jpg",
-    personalityTraits: [
-        { name: "外向性", value: 80 },
-        { name: "協調性", value: 90 },
-        { name: "勤勉性", value: 70 },
-        { name: "創造性", value: 85 },
-        { name: "冒険心", value: 75 },
-    ]
-}
 
 function calculateAge(birthday: any) {
     if (!birthday) return null;
@@ -55,6 +36,27 @@ function calculateAge(birthday: any) {
 }
 
 export default function ProfileCard({ userData, isOwnProfile }: { userData: any, isOwnProfile: boolean }) {
+
+    const chartParam = userData?.answers?.way_of_drinking;
+
+    const profileData = {
+        name: "Yuki",
+        age: 24,
+        gender: "女性",
+        height: "165 cm",
+        about: "新しい人と出会うのが好きです。お酒を飲みながら楽しい会話ができたらいいなと思います。",
+        interests: ["ダンス", "料理", "ジャズ", "映画", "時々飲む"],
+        favoriteBars: ["Bar Neon", "Space Lab"],
+        imageUrl: "/persona/men/restaurant_owner.jpg",
+        personalityTraits: [
+            { name: "呑み時間", value: chartParam?.ideal_drinking_time },
+            { name: "酒量", value: chartParam?.drinking_amount },
+            { name: "頻度", value: chartParam?.drinking_frequency },
+            { name: "食事", value: chartParam?.food_pairing_importance },
+            { name: "こだわり", value: chartParam?.alcohol_quality_preference },
+            { name: "パーティー", value: chartParam?.party_drink_preference },
+        ]
+    }
     const [isExpanded, setIsExpanded] = useState(true);
 
     const handleClick = () => {
@@ -75,7 +77,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
 
                 <motion.div 
                     id="el" 
-                    className="absolute flex flex-col bottom-0"
+                    className="absolute flex flex-col bottom-0 w-full"
                     initial={{ opacity: 0, y: 100 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
@@ -94,7 +96,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                         style={{
                             transition: "all 0.5s ease-in-out",
                             flex: isExpanded ? 0 : 1,
-                            background: "rgba(0, 0, 0, 0.4)",
+                            background: "rgba(0, 0, 0, 0.6)",
                             margin: isExpanded ? "0.5rem" : "0rem",
                             color: "#eee",
                             zIndex: 1,
@@ -129,14 +131,33 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                             overflow: isExpanded ? "hidden" : "scroll",
                             transition: "all 0.5s ease-in-out",
                             }}>
-                            <section 
-                                className="space-y-3 m-4" 
+                            <div className="flex flex-row">
+                                {/* 呑みスタンス */}
+                                <section className="space-y-3 m-4">
+                                    <h2 className="text-xl font-semibold">性格</h2>
+                                    <p className="text-sm">
+                                        {userData.about}
+                                    </p>
+                                </section>
 
-                                >
+                                {/* chart */}
+                                <section className="space-y-3 w-1/2">
+                                    <div className="w-full h-40">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <RadarChart cx="50%" cy="50%" outerRadius="60%" data={profileData.personalityTraits}>
+                                                <PolarGrid stroke="#6f2cff" />
+                                                <PolarAngleAxis dataKey="name" tick={{ fill: "#c2b5ff", fontSize: 10 }} />
+                                                <Radar name="性格" dataKey="value" stroke="#0ea5e9" fill="#0ea5e9" fillOpacity={0.6} />
+                                            </RadarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </section>
+                            </div>
+                            <section className="space-y-3 m-4">
 
                                 <h2 className="text-xl font-semibold">好きなお酒</h2>
                                 <div className="flex flex-wrap gap-2">
-                                    {userData?.answers?.favorite_alcohol ? 
+                                    {userData?.answers?.favorite_alcohol? 
                                         Object.entries(userData.answers.favorite_alcohol.favorite_alcohol || {}).map(([alcoholName, details]) => (
                                         <Badge
                                             key={alcoholName + "name"}
@@ -192,7 +213,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
 
                                     </div>
                             </section>
-                            <div className="h-[100vh] w-full"></div>
+                            <div className="h-20"></div>
                         </div>
                         
 
