@@ -29,7 +29,23 @@ interface ProfileData {
   }[]
 }
 
-
+const profileData: ProfileData = {
+  name: "Yuki",
+  age: 24,
+  gender: "女性",
+  height: "165 cm",
+  about: "新しい人と出会うのが好きです。お酒を飲みながら楽しい会話ができたらいいなと思います。",
+  interests: ["ダンス", "料理", "ジャズ", "映画", "時々飲む"],
+  favoriteBars: ["Bar Neon", "Space Lab"],
+  imageUrl: "/persona/men/restaurant_owner.jpg",
+  personalityTraits: [
+    { name: "外向性", value: 80 },
+    { name: "協調性", value: 90 },
+    { name: "勤勉性", value: 70 },
+    { name: "創造性", value: 85 },
+    { name: "冒険心", value: 75 },
+  ]
+}
 
 function calculateAge(birthday: any) {
   if (!birthday) return null;
@@ -131,6 +147,7 @@ export default function ProfilePage() {
             priority
           />
           <div className="fixed inset-0 " />
+
         </div>
 
 
@@ -174,17 +191,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* 性格チャート */}
-                <section className="space-y-3 w-1/2">
-                  <div className="w-full h-40">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart cx="50%" cy="50%" outerRadius="60%" data={profileData.personalityTraits}>
-                        <PolarGrid stroke="#6f2cff" />
-                        <PolarAngleAxis dataKey="name" tick={{ fill: "#c2b5ff", fontSize: 10 }} />
-                        <Radar name="性格" dataKey="value" stroke="#0ea5e9" fill="#0ea5e9" fillOpacity={0.6} />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </section>
+
               </div>
 
               {/* 自己紹介 */}

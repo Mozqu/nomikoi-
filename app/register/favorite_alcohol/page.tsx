@@ -113,7 +113,7 @@ const questions: Record<number, Question> = {
           subtypes: []
         },
         {
-          name: "どれもOK",
+          name: "特にこだわり無し",
           subtypes: []
         },
 
@@ -665,13 +665,13 @@ function QuestionStep({
                   if (isLastStep) {
                     const formData = watch();
                     console.log("formData", formData)
-                    await handleSubmitForm(formData, '/register/' + auth?.currentUser?.uid, isLastStep, router);
+                    await handleSubmitForm(formData, '/register/talking_stance', isLastStep, router);
                   } else {
                     nextStep()
                   }
                 }}
                 disabled={!isValid}
-                className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                className="w-full h-14 text-lg neon-bg hover:from-pink-600 hover:to-purple-700"
               >
                 次へ
               </Button>

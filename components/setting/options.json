@@ -1,25 +1,6 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
-import { ChevronLeft, LogOut, Settings } from "lucide-react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { auth, db } from "@/app/firebase/config"
-import { signOut } from "firebase/auth"
-import { useParams, useRouter } from "next/navigation"
-import ImageForm from "@/components/setting/image-form"
-import { OptionalStatusRadio, OptionalStatusCheck } from "@/components/setting/optional-status"
-import { getDoc } from "firebase/firestore"
-import { doc } from "firebase/firestore"
-import fs from "fs"
-import path from "path"
-
-
-const options = {
+{
   "height": {
     "label": "身長",
-    "type": "radio",
     "options": [
       "130cm", "131cm", "132cm", "133cm", "134cm", "135cm",
       "136cm", "137cm", "138cm", "139cm", "140cm",
@@ -37,7 +18,6 @@ const options = {
   },
   "bodyType": {
     "label": "体型",
-    "type": "radio",
     "options": [
       "細身",
       "普通",
@@ -49,12 +29,10 @@ const options = {
   },
   "bloodType": {
     "label": "血液型",
-    "type": "radio",
     "options": ["A", "B", "AB", "O", "不明"]
   },
   "location": {
     "label": "居住地",
-    "type": "radio",
     "options": [
       "北海道", "青森県", "岩手県", "宮城県", "秋田県",
       "山形県", "福島県", "茨城県", "栃木県", "群馬県",
@@ -70,7 +48,6 @@ const options = {
   },
   "origin": {
     "label": "出身地",
-    "type": "radio",
     "options": [
       "北海道", "青森県", "岩手県", "宮城県", "秋田県",
       "山形県", "福島県", "茨城県", "栃木県", "群馬県",
@@ -86,7 +63,6 @@ const options = {
   },
   "job": {
     "label": "職種",
-    "type": "radio",
     "options": [
       "大手企業",
       "公務員",
@@ -147,14 +123,12 @@ const options = {
   },
   "jobName": {
     "label": "職業名",
-    "type": "text",
     "options": [
       "自由記入"
     ]
   },
   "education": {
     "label": "学歴",
-    "type": "radio",
     "options": [
       "高校卒",
       "専門学校卒",
@@ -166,7 +140,6 @@ const options = {
   },
   "income": {
     "label": "年収",
-    "type": "radio",
     "options": [
       "～200万円",
       "200～400万円",
@@ -181,7 +154,6 @@ const options = {
   },
   "tobacco": {
     "label": "タバコ",
-    "type": "radio",
     "options": [
       "吸う",
       "吸う（電子タバコ）",
@@ -192,7 +164,6 @@ const options = {
   },
   "siblings": {
     "label": "兄弟・姉妹構成（複数選択）",
-    "type": "check",
     "options": [
       "一人っ子",
       "兄一人",
@@ -207,7 +178,6 @@ const options = {
   },
   "language": {
     "label": "話せる言語（複数選択）",
-    "type": "check",
     "options": [
       "日本語",
       "英語",
@@ -218,14 +188,12 @@ const options = {
   },
   "school": {
     "label": "学校名",
-    "type": "text",
     "options": [
       "自由記入"
     ]
   },
   "marriage": {
     "label": "結婚歴",
-    "type": "radio",
     "options": [
       "独身（未婚）",
       "独身（離婚）",
@@ -234,7 +202,6 @@ const options = {
   },
   "child": {
     "label": "子供の有無",
-    "type": "radio",
     "options": [
       "なし",
       "同居中",
@@ -243,7 +210,6 @@ const options = {
   },
   "childIntent": {
     "label": "子供が欲しいか",
-    "type": "radio",
     "options": [
       "欲しい",
       "欲しくない",
@@ -253,7 +219,6 @@ const options = {
   },
   "childcare": {
     "label": "家事・育児",
-    "type": "radio",
     "options": [
       "積極的に参加したい",
       "できれば参加したい",
@@ -264,7 +229,6 @@ const options = {
   },
   "meeting": {
     "label": "出会うまでの希望",
-    "type": "radio",
     "options": [
       "マッチング後にまずは飲みに行きたい",
       "気が合えば会いたい",
@@ -275,7 +239,6 @@ const options = {
   },
   "expense": {
     "label": "デート費用",
-    "type": "radio",
     "options": [
       "割り勘",
       "男性が多めに負担",
@@ -285,7 +248,6 @@ const options = {
   },
   "type": {
     "label": "１６タイプ (MBTI)",
-    "type": "radio",
     "options": [
       "ISTJ",
       "ISFJ",
@@ -307,7 +269,6 @@ const options = {
   },
   "roommate": {
     "label": "同居人",
-    "type": "radio",
     "options": [
       "一人暮らし",
       "実家暮らし",
@@ -318,7 +279,6 @@ const options = {
   },
   "pet": {
     "label": "飼っているペット",
-    "type": "check",
     "options": [
       "なし",
       "犬",
@@ -332,7 +292,6 @@ const options = {
   },
   "holiday": {
     "label": "休日",
-    "type": "radio",
     "options": [
       "土日",
       "平日",
@@ -341,93 +300,3 @@ const options = {
     ]
   }
 }
-
-
-export default function SettingsPage() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const params = useParams()
-  const [userData, setUserData] = useState<any>(null)
-  const currentUserId = auth?.currentUser?.uid
-  const isOwnProfile = params.id === currentUserId
-
-
-  const handleLogout = async () => {
-    setIsLoading(true)
-    try {
-      await signOut(auth)
-      router.push("/login")
-    } catch (error) {
-      console.error("ログアウトに失敗しました:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    console.log(auth?.currentUser?.uid)
-    const fetchUser = async () => {
-      try {
-        const userRef = doc(db, "users", auth?.currentUser?.uid as string)
-        const userDoc = await getDoc(userRef)
-        if (userDoc.exists()) {
-          setUserData({ id: userDoc.id, ...userDoc.data() })
-        }
-      } catch (error) {
-        console.error("ユーザー情報の取得に失敗しました:", error)
-      }
-    }
-
-    fetchUser()
-  }, [])
-
-  console.log(userData)
-  console.log(options)
-
-  return (
-    
-    <>
-        {/* ヘッダー */}
-        <div className="w-full p-2 flex justify-between items-center">
-          {/* Back button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-            className="bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Button>
-  
-        </div>
-
-        {currentUserId && (
-          <div className="overflow-y-auto">
-            <ImageForm /> 
-            {Object.entries(options).map(([key, value]) => (
-              value.type === "radio" ? (
-                <OptionalStatusRadio 
-                  key={key}
-                  title={key}
-                  label={value.label}
-                  options={value.options}
-                  userData={userData} 
-                />
-              ) : value.type === "check" ? (
-                <OptionalStatusCheck 
-                  key={key}
-                  title={key}
-                  label={value.label}
-                  options={value.options}
-                  userData={userData}
-                />
-              ) : null
-            ))}
-
-          </div>
-        )}
-
-
-    </>
-  )
-} 

@@ -14,12 +14,8 @@ import type { Question, radioItem } from "@/types/questions"
 import { Island_Moments } from "next/font/google"
 
 type FormData = {
-  ideal_drinking_time: string;
-  drinking_amount: string;
-  drinking_frequency: string;
-  food_pairing_importance: string;
-  alcohol_quality_preference: string;
-  party_drink_preference: string;
+
+  talking_stance: string;
 }
 
 // optionsの型を変換する関数
@@ -33,93 +29,16 @@ const convertOptions = (options: radioItem): { label: string; value: number }[] 
 // 質問データ
 const questions: Record<number, Question> = {
   1: {
-    id: "ideal_drinking_time",
-    title: "理想の飲み平均時間は？",
+    id: "talking_stance",
+    title: "会話スタンスは？",
     options: {
-      "1時間未満（サクッと）": 1,
-      "2-3時間（一次会）": 2,
-      "4-6時間（二次会～終電）": 3,
-      "6-9時間（三次会～タクシー帰り）": 4,
-      "12時間以上（朝まで）": 5
+      "よく話す": 1,
+      "聞き上手": 2,
+      "合わせ上手": 3,
+      "無口": 4,
+      "酔ったら喋る": 5
     } as radioItem,
     type: "radio"
-  },
-  2: {
-    id: "drinking_amount",
-    title: "飲む量はどのくらい？",
-    options: {
-      "全く飲まない（純アルコール0g）": 0,
-      "少量飲む（1～9g）": 1,
-      "控えめに飲む（10～29g）": 2,
-      "普通に飲む（30～49g）": 3,
-      "そこそこ飲む（50～79g）": 4,
-      "かなり飲む（80g以上）": 5
-    },
-    type: "radio"
-  },
-  3: {
-    id: "drinking_frequency",
-    title: "理想の飲み会頻度は？",
-    options: {
-      "ほぼ飲まない（月1回以下）": 1,
-      "たまに飲む（月2～3回）": 2,
-      "普通（週1回程度）": 3,
-      "よく飲む（週2～3回）": 4,
-      "飲み会がライフスタイル（週4回以上）": 5
-    },
-    type: "radio"
-  },
-  4: {
-    "id": "food_pairing_importance",
-    "title": "食事との相性は重視する？",
-    "options": {
-      "あまり気にしない": 1,
-      "不味くなければ": 2,
-      "合った方がいい": 3,
-      "こだわる方だ": 4,
-      "かなりこだわる": 5
-    },
-    "type": "radio"
-  },
-  5: {
-    "id": "alcohol_quality_preference",
-    "title": "お酒の味や品質はこだわる？",
-    "options": {
-      "あまり気にしない": 1,
-      "不味くなければいい": 2,
-      "美味しいければいい": 3,
-      "好みがあり、色々試したい": 4,
-      "品種名や産地を知っている": 5
-    },
-    "type": "radio"
-  },
-  6: {
-    "id": "party_drink_preference",
-    "title": "パーティードリンク(ショット等)は楽しめる？",
-    "options": {
-      "飲みたくない": 1,
-      "できれば飲みたくない": 2,
-      "流れでたまに飲むのは楽しい": 3,
-      "好きな方だ": 4,
-      "大好きだ": 5
-    },
-    "type": "radio"
-  },
-  7: {
-    "id": "smoking_motivation",
-    "title": "飲みの席でのあなたの希望は？",
-    "options": {
-      "喫煙席必須（紙）": 1,
-      "喫煙席必須（電子）": 2,
-      "できれば喫煙席（紙）がいい": 3,
-      "できれば喫煙席（電子）がいい": 4,
-      "吸うけど禁煙席OK": 5,
-      "吸わないけど喫煙席OK（紙）": 6,
-      "吸わないけど喫煙席OK（相手が電子まで）": 7,
-      "できれば禁煙席がいい": 8,
-      "禁煙席必須": 9,
-    },
-    "type": "radio"
   }
 }
 
@@ -133,9 +52,9 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       className="w-full flex flex-col items-center justify-center text-center space-y-6"
     >
       <h1 className="text-3xl font-bold">
-        次に、質問に答えて<br />
-        あなたのプロフィールを<br />
-        作成しましょう
+        最後に<br />
+        あなたの会話スタンスを教えて<br />
+        
       </h1>
       <p className="text-gray-400">
         質問に答えていくと、自動的にプロフィールが作成されます。
@@ -145,7 +64,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           onClick={onNext}
           className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
         >
-          プロフィールを入力する
+          スタンスを入力する
         </Button>
       </div>
     </motion.div>
@@ -158,14 +77,11 @@ export default function RegisterPage() {
   const totalSteps = Object.keys(questions).length  // 質問の総数を動的に取得
   const methods = useForm<FormData>({
     defaultValues: {
-      ideal_drinking_time: '',
-      drinking_amount: '',
-      drinking_frequency: '',
-      food_pairing_importance: '',
-      alcohol_quality_preference: '',
-      party_drink_preference: ''
+      talking_stance: ''
     }
   })
+
+
  
 
   const nextStep = () => {
@@ -233,14 +149,7 @@ const handleSubmitForm = async (data: any, redirectUrl: string, isLastStep: bool
   try {
     // DB構造に合わせてデータを整形
     const answers = {
-      way_of_drinking: {
-        ideal_drinking_time: Number(data.ideal_drinking_time) || 0,
-        drinking_amount: Number(data.drinking_amount) || 0,
-        drinking_frequency: Number(data.drinking_frequency) || 0,
-        food_pairing_importance: Number(data.food_pairing_importance) || 0,
-        alcohol_quality_preference: Number(data.alcohol_quality_preference) || 0,
-        party_drink_preference: Number(data.party_drink_preference) || 0
-      }
+      talking_stance: data.talking_stance || ''
     }
 
     if (auth.currentUser && isLastStep) {
@@ -252,7 +161,7 @@ const handleSubmitForm = async (data: any, redirectUrl: string, isLastStep: bool
       }
 
       // Firebaseにデータを保存
-      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      const userDocRef = doc(db!, 'users', auth.currentUser.uid);
       await setDoc(userDocRef, userData, { merge: true });
       
       console.log("データが正常に保存されました"); // デバッグ用
@@ -291,7 +200,10 @@ function QuestionStep({
   const router = useRouter()
 
   const formData = watch();
-
+  useEffect(() => {
+    console.log(formData)
+  }, [formData])
+      
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -312,7 +224,7 @@ function QuestionStep({
                 className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-4 hover:bg-white/5 transition-colors cursor-pointer"
               >
                 <input
-                  type="radio"
+                  type="checkbox"
                   value={value}
                   {...register(question.id, {
                     onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -335,7 +247,7 @@ function QuestionStep({
                   console.log(watch())
                   if (isLastStep) {
                     const formData = watch();
-                    await handleSubmitForm(formData, '/register/favorite_alcohol', isLastStep, router);
+                    await handleSubmitForm(formData, '/discover', isLastStep, router);
                   } else {
                     console.log(formData)
                     nextStep()
