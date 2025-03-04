@@ -1,6 +1,6 @@
 "use client"
 import dynamic from 'next/dynamic'
-import { useState, useEffect } from "react"
+import { useState, useEffect, useLayoutEffect } from "react"
 import { doc, updateDoc } from "firebase/firestore"
 import { auth, db } from "@/app/firebase/config"
 import { Badge } from '../ui/badge'
@@ -17,12 +17,25 @@ interface OptionalStatusRadioProps {
 export const OptionalStatusRadio = dynamic(
   () => Promise.resolve(({title, label, options, userData }: OptionalStatusRadioProps) => {
     const [selectedValue, setSelectedValue] = useState(() => {
-      // プロフィールデータから初期値を取得
+      // 初期値を設定
       return userData?.profile?.[title] || ""
     })
+    const [text, setText] = useState(userData?.profile?.[`${label}Detail`] || "")
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    // userDataが変更されたら値を更新
+    useEffect(() => {
+      if (userData?.profile?.[title]) {
+        setSelectedValue(userData.profile[title])
+        setText(userData.profile[`${title}Detail`] || "")
+      }
+    }, [userData, title])
+
+    
+
+    console.log("useEffect", userData?.profile, text)
+
+    const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>, label: string) => {
       console.log('handleChange開始:', e.target.value)
       if (!auth.currentUser || isSubmitting) {
         console.log('処理をスキップ:', { isAuthenticated: !!auth.currentUser, isSubmitting })
@@ -36,7 +49,7 @@ export const OptionalStatusRadio = dynamic(
       try {
         const userRef = doc(db, "users", auth.currentUser.uid)
         await updateDoc(userRef, {
-          [`profile.${title}`]: newValue,
+          [`profile.${label}`]: newValue,
           updatedAt: new Date()
         })
         console.log(`更新成功: ${title} => ${newValue}`)
@@ -57,18 +70,20 @@ export const OptionalStatusRadio = dynamic(
           value={selectedValue}
           onChange={(e) => {
             console.log('onChange:', e.target.value)
-            handleChange(e)
+            handleChange(e, label)
           }}
           className="w-full p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
           style={{
             backgroundColor: "transparent",
-            borderBottom: "1px solid white",
+            borderBottom: selectedValue ? "1px solid white" : "1px solid #00fff7",
             outline: "none",
             boxShadow: "none",
             color: "#aaa",
           }}
         >
-          <option value="">選択してください</option>
+          <option value="" disabled={!!selectedValue}>
+            {selectedValue ? selectedValue : "選択してください"}
+          </option>
           {options.map((option: string) => (
             <option key={option} value={option}>{option}</option>
           ))}
@@ -77,8 +92,11 @@ export const OptionalStatusRadio = dynamic(
       {selectedValue === "その他（自由記入）" && (
         <input
           type="text"
-          placeholder="その他の詳細を入力"
           className="w-full mt-4 p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          placeholder={userData?.profile?.[`${title}Detail`] ?? userData?.profile?.[title] ?? "その他の詳細を入力"}
+          onChange={(e) => {
+            setText(e.target.value)
+          }}
           style={{
             backgroundColor: "transparent", 
             borderBottom: "1px solid white",
@@ -94,7 +112,7 @@ export const OptionalStatusRadio = dynamic(
             try {
               const userRef = doc(db, "users", auth.currentUser.uid);
               await updateDoc(userRef, {
-                [`profile.${title}detail`]: e.target.value,
+                [`profile.${label}detail`]: e.target.value,
                 updatedAt: new Date()
               });
             } catch (error) {
@@ -115,19 +133,25 @@ export const OptionalStatusRadio = dynamic(
 // チェックボックス用のコンポーネント
 export const OptionalStatusCheck = dynamic(
   () => Promise.resolve(({title, label, options, userData}: OptionalStatusRadioProps) => {
-    const [selectedValues, setSelectedValues] = useState<string[]>(() => {
-      // プロフィールデータから初期値を取得
-      return userData?.profile?.[title] || []
-    })
-
-    console.log("title", title)
-    console.log("label", label)
-    console.log("options", options)
-    console.log("userData", userData)
-
+    const [selectedValues, setSelectedValues] = useState(userData?.profile?.[`${label}`] || [])
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const handleChange = async (option: string, checked: boolean) => {
+    // userDataが変更されたら値を更新
+    useLayoutEffect(() => {
+      if (userData?.profile && userData.profile[title]) {
+        setSelectedValues(Array.isArray(userData.profile[title]) 
+          ? userData.profile[title] 
+          : [])
+      }
+    }, [userData, title])
+
+    if (userData?.profile && userData.profile[title]) {
+      setSelectedValues(Array.isArray(userData.profile[title]) 
+        ? userData.profile[title] 
+        : [])
+    }
+
+    const handleChange = async (option: string, checked: boolean, label: string) => {
       if (!auth.currentUser || isSubmitting) return
 
       setIsSubmitting(true)
@@ -138,7 +162,7 @@ export const OptionalStatusCheck = dynamic(
       try {
         const userRef = doc(db, "users", auth.currentUser.uid)
         await updateDoc(userRef, {
-          [`profile.${title}`]: newValues,
+          [`profile.${label}`]: newValues,
           updatedAt: new Date()
         })
         setSelectedValues(newValues)
@@ -150,6 +174,8 @@ export const OptionalStatusCheck = dynamic(
       }
     }
 
+    console.log(userData)
+
     return (    
       <div className="p-4 space-y-4">
         <h2 className="text-xl font-bold">{label}</h2>
@@ -160,10 +186,9 @@ export const OptionalStatusCheck = dynamic(
                 <input
                     type="checkbox"
                     id={option}
-                    value={option}
                     checked={selectedValues.includes(option)}
                     onChange={(e) => {
-                        handleChange(option, e.target.checked)
+                        handleChange(option, e.target.checked, label)
                         console.log("selectedValues", selectedValues)
                     }}
                     className=""

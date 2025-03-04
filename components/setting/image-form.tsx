@@ -4,6 +4,15 @@ import { Shield, Camera, Plus, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import Image from "next/image"
+import { ref } from "firebase/storage"
+import { storage } from "@/app/firebase/config"
+import { uploadBytes } from "firebase/storage"
+import { auth } from "@/app/firebase/config"
+import { arrayUnion, doc, updateDoc } from "firebase/firestore"
+import { db } from "@/app/firebase/config"
+import { getDownloadURL } from "firebase/storage"
+import { useRouter } from "next/navigation"
+
 
 export default function ImageForm() {
     const [image, setImage] = useState<File | null>(null)
@@ -11,61 +20,81 @@ export default function ImageForm() {
     const [error, setError] = useState<string | null>(null)
 
 
-    const photos = [
-        {
-          id: 1,
-          url: "/sample1.jpg",  // URLを一時的に変更
-          isMain: true,
-        },
-        {
-          id: 2,
-          url: "/sample2.jpg",
-        },
-        {
-          id: 3,
-          url: "/sample3.jpg",
-        },
-        {
-          id: 4,
-          url: "/sample4.jpg",
-        },
-    ]
+    const photos = []
     
         // デバッグ用にphotosの内容を確認
         console.log('Photos:', photos);
 
 
-    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0]
-        if (file) {
-            setImage(file)
+    const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            // Firebase Storageへの参照を作成
+            const storageRef = ref(storage, `photos/${auth.currentUser?.uid}/${Date.now()}_${file.name}`);
+            
+            // 画像をアップロード
+            const snapshot = await uploadBytes(storageRef, file);
+            
+            // アップロードした画像のURLを取得
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            setImage(file);
+            
+            // Firestoreにも画像情報を保存
+            const userRef = doc(db, "users", auth.currentUser!.uid);
+            await updateDoc(userRef, {
+                photos: arrayUnion({  
+                    url: downloadURL,
+                    createdAt: new Date(),
+                    isMain: false
+                })
+            });
+
+        } catch (err) {
+            console.error("画像アップロードエラー:", err);
+            setError("画像のアップロードに失敗しました");
+        } finally {
+            setIsLoading(false);
         }
     }
+
+    const router = useRouter()
 
     return (
         
 
   
         <div className="p-4 space-y-8">
-          {/* ヘッダー 
-          {/* Profile Completion 
+          
+          {/* Profile Completion */}
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">プロフィール充実度</h2>
-            <button className="w-full flex items-center justify-between p-4 rounded-full border">
-              <span>39%登録済み</span>
+            <h2 className="text-xl font-bold">プロフィール設定</h2>
+            <button 
+              className="w-full flex items-center justify-between p-4 rounded-full border"
+              onClick={() => router.push('/register/way_of_drinking')}
+            >
+              <span>もう一度お酒の質問に答える</span>
               <ArrowLeft size={20} className="rotate-180" />
             </button>
           </div>
-          */}
+          
 
           {/* Photos Section */}
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">写真と動画</h2>
-            <p className="text-gray-600">自分の良さが伝わる写真を選びましょう。</p>
+            <h2 className="text-xl font-bold">写真</h2>
+            <p className="text-gray-600"></p>
   
             <div className="grid grid-cols-3 gap-2">
-              {photos.map((photo, index) => (
-                photo.url ? (
+              {[...Array(6)].map((_, index) => {
+                const photo = photos[index];
+
+                
+                return photo?.url ? (
                   <div key={photo.id} className="relative aspect-square">
                     <Image
                       src={photo.url}
@@ -86,10 +115,10 @@ export default function ImageForm() {
                     </span>
                   </div>
                 ) : (
-                  <div key={photo.id} className="relative aspect-square">
+                  <div key={index} className="relative aspect-square">
                     <label className="w-full h-full flex items-center justify-center border-2 border-dashed rounded-lg cursor-pointer">
                       <input
-                        type="file"
+                        type="file" 
                         accept="image/*"
                         className="hidden"
                         onChange={handleImageChange}
@@ -98,22 +127,9 @@ export default function ImageForm() {
                     </label>
                   </div>
                 )
-              ))}
-              {[5, 6].map((num) => (
-                <div key={num} className="relative aspect-square">
-                  <label className="w-full h-full flex items-center justify-center border-2 border-dashed rounded-lg cursor-pointer">
-                    <input
-                      type="file" 
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageChange}
-                    />
-                    <Plus className="h-6 w-6 text-gray-400" />
-                  </label>
-                </div>
-              ))}
+              })}
+
             </div>
-            <p className="text-sm text-gray-600">長押しドラッグで並び替え</p>
           </div>
           {/*
           {/* Best Photo Toggle 

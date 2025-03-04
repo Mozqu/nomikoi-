@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { ChevronLeft, LogOut, Settings } from "lucide-react"
+import { ChevronLeft, ChevronRight, LogOut, Settings } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { auth, db } from "@/app/firebase/config"
@@ -10,7 +10,7 @@ import { signOut } from "firebase/auth"
 import { useParams, useRouter } from "next/navigation"
 import ImageForm from "@/components/setting/image-form"
 import { OptionalStatusRadio, OptionalStatusCheck } from "@/components/setting/optional-status"
-import { getDoc } from "firebase/firestore"
+import { getDoc, updateDoc } from "firebase/firestore"
 import { doc } from "firebase/firestore"
 import fs from "fs"
 import path from "path"
@@ -403,7 +403,36 @@ export default function SettingsPage() {
 
         {currentUserId && (
           <div className="overflow-y-auto">
+
+
+
             <ImageForm /> 
+
+            {/* textarea bio */}
+            <div className="p-4">
+              <h2 className="text-xl font-bold">自己紹介</h2>
+              <textarea 
+                className="w-full mt-3 p-2 border border-gray-300 bg-transparent rounded-md"
+                rows={5}
+                placeholder="あなたについて教えて下さい"
+                value={userData?.bio}
+                onChange={(e) => setUserData({ ...userData, bio: e.target.value })}
+              />
+              <Button 
+                className="w-full mt-3 neon-bg"
+                onClick={() => {
+                  console.log(userData)
+                  const userRef = doc(db, "users", auth?.currentUser?.uid as string)
+                  updateDoc(userRef, {
+                    bio: userData?.bio
+                  })
+                }}
+              >
+                保存
+              </Button>
+            </div>
+
+            {/* 基本情報 */}  
             {Object.entries(options).map(([key, value]) => (
               value.type === "radio" ? (
                 <OptionalStatusRadio 

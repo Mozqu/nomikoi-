@@ -39,6 +39,8 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
 
     const chartParam = userData?.answers?.way_of_drinking;
 
+    const basicInfo = userData?.profile;
+
     const profileData = {
         name: "Yuki",
         age: 24,
@@ -72,7 +74,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
             transition={{ duration: 0.5 }}
             id="card-container" 
             className="w-full h-full overflow-hidden rounded-2xl relative" 
-            onClick={() => console.log("clicked")}>
+            >
 
 
                 <motion.div 
@@ -116,11 +118,9 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                     {calculateAge(userData?.birthday) || ""}
                                 )
                             </p>
-                            <p className=" text-xl">
-                                性別: {userData?.gender || "Loading..."}
-                            </p>
-                            <p className=" text-xl">
-                                身長: {userData?.height || "Loading..."}
+
+                            <p className="text-sm">
+                                {basicInfo?.居住地}
                             </p>
 
                         </div>
@@ -173,7 +173,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 </div>
                             </section>
 
-                                {/* 苦手なお酒 */}
+                            {/* 苦手なお酒 */}
                             <section className="m-4 space-y-3">
                                 <h2 className="text-xl font-semibold">苦手なお酒</h2>
                                 <div className="flex flex-wrap gap-2">
@@ -195,24 +195,35 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
 
                             {/* お気に入りのバー */}
                             <section className="m-4 space-y-3">
-                                    <h2 className="text-xl font-semibold">よく飲むお店</h2>
-                                    <div className="flex flex-wrap gap-2">
-                                        {userData?.answers?.favorite_alcohol ? 
-                                            Object.entries(userData.answers.favorite_alcohol.drinking_location_preference || {}).map(([alcoholName, details]) => (
-                                            <Badge
-                                                key={alcoholName + "name"}
-                                                variant="secondary"
-                                                className="text-white border-white/20 bg-white/5"
-                                            >
-                                                {details}
-                                            </Badge>
-                                            ))
-                                        : 
-                                            <p className="text-[#c2b5ff]">データがありません</p>
-                                        }
+                                <h2 className="text-xl font-semibold">よく飲むお店</h2>
+                                <div className="flex flex-wrap gap-2">
+                                    {userData?.answers?.favorite_alcohol ? 
+                                        Object.entries(userData.answers.favorite_alcohol.drinking_location_preference || {}).map(([alcoholName, details]) => (
+                                        <Badge
+                                            key={alcoholName + "name"}
+                                            variant="secondary"
+                                            className="text-white border-white/20 bg-white/5"
+                                        >
+                                            {details}
+                                        </Badge>
+                                        ))
+                                    : 
+                                        <p className="text-[#c2b5ff]">データがありません</p>
+                                    }
 
-                                    </div>
+                                </div>
                             </section>
+
+                            <section className="m-4 space-y-3">
+                                <h2 className="text-xl font-semibold">基本情報</h2>
+
+                                {userData?.profile && Object.entries(userData?.profile).map(([key, value], index) => (
+                                    <p key={`profile-${key}-${index}`} className="text-sm">
+                                        {key}: {value}
+                                    </p>
+                                ))}
+                            </section>
+                            
                             <div className="h-20"></div>
                         </div>
                         
@@ -233,7 +244,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                     circular={false}
                     className="object-cover rounded-2xl"
                     style={{ zIndex: 0, height: "100%" }}
-                    onClick={() => console.log("clicked")}
+                    onClick={() => ""}
                 >
                     <Image
                         src="/OIP.jpeg"
