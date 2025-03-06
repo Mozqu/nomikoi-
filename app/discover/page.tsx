@@ -193,6 +193,8 @@ export default function DiscoverPage() {
   return (
     <div className="min-h-screen [--scroll-mt:9.875rem] lg:[--scroll-mt:6.3125rem]">
       <div className="max-w-lg mx-auto px-4 py-6">
+        
+        {/* あなたの好みかも 
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold">あなたの好みかも</h2>
@@ -208,6 +210,7 @@ export default function DiscoverPage() {
             ))}
           </div>
         </div>
+        */}
 
         <div>
           <div className="flex justify-between items-center mb-4">

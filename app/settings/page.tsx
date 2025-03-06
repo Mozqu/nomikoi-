@@ -364,6 +364,8 @@ export default function SettingsPage() {
     }
   }
 
+  
+
   useEffect(() => {
     console.log(auth?.currentUser?.uid)
     const fetchUser = async () => {
