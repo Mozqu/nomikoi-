@@ -17,8 +17,9 @@ interface OptionalStatusRadioProps {
 export const OptionalStatusRadio = dynamic(
   () => Promise.resolve(({title, label, options, userData }: OptionalStatusRadioProps) => {
     const [selectedValue, setSelectedValue] = useState(() => {
+      console.log("selectedValue", userData?.profile)
       // 初期値を設定
-      return userData?.profile?.[title] || ""
+      return userData?.profile?.[label] || ""
     })
     const [text, setText] = useState(userData?.profile?.[`${label}Detail`] || "")
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -33,10 +34,8 @@ export const OptionalStatusRadio = dynamic(
 
     
 
-    console.log("useEffect", userData?.profile, text)
 
     const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>, label: string) => {
-      console.log('handleChange開始:', e.target.value)
       if (!auth.currentUser || isSubmitting) {
         console.log('処理をスキップ:', { isAuthenticated: !!auth.currentUser, isSubmitting })
         return
@@ -67,7 +66,8 @@ export const OptionalStatusRadio = dynamic(
       <div className="p-4 space-y-4">
         <h2 className="text-xl font-bold">{label}</h2>
         <select 
-          value={selectedValue}
+          key={selectedValue}
+          defaultValue={selectedValue}
           onChange={(e) => {
             console.log('onChange:', e.target.value)
             handleChange(e, label)

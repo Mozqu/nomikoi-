@@ -118,15 +118,15 @@ export default function ProfilePage() {
 
         {/* プロフィール編集ボタン */}
         {isOwnProfile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/settings")}
-            className="z-20 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md"
+          <a href="/settings">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="z-20 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md"
           >
             <Settings className="h-6 w-6" />
-          </Button>
-          
+            </Button>
+          </a>
         )}
       </div>
 
