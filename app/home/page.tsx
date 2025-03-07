@@ -9,6 +9,10 @@ import type { QueryDocumentSnapshot, Timestamp } from "firebase/firestore"
 import { useInView } from "react-intersection-observer"
 import { collection, query, limit, getDocs, startAfter, orderBy } from "firebase/firestore"
 import { useRouter } from 'next/navigation'
+import { getDownloadURL } from "firebase/storage"
+import { listAll } from "firebase/storage"
+import { ref } from "firebase/storage"
+import { getStorage } from "firebase/storage"
 
 // User型を定義
 interface User {
@@ -57,18 +61,45 @@ interface UserCardProps {
 const UserCard: React.FC<UserCardProps> = ({ user, isNew }) => {
   const router = useRouter()
   const age = calculateAge(user.birthday)
-  
+  console.log(user)
   const handleClick = () => {
     router.push(`/profile/${user.id}`)
   }
+
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+        if (!user?.id) return;
+        
+        try {
+            const storage = getStorage();
+              const imagesRef = ref(storage, `profile-image/${user.id}`);
+              const imagesList = await listAll(imagesRef);
+            
+            const urls = await Promise.all(
+                imagesList.items.map(imageRef => getDownloadURL(imageRef))
+            );
+            
+            setImageUrls(urls);
+        } catch (error) {
+            console.error('画像の取得に失敗しました:', error);
+            // デフォルト画像を設定
+            setImageUrls(['/OIP.jpeg']);
+        }
+    };
+    
+    fetchImages();
+}, [user?.id]);
   
   return (
     <div 
       className="relative rounded-xl overflow-hidden aspect-[3/4] bg-white shadow cursor-pointer transition-transform hover:scale-105"
+
       onClick={handleClick}
     >
       <Image 
-        src={user.photoURL || "/placeholder.svg"} 
+        src={imageUrls[0] || user.photoURL || "/placeholder.svg"}
         alt={user.name} 
         fill 
         className="object-cover"

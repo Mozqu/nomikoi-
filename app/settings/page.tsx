@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { ChevronLeft, ChevronRight, LogOut, Settings } from "lucide-react"
+import { ArrowLeft, ChevronLeft, ChevronRight, LogOut, Settings } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { auth, db } from "@/app/firebase/config"
@@ -191,7 +191,7 @@ const options = {
     ]
   },
   "siblings": {
-    "label": "兄弟・姉妹構成（複数選択）",
+    "label": "兄弟・姉妹構成",
     "type": "check",
     "options": [
       "一人っ子",
@@ -206,7 +206,7 @@ const options = {
     ]
   },
   "language": {
-    "label": "話せる言語（複数選択）",
+    "label": "話せる言語",
     "type": "check",
     "options": [
       "日本語",
@@ -367,7 +367,6 @@ export default function SettingsPage() {
   
 
   useEffect(() => {
-    console.log(auth?.currentUser?.uid)
     const fetchUser = async () => {
       try {
         const userRef = doc(db, "users", auth?.currentUser?.uid as string)
@@ -382,9 +381,6 @@ export default function SettingsPage() {
 
     fetchUser()
   }, [])
-
-  console.log(userData)
-  console.log(options)
 
   return (
     
@@ -406,7 +402,17 @@ export default function SettingsPage() {
         {currentUserId && (
           <div className="overflow-y-auto">
 
-
+            {/* Profile Completion */}
+            <div className="space-y-4 p-4">
+              <h2 className="text-xl font-bold">プロフィール設定</h2>
+              <button 
+                className="w-full flex items-center justify-between p-4 rounded-full border"
+                onClick={() => router.push('/register/way_of_drinking')}
+              >
+                <span>もう一度お酒の質問に答える</span>
+                <ArrowLeft size={20} className="rotate-180" />
+              </button>
+            </div>
 
             <ImageForm /> 
 

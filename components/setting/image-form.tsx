@@ -1,29 +1,21 @@
 import { X } from "lucide-react"
-import { Switch } from "@radix-ui/react-switch"
 import { Shield, Camera, Plus, ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { ref } from "firebase/storage"
-import { storage } from "@/app/firebase/config"
-import { uploadBytes } from "firebase/storage"
+import { ref, getStorage, uploadBytes, getDownloadURL, listAll, getMetadata, uploadBytesResumable, deleteObject } from "firebase/storage"
 import { auth } from "@/app/firebase/config"
 import { arrayUnion, doc, updateDoc } from "firebase/firestore"
 import { db } from "@/app/firebase/config"
-import { getDownloadURL } from "firebase/storage"
 import { useRouter } from "next/navigation"
 
 
 export default function ImageForm() {
+    const [photos, setPhotos] = useState<any[]>([])
     const [image, setImage] = useState<File | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const storage = getStorage();
 
-
-    const photos = []
-    
-        // デバッグ用にphotosの内容を確認
-        console.log('Photos:', photos);
 
 
     const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,26 +26,64 @@ export default function ImageForm() {
             setIsLoading(true);
             setError(null);
 
-            // Firebase Storageへの参照を作成
-            const storageRef = ref(storage, `photos/${auth.currentUser?.uid}/${Date.now()}_${file.name}`);
+            const storageRef = ref(storage, `profile-image/${auth.currentUser?.uid}/${Date.now()}_${file.name}`);
             
-            // 画像をアップロード
-            const snapshot = await uploadBytes(storageRef, file);
+            const metadata = {
+                customMetadata: {
+                    userId: auth?.currentUser?.uid || "",
+                    uploadedAt: new Date().toISOString(),
+                    fileName: file.name
+                }
+            };
             
-            // アップロードした画像のURLを取得
-            const downloadURL = await getDownloadURL(snapshot.ref);
+            // uploadBytesResumableを使用して進捗状況をモニタリング
+            const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
-            setImage(file);
-            
-            // Firestoreにも画像情報を保存
-            const userRef = doc(db, "users", auth.currentUser!.uid);
-            await updateDoc(userRef, {
-                photos: arrayUnion({  
-                    url: downloadURL,
-                    createdAt: new Date(),
-                    isMain: false
-                })
-            });
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    // アップロードの進捗状況
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    console.log('アップロード進捗: ' + progress + '%');
+                    
+                    // 現在の状態も表示
+                    switch (snapshot.state) {
+                        case 'paused':
+                            console.log('アップロード一時停止中');
+                            break;
+                        case 'running':
+                            console.log('アップロード進行中');
+                            break;
+                    }
+                },
+                (error) => {
+                    console.error("アップロードエラー:", error);
+                    setError("画像のアップロードに失敗しました");
+                },
+                async () => {
+                    // アップロード完了時の処理
+                    console.log('アップロード完了！');
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    
+                    setImage(file);
+                    
+                    // Firestoreに画像情報を保存
+                    const userRef = doc(db, "users", auth.currentUser!.uid);
+                    await updateDoc(userRef, {
+                        photos: arrayUnion({  
+                            url: downloadURL,
+                            createdAt: new Date(),
+                            isMain: false
+                        })
+                    });
+                    // 新しい画像を写真リストに追加
+                    setPhotos(prevPhotos => [...prevPhotos, {
+                        url: downloadURL,
+                        id: uploadTask.snapshot.ref.name,
+                        isMain: false,
+                        metadata: metadata.customMetadata
+                    }]);
+                }
+            );
 
         } catch (err) {
             console.error("画像アップロードエラー:", err);
@@ -63,25 +93,51 @@ export default function ImageForm() {
         }
     }
 
+    useEffect(() => {
+        const fetchPhotos = async () => {
+            if (!auth.currentUser) return;
+            
+            try {
+                // profile-imageフォルダ内のユーザーのディレクトリを参照
+                const storageRef = ref(storage, `profile-image/${auth.currentUser.uid}`);
+                
+                // ディレクトリ内のすべてのファイルを取得
+                const result = await listAll(storageRef);
+                
+                // 各ファイルのダウンロードURLとメタデータを取得
+                const photoPromises = result.items.map(async (item) => {
+                    const url = await getDownloadURL(item);
+                    const metadata = await getMetadata(item);
+                    
+                    return {
+                        url,
+                        id: item.name,
+                        isMain: false, // デフォルトはfalse
+                        metadata: metadata.customMetadata
+                    };
+                });
+                
+                const photosList = await Promise.all(photoPromises);
+                setPhotos(photosList);
+                
+            } catch (error) {
+                console.error("画像の取得に失敗しました:", error);
+                setError("画像の取得に失敗しました");
+            }
+        };
+
+        fetchPhotos();
+    }, []);
+
     const router = useRouter()
 
     return (
         
 
   
-        <div className="p-4 space-y-8">
+        <div className="p-4 space-y-8 w-full">
           
-          {/* Profile Completion */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">プロフィール設定</h2>
-            <button 
-              className="w-full flex items-center justify-between p-4 rounded-full border"
-              onClick={() => router.push('/register/way_of_drinking')}
-            >
-              <span>もう一度お酒の質問に答える</span>
-              <ArrowLeft size={20} className="rotate-180" />
-            </button>
-          </div>
+
           
 
           {/* Photos Section */}
@@ -101,7 +157,62 @@ export default function ImageForm() {
                       alt={`Photo ${index + 1}`}
                       fill
                       className="object-cover rounded-lg"
+                      onClick={async () => {
+                        console.log("画像を削除します");
+                        try {
+                          if (!auth?.currentUser) return;
+                          
+                          // 削除確認モーダルを表示
+                          const dialog = document.createElement('dialog');
+                          dialog.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-6 bg-white rounded-lg shadow-xl';
+                          
+                          dialog.innerHTML = `
+                            <div class="space-y-4">
+                              <h3 class="text-lg font-medium">画像を削除しますか?</h3>
+                              <p class="text-gray-500">この操作は取り消せません。</p>
+                              <div class="flex justify-end gap-3">
+                                <button class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg" id="cancel">
+                                  キャンセル
+                                </button>
+                                <button class="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg" id="confirm">
+                                  削除する
+                                </button>
+                              </div>
+                            </div>
+                          `;
+
+                          document.body.appendChild(dialog);
+                          dialog.showModal();
+
+                          const result = await new Promise((resolve) => {
+                            dialog.querySelector('#confirm')?.addEventListener('click', () => resolve(true));
+                            dialog.querySelector('#cancel')?.addEventListener('click', () => resolve(false));
+                          });
+
+                          dialog.close();
+                          document.body.removeChild(dialog);
+
+                          if (!result) return;
+                          
+                          // Storageから画像を削除
+                          const imageRef = ref(storage, `profile-image/${auth.currentUser.uid}/${photo.id}`);
+                          await deleteObject(imageRef);
+                          
+                          // 画像リストから削除
+                          setPhotos(prev => prev.filter(p => p.id !== photo.id));
+                          console.log("画像を削除しました");
+                        } catch (error) {
+                          console.error("画像の削除に失敗しました:", error);
+                          alert("画像の削除に失敗しました");
+                        }
+                      }}
+
                     />
+                    <button 
+                      className="absolute top-2 right-2 p-1 bg-black/50 rounded-full z-index-10"
+                    >
+                      <X className="h-4 w-4 text-white" />
+                    </button>
                     <button className="absolute top-2 right-2 p-1 bg-black/50 rounded-full">
                       <X className="h-4 w-4 text-white" />
                     </button>

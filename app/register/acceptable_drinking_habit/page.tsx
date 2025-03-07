@@ -375,7 +375,7 @@ function QuestionStep({
                 
                 <label
                   key={uniqueKey}
-                  className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-4 hover:bg-white/5 transition-colors cursor-pointer"
+                  className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-3 hover:bg-white/5 transition-colors cursor-pointer"
                 >
                   <input
                     type="radio"
