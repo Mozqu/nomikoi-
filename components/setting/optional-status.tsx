@@ -17,7 +17,6 @@ interface OptionalStatusRadioProps {
 export const OptionalStatusRadio = dynamic(
   () => Promise.resolve(({title, label, options, userData }: OptionalStatusRadioProps) => {
     const [selectedValue, setSelectedValue] = useState(() => {
-      console.log("selectedValue", userData?.profile)
       // 初期値を設定
       return userData?.profile?.[label] || ""
     })
@@ -174,7 +173,6 @@ export const OptionalStatusCheck = dynamic(
       }
     }
 
-    console.log(userData)
 
     return (    
       <div className="p-4 space-y-4">

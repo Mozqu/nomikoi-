@@ -139,9 +139,11 @@ export default function RegisterPage() {
     setStep((prev) => Math.max(prev - 1, 1))
   }
 
+  const isLastStep = step === 4
+
   return (
     <FormProvider {...methods}>
-      <div className="min-h-screen bg-black text-white flex flex-col">
+      <div className="min-h-screen bg-black text-white flex flex-col overflow-y-auto">
         {/* Progress Bar */}
         <div className="w-full px-4 pt-8">
           <div className="flex items-center mb-2">
@@ -169,6 +171,15 @@ export default function RegisterPage() {
               onNext={step === 4 ? handleFinalStep : nextStep} 
             />
           </AnimatePresence>
+        </div>
+        <div className="fixed bottom-0 w-full mt-auto py-4">
+          <Button
+            onClick={isLastStep ? handleFinalStep : nextStep}
+            disabled={!watch(questions[step].id)}
+            className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+          >
+            次へ
+          </Button>
         </div>
       </div>
     </FormProvider>
@@ -203,15 +214,7 @@ function QuestionStep({ question, onNext }: { question: Question; onNext: () => 
         </div>
       )}
 
-      <div className="mt-auto py-4">
-        <Button
-          onClick={onNext}
-          disabled={!value}
-          className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
-        >
-          次へ
-        </Button>
-      </div>
+
     </motion.div>
   )
 }

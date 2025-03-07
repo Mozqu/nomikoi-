@@ -48,13 +48,14 @@ const questions: Record<number, Question> = {
     id: "drinking_amount",
     title: "飲む量はどのくらい？",
     options: {
-      "全く飲まない（純アルコール0g）": 0,
-      "少量飲む（1～9g）": 1,
-      "控えめに飲む（10～29g）": 2,
-      "普通に飲む（30～49g）": 3,
-      "そこそこ飲む（50～79g）": 4,
-      "かなり飲む（80g以上）": 5
+      "全く飲まない": 0,
+      "少量飲む": 1,
+      "控えめに飲む": 2,
+      "普通に飲む": 3,
+      "そこそこ飲む": 4,
+      "かなり飲む": 5
     },
+
     type: "radio"
   },
   3: {
@@ -166,6 +167,10 @@ export default function RegisterPage() {
       party_drink_preference: ''
     }
   })
+  const descriptions = [
+    "全く飲まない（純アルコール0g）は選択できません",
+
+  ]
  
 
   const nextStep = () => {
@@ -292,6 +297,18 @@ function QuestionStep({
 
   const formData = watch();
 
+  const descriptions = [
+    "",
+    "グラス1杯のみ",
+    "ビール・ワイン 1～2杯<br>ハイボール・サワー・酎ハイ 2～3杯",
+    "ビール・ワイン 2～3杯<br>ハイボール・サワー・酎ハイ 4～5杯",
+    "ビール・ワイン 4～5杯<br>ハイボール・サワー・酎ハイ 6～8杯",
+    "ビール・ワイン 6～7杯<br>ハイボール・サワー・酎ハイ 9～10杯",
+    "ビール・ワイン 8杯以上<br>ハイボール・サワー・酎ハイ 11杯以上",
+    
+  ]
+ 
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -309,7 +326,7 @@ function QuestionStep({
               
               <label
                 key={uniqueKey}
-                className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-4 hover:bg-white/5 transition-colors cursor-pointer"
+                className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-3 hover:bg-white/5 transition-colors cursor-pointer"
               >
                 <input
                   type="radio"
@@ -322,7 +339,13 @@ function QuestionStep({
                   id="test-radio"
                   className="w-5 h-5 border-2 border-white rounded-full accent-pink-500"
                 />
-                <span className="text-lg">{label}</span>
+                <div className={`${question.id === "drinking_amount" ? "flex flex-col"  : ""}`}>
+                  <span className="text-lg">{label}</span>
+                  {/* 飲酒量の質問の時だけ補足をつける */}
+                  {question.id === "drinking_amount" && (               
+                    <span className="text-sm text-gray-400">{descriptions[index]}</span>
+                  )}
+                </div>
               </label>
             );
           })}

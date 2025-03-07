@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Badge } from '../ui/badge';
 import Flicking, { MoveEvent, WillChangeEvent } from "@egjs/react-flicking";
 import { motion } from "framer-motion"
+import { getStorage, ref, listAll, getDownloadURL } from 'firebase/storage';
 
 import "@egjs/react-flicking/dist/flicking.css";
-import { Radar, PolarAngleAxis, PolarGrid, RadarChart, ResponsiveContainer } from 'recharts';
+import { Radar, PolarAngleAxis, PolarGrid, RadarChart, ResponsiveContainer, PolarRadiusAxis } from 'recharts';
 
 
 function calculateAge(birthday: any) {
@@ -36,29 +37,48 @@ function calculateAge(birthday: any) {
 }
 
 export default function ProfileCard({ userData, isOwnProfile }: { userData: any, isOwnProfile: boolean }) {
+    const [imageUrls, setImageUrls] = useState<string[]>([]);
+    
+    useEffect(() => {
+        const fetchImages = async () => {
+            if (!userData?.uid) return;
+            
+            try {
+                const storage = getStorage();
+                const imagesRef = ref(storage, `profile-image/${userData.uid}`);
+                const imagesList = await listAll(imagesRef);
+                
+                const urls = await Promise.all(
+                    imagesList.items.map(imageRef => getDownloadURL(imageRef))
+                );
+                
+                setImageUrls(urls);
+            } catch (error) {
+                console.error('画像の取得に失敗しました:', error);
+                // デフォルト画像を設定
+                setImageUrls(['/OIP.jpeg']);
+            }
+        };
+        
+        fetchImages();
+    }, [userData?.uid]);
 
     const chartParam = userData?.answers?.way_of_drinking;
 
     const basicInfo = userData?.profile;
 
     const profileData = {
-        name: "Yuki",
-        age: 24,
-        gender: "女性",
-        height: "165 cm",
-        about: "新しい人と出会うのが好きです。お酒を飲みながら楽しい会話ができたらいいなと思います。",
-        interests: ["ダンス", "料理", "ジャズ", "映画", "時々飲む"],
-        favoriteBars: ["Bar Neon", "Space Lab"],
-        imageUrl: "/persona/men/restaurant_owner.jpg",
+
         personalityTraits: [
-            { name: "呑み時間", value: chartParam?.ideal_drinking_time },
-            { name: "酒量", value: chartParam?.drinking_amount },
-            { name: "頻度", value: chartParam?.drinking_frequency },
-            { name: "食事", value: chartParam?.food_pairing_importance },
-            { name: "こだわり", value: chartParam?.alcohol_quality_preference },
-            { name: "パーティー", value: chartParam?.party_drink_preference },
+            { name: "呑み時間", value: chartParam?.ideal_drinking_time},
+            { name: "酒量", value: chartParam?.drinking_amount},
+            { name: "頻度", value: chartParam?.drinking_frequency},
+            { name: "食事", value: chartParam?.food_pairing_importance},
+            { name: "こだわり", value: chartParam?.alcohol_quality_preference},
+            { name: "パーティー", value: chartParam?.party_drink_preference},
         ]
     }
+    console.log(profileData.personalityTraits);
     const [isExpanded, setIsExpanded] = useState(true);
 
     const handleClick = () => {
@@ -146,8 +166,9 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                         <ResponsiveContainer width="100%" height="100%">
                                             <RadarChart cx="50%" cy="50%" outerRadius="60%" data={profileData.personalityTraits}>
                                                 <PolarGrid stroke="#6f2cff" />
+                                                <PolarRadiusAxis domain={[0, 5]} tickCount={6} style={{ display: "none" }}/>
                                                 <PolarAngleAxis dataKey="name" tick={{ fill: "#c2b5ff", fontSize: 10 }} />
-                                                <Radar name="性格" dataKey="value" stroke="#0ea5e9" fill="#0ea5e9" fillOpacity={0.6} />
+                                                <Radar name="性格" dataKey="value" stroke="#fff" fill="#0ea5e9" fillOpacity={0.6} />
                                             </RadarChart>
                                         </ResponsiveContainer>
                                     </div>
@@ -246,34 +267,30 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                     style={{ zIndex: 0, height: "100%" }}
                     onClick={() => ""}
                 >
-                    <Image
-                        src="/OIP.jpeg"
-                        alt="Profile"
-                        width={500}
-                        height={500}
-                        style={{
-                            objectFit: "cover",
-                        }}
-                    />
-                    
-                    <Image
-                        src="/persona/men/restaurant_owner.jpg"
-                        alt="Profile"
-                        width={500}
-                        height={500}
-                        style={{
-                            objectFit: "cover",
-                        }}
-                    />
-                    <Image
-                        src="/persona/women/sampleWoman.jpeg"
-                        alt="Profile"
-                        width={500}
-                        height={500}
-                        style={{
-                            objectFit: "cover",
-                        }}
-                    />
+                    {imageUrls.length > 0 ? (
+                        imageUrls.map((url, index) => (
+                            <Image
+                                key={`profile-image-${index}`}
+                                src={url}
+                                alt="Profile"
+                                width={500}
+                                height={500}
+                                style={{
+                                    objectFit: "cover",
+                                }}
+                            />
+                        ))
+                    ) : (
+                        <Image
+                            src="/OIP.jpeg"
+                            alt="Profile"
+                            width={500}
+                            height={500}
+                            style={{
+                                objectFit: "cover",
+                            }}
+                        />
+                    )}
 
                 </Flicking>
 
