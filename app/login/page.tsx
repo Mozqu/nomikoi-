@@ -48,7 +48,7 @@ export default function LoginPage() {
       if (!userData?.name || !userData?.birthday || !userData?.gender) {
         router.push("/register")
       } else {
-        router.push("/discover")
+        router.push("/home")
       }
     } catch (error: any) {
       switch (error.code) {
