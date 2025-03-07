@@ -83,7 +83,8 @@ export function LikeAction({ targetId }: LikeActionProps) {
   }
 
   return (
-    <div className="flex justify-center gap-4">
+    <div className="">
+      {/* nope 
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
         <Button
           size="lg"
@@ -110,14 +111,20 @@ export function LikeAction({ targetId }: LikeActionProps) {
           )}
         </Button>
       </motion.div>
+      */}
+      {/* like */}
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
         <Button
           size="lg"
           variant="default"
-          className={`rounded-full backdrop-blur-md px-8 py-6 text-white flex items-center gap-2 transition-all duration-300 ${
+          style={{
+            background: currentAction === 'like' ? "" : "none",
+            border: currentAction === 'like' ? "none" : "2px solid #fff",
+          }}
+          className={`rounded-full backdrop-blur-md text-white flex items-center gap-2 transition-all duration-300 ${
             currentAction === 'like'
-              ? 'bg-pink hover:from-pink-600/90 hover:to-cyan-600/90 shadow-[0_0_15px_rgba(0,255,255,0.5)]'
-              : 'bg-pink hover:from-pink-600/80 hover:to-cyan-600/80'
+              ? 'neon-bg hover:from-pink-600/90 hover:to-cyan-600/90 shadow-[0_0_15px_rgba(0,255,255,0.5)]'
+              : 'neon-bg'
           }`}
           onClick={() => handleAction('like')}
           disabled={isSubmitting}

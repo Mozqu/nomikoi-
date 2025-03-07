@@ -104,18 +104,17 @@
 }
 
 .neon-bg {
-  background-image: linear-gradient(to right, rgba(0, 94, 255, 0.7), rgb(255 0 212 / 0.7));
-  backdrop-filter: blur(5px);
+  background-image: linear-gradient(to right, rgba(0, 162, 255, 0.7), rgb(255 0 212 / 0.7));
+}
+.neon-bg-2 {
+  background-image: linear-gradient(to right, rgba(0, 162, 255, 0.2), rgb(255 0 212 / 0.2));
+  backdrop-filter: blur(20px);
 }
 .shadow-black-bg {
   background-image: linear-gradient(to bottom, rgb(0 0 0 / 0.0), rgb(0 0 0 / 0.5));
   backdrop-filter: blur(3px);
 }
 .neon-border {
-  border-image: linear-gradient(to bottom right, rgb(138 43 226 / 0.7), rgb(0 255 247 / 0.7),  rgb(255 0 212 / 0.7));
-  border-width: 1px;
-  border-style: solid;
-  border-image-slice: 1;
 }
 
 .sky-border {

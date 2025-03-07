@@ -7,6 +7,7 @@ import { getStorage, ref, listAll, getDownloadURL } from 'firebase/storage';
 
 import "@egjs/react-flicking/dist/flicking.css";
 import { Radar, PolarAngleAxis, PolarGrid, RadarChart, ResponsiveContainer, PolarRadiusAxis } from 'recharts';
+import { LikeAction } from '@/components/like-action';
 
 
 function calculateAge(birthday: any) {
@@ -78,14 +79,21 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
             { name: "パーティー", value: chartParam?.party_drink_preference},
         ]
     }
-    console.log(profileData.personalityTraits);
     const [isExpanded, setIsExpanded] = useState(true);
 
     const handleClick = () => {
       setIsExpanded(!isExpanded);
-      console.log(isExpanded);
     };
 
+    const [imageIndex, setImageIndex] = useState(0);
+    useEffect(() => {
+
+        console.log(imageIndex);
+    }, [imageIndex]);
+
+    const handleImageIndex = (index: number) => {
+        setImageIndex(index);
+    }
 
     return (
         <motion.div
@@ -96,6 +104,15 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
             className="w-full h-full overflow-hidden rounded-2xl relative" 
             >
 
+                <div id="like-action" className="absolute inline-block z-30"
+                    style={{
+                        bottom: isExpanded ? "6.5rem" : "1.5rem",
+                        right: "1.5rem",
+                        transition: "all 0.5s ease-in-out",
+                    }}
+                >
+                    <LikeAction targetId={userData?.uid as string} />
+                </div>
 
                 <motion.div 
                     id="el" 
@@ -103,11 +120,10 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                     initial={{ opacity: 0, y: 100 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
-
                     style={{
                         top: isExpanded ? 0 : "0",
                     }}
-                    >
+                >
                     <div style={{
                         transition: "all 0.5s ease-in-out",
                         flex: isExpanded ? 1 : 0,
@@ -122,15 +138,17 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                             margin: isExpanded ? "0.5rem" : "0rem",
                             color: "#eee",
                             zIndex: 1,
+                            boxShadow: "0 0 10px 0 rgba(255, 255, 255, 0.5)",
                         }}
-                        className={`shadow-black-bg p-4 rounded-2xl ${isExpanded ? "expanded-card" : ""}`}
+                        className={`shadow-black-bg rounded-2xl ${isExpanded ? "expanded-card" : ""}`}
                         >
                         
                         {/* show contents */}
                         <div 
-                            className=""
+                            className="p-4 rounded-2xl"
                             style={{
                                 transition: "all 0.5s ease-in-out",
+                                boxShadow: isExpanded ? "0 0 10px 0 rgba(255, 255, 255, 0.5)" : "0 0 0 rgba(255, 255, 255, 0.5)",
                             }}
                             onClick={() => handleClick()}>
                             <p className=" text-2xl">
@@ -260,13 +278,14 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                     renderOnSameKey={false}
                     align="center"
                     onMove={(e: MoveEvent) => {}}
-                    onWillChange={(e: WillChangeEvent) => {}}
+                    onWillChange={(e: WillChangeEvent) => {handleImageIndex(e.index)}}
                     horizontal={true}
                     circular={false}
                     className="object-cover rounded-2xl"
                     style={{ zIndex: 0, height: "100%" }}
                     onClick={() => ""}
                 >
+
                     {imageUrls.length > 0 ? (
                         imageUrls.map((url, index) => (
                             <Image
@@ -294,6 +313,33 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
 
                 </Flicking>
 
+                {/* ページネーション */}
+                <div 
+                    className="flex flex-row justify-center items-center gap-2"
+                    style={{
+                        position: "absolute",
+                        top: "1em",
+                        width: "100%",
+                        height: "0.5rem",
+                        padding: "0 3rem",
+                    }}
+                >
+                    
+                    {imageUrls.length > 0 && (
+                        imageUrls.map((_, index) => (
+                            <div 
+                                key={`pagination-dot-${index}`}
+                                style={{
+                                    flex: 1,
+                                    width: "0.5rem",
+                                    height: "0.5rem",
+                                    backgroundColor: imageIndex === index ? "rgba(0, 0, 0, 0.7)" : "rgba(0, 0, 0, 0.2)",
+                                }}
+                                className="w-full h-full">
+                            </div>
+                        ))
+                    )}
+                </div>
 
         </motion.div>
     )

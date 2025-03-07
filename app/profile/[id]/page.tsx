@@ -81,9 +81,6 @@ export default function ProfilePage() {
 
   if (!userData) return <div>Loading...</div>
 
-  // データ構造を確認するデバッグログを追加
-  console.log('Profile Data:', userData?.answers?.favorite_alcohol);
-
   return (
     <>
       {/* ヘッダー */}
