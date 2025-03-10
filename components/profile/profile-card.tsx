@@ -71,18 +71,28 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
     const profileData = {
 
         personalityTraits: [
-            { name: "呑み時間", value: chartParam?.ideal_drinking_time},
-            { name: "酒量", value: chartParam?.drinking_amount},
-            { name: "頻度", value: chartParam?.drinking_frequency},
-            { name: "食事", value: chartParam?.food_pairing_importance},
-            { name: "こだわり", value: chartParam?.alcohol_quality_preference},
-            { name: "パーティー", value: chartParam?.party_drink_preference},
+            { name: "飲み時間", value: chartParam?.ideal_drinking_time || 0},
+            { name: "飲む量", value: Math.round(5 * chartParam?.drinking_amount / 6 * 10) / 10 || 0},
+            { name: "飲み頻度", value: chartParam?.drinking_frequency || 0},
+            { name: "食事との相性", value: chartParam?.food_pairing_importance || 0},
+            { name: "酒こだわり", value: chartParam?.alcohol_quality_preference || 0},
+            { name: "パーティー", value: chartParam?.party_drink_preference || 0},
         ]
     }
     const [isExpanded, setIsExpanded] = useState(true);
 
     const handleClick = () => {
       setIsExpanded(!isExpanded);
+      if (!isExpanded) {
+        // hideContentsの要素を取得して最上部までスクロール
+        const hideContents = document.querySelector('#hide-contents');
+        if (hideContents) {
+          hideContents.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      }
     };
 
     const [imageIndex, setImageIndex] = useState(0);
@@ -95,6 +105,34 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
         setImageIndex(index);
     }
 
+    {/*基本情報のカテゴリ分けのための配列*/}
+    const basicInfoCategory = [
+        "身長",
+        "体重",
+        "血液型",
+        "出身地",
+        "居住地",
+        "兄弟・姉妹構成",
+        "話せる言語",
+        "チャームポイント",        
+    ]
+
+    const educationInfoCategory = [
+        "職種",
+        "職業名",
+        "学歴",
+        "年収",
+        "学校名",
+    ]
+
+    const loveInfoCategory = [
+        "結婚歴",
+        "子供の有無",
+        "結婚に対する意思",
+        
+    ]
+
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 100 }}
@@ -103,16 +141,18 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
             id="card-container" 
             className="w-full h-full overflow-hidden rounded-2xl relative" 
             >
-
+                {/* like action */}
+                {!isOwnProfile && (
                 <div id="like-action" className="absolute inline-block z-30"
                     style={{
-                        bottom: isExpanded ? "6.5rem" : "1.5rem",
+                        bottom: isExpanded ? "17rem" : "1.5rem",
                         right: "1.5rem",
                         transition: "all 0.5s ease-in-out",
                     }}
                 >
                     <LikeAction targetId={userData?.uid as string} />
                 </div>
+                )}
 
                 <motion.div 
                     id="el" 
@@ -122,6 +162,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                     transition={{ duration: 0.2 }}
                     style={{
                         top: isExpanded ? 0 : "0",
+                        
                     }}
                 >
                     <div style={{
@@ -132,15 +173,17 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                     </div>
                     <div
                         style={{
+                            
                             transition: "all 0.5s ease-in-out",
                             flex: isExpanded ? 0 : 1,
                             background: "rgba(0, 0, 0, 0.6)",
                             margin: isExpanded ? "0.5rem" : "0rem",
                             color: "#eee",
                             zIndex: 1,
-                            boxShadow: "0 0 10px 0 rgba(255, 255, 255, 0.5)",
+                            boxShadow: isExpanded ? "0 0 10px 0 rgba(255, 255, 255, 0.5)" : "0 0 0 rgba(255, 255, 255, 0.5)",
+                            height: "100%",
                         }}
-                        className={`shadow-black-bg rounded-2xl ${isExpanded ? "expanded-card" : ""}`}
+                        className={`flex flex-col shadow-black-bg rounded-2xl ${isExpanded ? "expanded-card" : ""}`}
                         >
                         
                         {/* show contents */}
@@ -148,7 +191,6 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                             className="p-4 rounded-2xl"
                             style={{
                                 transition: "all 0.5s ease-in-out",
-                                boxShadow: isExpanded ? "0 0 10px 0 rgba(255, 255, 255, 0.5)" : "0 0 0 rgba(255, 255, 255, 0.5)",
                             }}
                             onClick={() => handleClick()}>
                             <p className=" text-2xl">
@@ -161,83 +203,74 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 {basicInfo?.居住地}
                             </p>
 
+
                         </div>
 
+
                         {/* hide contents */}
-                        <div style={{
-                            height: isExpanded ? "0px" : "500px",
+                        <div 
+                            id="hide-contents"
+                            style={{
                             overflow: isExpanded ? "hidden" : "scroll",
                             transition: "all 0.5s ease-in-out",
                             }}>
-                            <div className="flex flex-row">
-                                {/* 呑みスタンス */}
-                                <section className="space-y-3 m-4">
-                                    <h2 className="text-xl font-semibold">性格</h2>
-                                    <p className="text-sm">
-                                        {userData.about}
-                                    </p>
-                                </section>
+
+
+                                <div className="flex flex-row">
+                                    {/* 呑みスタンス */}
+                                    <section className="space-y-3 m-4">
+                                        <p className="text-sm">
+                                            {userData.bio}
+                                        </p>
+                                    </section>
+                                </div>
 
                                 {/* chart */}
-                                <section className="space-y-3 w-1/2">
-                                    <div className="w-full h-40">
+                                <section className="space-y-3 flex-1" onClick={() => handleClick()}>
+                                    <div className="w-full h-40 relative">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <RadarChart cx="50%" cy="50%" outerRadius="60%" data={profileData.personalityTraits}>
                                                 <PolarGrid stroke="#6f2cff" />
                                                 <PolarRadiusAxis domain={[0, 5]} tickCount={6} style={{ display: "none" }}/>
                                                 <PolarAngleAxis dataKey="name" tick={{ fill: "#c2b5ff", fontSize: 10 }} />
-                                                <Radar name="性格" dataKey="value" stroke="#fff" fill="#0ea5e9" fillOpacity={0.6} />
+                                                <Radar name="性格" dataKey="value" stroke="#fff" fill="#000" fillOpacity={0.6} />
                                             </RadarChart>
                                         </ResponsiveContainer>
                                     </div>
                                 </section>
-                            </div>
-                            <section className="space-y-3 m-4">
 
-                                <h2 className="text-xl font-semibold">好きなお酒</h2>
-                                <div className="flex flex-wrap gap-2">
-                                    {userData?.answers?.favorite_alcohol? 
-                                        Object.entries(userData.answers.favorite_alcohol.favorite_alcohol || {}).map(([alcoholName, details]) => (
-                                        <Badge
-                                            key={alcoholName + "name"}
-                                            variant="secondary"
-                                            className=" border-white/20 bg-white/5"
-                                        >
-                                            {details}
-                                        </Badge>
-                                        ))
-                                    : 
-                                        <p className="text-[#c2b5ff]">データがありません</p>
-                                    }
-                                </div>
-                            </section>
 
-                            {/* 苦手なお酒 */}
-                            <section className="m-4 space-y-3">
-                                <h2 className="text-xl font-semibold">苦手なお酒</h2>
-                                <div className="flex flex-wrap gap-2">
-                                {userData?.answers?.favorite_alcohol ? 
-                                    Object.entries(userData.answers.favorite_alcohol.dislike_alcohol || {}).map(([alcoholName, details]) => (
-                                    <Badge
-                                        key={alcoholName + "name"}
-                                        variant="secondary"
-                                        className="text-white border-white/20 bg-white/5"
-                                    >
-                                        {details}
-                                    </Badge>
-                                    ))
-                                : 
-                                    <p className="text-[#c2b5ff]">データがありません</p>
-                                }
-                                </div>
-                            </section>
+                            <div style={{
+                                height: isExpanded ? "0px" : "500px",
+                                transition: "all 0.5s ease-in-out",
+                                }}>
 
-                            {/* お気に入りのバー */}
-                            <section className="m-4 space-y-3">
-                                <h2 className="text-xl font-semibold">よく飲むお店</h2>
-                                <div className="flex flex-wrap gap-2">
+                                <section className="space-y-3 m-4">
+
+                                    <h2 className="text-xl font-semibold">好きなお酒</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {userData?.answers?.favorite_alcohol? 
+                                            Object.entries(userData.answers.favorite_alcohol.favorite_alcohol || {}).map(([alcoholName, details]) => (
+                                            <Badge
+                                                key={alcoholName + "name"}
+                                                variant="secondary"
+                                                className=" border-white/20 bg-white/5"
+                                            >
+                                                {details}
+                                            </Badge>
+                                            ))
+                                        : 
+                                            <p className="text-[#c2b5ff]">データがありません</p>
+                                        }
+                                    </div>
+                                </section>
+
+                                {/* 苦手なお酒 */}
+                                <section className="m-4 space-y-3">
+                                    <h2 className="text-xl font-semibold">苦手なお酒</h2>
+                                    <div className="flex flex-wrap gap-2">
                                     {userData?.answers?.favorite_alcohol ? 
-                                        Object.entries(userData.answers.favorite_alcohol.drinking_location_preference || {}).map(([alcoholName, details]) => (
+                                        Object.entries(userData.answers.favorite_alcohol.dislike_alcohol || {}).map(([alcoholName, details]) => (
                                         <Badge
                                             key={alcoholName + "name"}
                                             variant="secondary"
@@ -249,23 +282,114 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                     : 
                                         <p className="text-[#c2b5ff]">データがありません</p>
                                     }
+                                    </div>
+                                </section>
 
-                                </div>
-                            </section>
+                                {/* お気に入りのバー */}
+                                <section className="m-4 space-y-3">
+                                    <h2 className="text-xl font-semibold">よく飲むお店</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {userData?.answers?.favorite_alcohol ? 
+                                            Object.entries(userData.answers.favorite_alcohol.drinking_location_preference || {}).map(([alcoholName, details]) => (
+                                            <Badge
+                                                key={alcoholName + "name"}
+                                                variant="secondary"
+                                                className="text-white border-white/20 bg-white/5"
+                                            >
+                                                {details}
+                                            </Badge>
+                                            ))
+                                        : 
+                                            <p className="text-[#c2b5ff]">データがありません</p>
+                                        }
 
-                            <section className="m-4 space-y-3">
-                                <h2 className="text-xl font-semibold">基本情報</h2>
+                                    </div>
+                                </section>
 
-                                {userData?.profile && Object.entries(userData?.profile).map(([key, value], index) => (
-                                    <p key={`profile-${key}-${index}`} className="text-sm">
-                                        {key}: {value}
-                                    </p>
-                                ))}
-                            </section>
-                            
-                            <div className="h-20"></div>
+                                <section className="m-4 space-y-3">
+                                    <h2 className="text-xl font-semibold">基本情報</h2>
+                                    <table className="w-full">
+                                        <tbody>
+                                            {userData?.profile && Object.entries(userData?.profile)
+                                                .filter(([key]) => basicInfoCategory.includes(key))
+                                                .map(([key, value], index) => (
+                                                    
+                                                    <tr
+                                                        style={{
+                                                            borderBottom: "1px solid #999",
+                                                        }}
+                                                        key={`profile-${key}-${index}`}
+                                                    >
+                                                        <td className="text-sm p-1">{key}</td>
+                                                        <td className="text-sm p-1">{value}</td>
+                                                    </tr>
+                                                ))}
+                                        </tbody>
+                                    </table>
+
+                                    <h2 className="text-xl font-semibold">学歴・職歴</h2>
+                                    <table className="w-full">
+                                        <tbody>
+                                            {userData?.profile && Object.entries(userData?.profile)
+                                                .filter(([key]) => educationInfoCategory.includes(key))
+                                                .map(([key, value], index) => (
+                                                    <tr
+                                                        style={{
+                                                            borderBottom: "1px solid #999",
+                                                        }}
+                                                        key={`profile-${key}-${index}`}
+                                                    >
+                                                        <td className="text-sm p-1">{key}</td>
+                                                        <td className="text-sm p-1">{value}</td>
+                                                    </tr>
+                                                ))}
+                                        </tbody>
+                                    </table>
+                                    
+                                    <h2 className="text-xl font-semibold">恋愛・結婚</h2>
+                                    <table className="w-full">
+                                        <tbody>
+                                            {userData?.profile && Object.entries(userData?.profile)
+                                                .filter(([key]) => loveInfoCategory.includes(key))
+                                                .map(([key, value], index) => (
+                                                    <tr
+                                                        style={{
+                                                            borderBottom: "1px solid #999",
+                                                        }}
+                                                        key={`profile-${key}-${index}`}
+                                                    >
+                                                        <td className="text-sm p-1">{key}</td>
+                                                        <td className="text-sm p-1">{value}</td>
+                                                    </tr>
+                                                ))}
+                                        </tbody>
+                                    </table>
+
+                                    <h2 className="text-xl font-semibold">性格・趣味・生活</h2>
+                                    <table className="w-full">
+                                        <tbody>
+                                            {userData?.profile && Object.entries(userData?.profile).map(([key, value], index) => (
+                                                <tr
+                                                    style={{
+                                                        borderBottom: "1px solid #999",
+                                                    }}
+                                                    key={`profile-${key}-${index}`}
+                                                >
+                                                    <td className="text-sm p-1">{key}</td>
+                                                    <td className="text-sm p-1">{value}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+
+
+                                </section>
+                                
+                                <div className="w-full" style={{height: "100px"}}></div>
+
+                            </div>
                         </div>
-                        
+                                        
 
 
                     </div>
@@ -281,9 +405,12 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                     onWillChange={(e: WillChangeEvent) => {handleImageIndex(e.index)}}
                     horizontal={true}
                     circular={false}
+                    bound={false}
                     className="object-cover rounded-2xl"
                     style={{ zIndex: 0, height: "100%" }}
-                    onClick={() => ""}
+                    defaultIndex={0}
+                    moveType="snap"
+                    duration={500}
                 >
 
                     {imageUrls.length > 0 ? (
@@ -297,17 +424,19 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 style={{
                                     objectFit: "cover",
                                 }}
+                                className="w-full h-full"
                             />
                         ))
                     ) : (
                         <Image
-                            src="/OIP.jpeg"
+                            src="/home-background.jpg"
                             alt="Profile"
                             width={500}
                             height={500}
                             style={{
                                 objectFit: "cover",
                             }}
+                            className="w-full h-full"
                         />
                     )}
 
