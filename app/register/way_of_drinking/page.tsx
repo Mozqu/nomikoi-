@@ -297,15 +297,25 @@ function QuestionStep({
 
   const formData = watch();
 
-  const descriptions = [
+  const descriptions1 = [
     "",
     "グラス1杯のみ",
-    "ビール・ワイン 1～2杯<br>ハイボール・サワー・酎ハイ 2～3杯",
-    "ビール・ワイン 2～3杯<br>ハイボール・サワー・酎ハイ 4～5杯",
-    "ビール・ワイン 4～5杯<br>ハイボール・サワー・酎ハイ 6～8杯",
-    "ビール・ワイン 6～7杯<br>ハイボール・サワー・酎ハイ 9～10杯",
-    "ビール・ワイン 8杯以上<br>ハイボール・サワー・酎ハイ 11杯以上",
-    
+    "ビール・ワイン 1～2杯",
+    "ビール・ワイン 2～3杯",
+    "ビール・ワイン 4～5杯",
+    "ビール・ワイン 6～7杯",
+    "ビール・ワイン 8杯以上",
+
+  ]
+
+  const descriptions2 = [
+    "",
+    "",
+    "ハイボール・サワー・酎ハイ 2～3杯",
+    "ハイボール・サワー・酎ハイ 4～5杯",
+    "ハイボール・サワー・酎ハイ 6～8杯",
+    "ハイボール・サワー・酎ハイ 9～10杯",
+    "ハイボール・サワー・酎ハイ 11杯以上",
   ]
  
 
@@ -343,7 +353,10 @@ function QuestionStep({
                   <span className="text-lg">{label}</span>
                   {/* 飲酒量の質問の時だけ補足をつける */}
                   {question.id === "drinking_amount" && (               
-                    <span className="text-sm text-gray-400">{descriptions[index]}</span>
+                    <span className="block text-sm text-gray-400">{descriptions1[index]}</span>
+                  )}
+                  {question.id === "drinking_amount" && (               
+                    <span className="block text-sm text-gray-400">{descriptions2[index]}</span>
                   )}
                 </div>
               </label>
