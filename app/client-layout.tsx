@@ -17,7 +17,11 @@ export default function ClientLayout({
     <>
 
       <div className="w-full h-screen flex flex-col "
-
+        style={
+          {
+            height: "100svh",
+          } 
+        }
       >
         <div id="content" className="flex-1 flex flex-col overflow-hidden">
           {children}
