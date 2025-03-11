@@ -124,6 +124,12 @@
 .pink-border {
   border: 1px solid #ff00d4;
 }
+.pink-text {
+  color: #ff00d4;
+}
+.sky-text {
+  color: #00fff7;
+}
 
 
 .default-bg {
@@ -133,6 +139,9 @@
 
 .bg-pink {
   background: var(--neon-pink);
+}
+.bg-sky {
+  background: #52A9FF;
 }
 
 
