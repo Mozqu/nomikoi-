@@ -57,7 +57,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
             } catch (error) {
                 console.error('画像の取得に失敗しました:', error);
                 // デフォルト画像を設定
-                setImageUrls(['/OIP.jpeg']);
+                setImageUrls(['/home-background.jpg']);
             }
         };
         
@@ -96,10 +96,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
     };
 
     const [imageIndex, setImageIndex] = useState(0);
-    useEffect(() => {
 
-        console.log(imageIndex);
-    }, [imageIndex]);
 
     const handleImageIndex = (index: number) => {
         setImageIndex(index);
@@ -129,9 +126,20 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
         "結婚歴",
         "子供の有無",
         "結婚に対する意思",
-        
+        '子供が欲しいか',
+        '家事・育児',
+        'であうまでの希望',
+        'デート費用'        
     ]
 
+    const personalityHobbiesLifestyle = [
+        '１６タイプ (MBTI)',
+        '同居人',
+        'タバコ',
+        '飼っているペット',
+        '休日',
+        '好きな料理・店',
+    ]
 
     return (
         <motion.div
@@ -368,7 +376,9 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                     <h2 className="text-xl font-semibold">性格・趣味・生活</h2>
                                     <table className="w-full">
                                         <tbody>
-                                            {userData?.profile && Object.entries(userData?.profile).map(([key, value], index) => (
+                                            {userData?.profile && Object.entries(userData?.profile)
+                                                .filter(([key]) => personalityHobbiesLifestyle.includes(key))
+                                                .map(([key, value], index) => (
                                                 <tr
                                                     style={{
                                                         borderBottom: "1px solid #999",
