@@ -1,15 +1,34 @@
 import { NextResponse } from 'next/server'
-import { Client, validateSignature } from '@line/bot-sdk'
+import { Client } from '@line/bot-sdk'
 import { headers } from 'next/headers'
 
 // 1. まずパッケージをインストール
 // npm install @line/bot-sdk
 
-// 2. LINE Client の初期化
-const client = new Client({
+// デバッグ用にトークンの存在を確認
+console.log('Access Token exists:', !!process.env.LINE_CHANNEL_ACCESS_TOKEN)
+console.log('Secret exists:', !!process.env.LINE_CHANNEL_SECRET)
+
+const config = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN!,
   channelSecret: process.env.LINE_CHANNEL_SECRET!
-})
+}
+
+// クライアントの初期化をtry-catchで囲む
+let client: Client
+try {
+  if (!config.channelAccessToken) {
+    throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not set')
+  }
+  if (!config.channelSecret) {
+    throw new Error('LINE_CHANNEL_SECRET is not set')
+  }
+  
+  client = new Client(config)
+} catch (error) {
+  console.error('LINE client initialization error:', error)
+  // エラーを投げずに、後で処理する
+}
 
 // GETメソッドも追加
 export async function GET() {
@@ -17,6 +36,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!client) {
+    console.error('LINE client not initialized')
+    return new Response('OK', { status: 200 })
+  }
+
   try {
     const headersList = headers()
     const signature = headersList.get('x-line-signature')
