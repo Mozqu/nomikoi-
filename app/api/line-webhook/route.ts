@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Client } from '@line/bot-sdk'
+import { Client, validateSignature } from '@line/bot-sdk'
 import { headers } from 'next/headers'
 
 // 1. まずパッケージをインストール
@@ -49,13 +49,14 @@ export async function POST(request: Request) {
     const headersList = await headers()
     const signature = headersList.get('x-line-signature')
     const body = await request.text()
-    const events = JSON.parse(body).events
 
-    if (!signature || !validateSignature(body, config.channelSecret, signature)) {
+    // 署名検証
+    if (!signature || !validateSignature(body, process.env.LINE_CHANNEL_SECRET!, signature)) {
       console.error('Invalid signature')
-      return new Response('OK', { status: 200 }) // LINEプラットフォームには常に200を返す
+      return new Response('OK', { status: 200 })
     }
 
+    const events = JSON.parse(body).events
     console.log('Received events:', events) // デバッグ用ログ
 
     for (const event of events) {
@@ -108,11 +109,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // 成功時も必ず200を返す
     return new Response('OK', { status: 200 })
   } catch (error) {
     console.error('Webhook error:', error)
-    // エラー時も必ず200を返す
     return new Response('OK', { status: 200 })
   }
 } 
