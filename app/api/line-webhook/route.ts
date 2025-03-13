@@ -17,6 +17,10 @@ const config = {
 // クライアントの初期化をtry-catchで囲む
 let client: Client
 try {
+  // より詳細なデバッグ情報を出力
+  console.log('LINE_CHANNEL_ACCESS_TOKEN:', typeof process.env.LINE_CHANNEL_ACCESS_TOKEN, process.env.LINE_CHANNEL_ACCESS_TOKEN?.length)
+  console.log('LINE_CHANNEL_SECRET:', typeof process.env.LINE_CHANNEL_SECRET, process.env.LINE_CHANNEL_SECRET?.length)
+
   if (!config.channelAccessToken) {
     throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not set')
   }
@@ -24,10 +28,13 @@ try {
     throw new Error('LINE_CHANNEL_SECRET is not set')
   }
   
-  client = new Client(config)
+  client = new Client({
+    channelAccessToken: config.channelAccessToken,
+    channelSecret: config.channelSecret
+  })
+  console.log('LINE client initialized successfully')
 } catch (error) {
   console.error('LINE client initialization error:', error)
-  // エラーを投げずに、後で処理する
 }
 
 // GETメソッドも追加
