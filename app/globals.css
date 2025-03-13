@@ -157,12 +157,9 @@
 }
 
 .panel {
-
 }
 
-.flicking-viewport {
-    overflow: visible !important;
-}
+
 
 /* LINE連携プロンプトのアニメーション */
 @keyframes slideDown {
