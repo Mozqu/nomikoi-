@@ -21,7 +21,6 @@ try {
     throw new Error(`環境変数が未設定です:
       LINE_CHANNEL_ACCESS_TOKEN: ${!!process.env.LINE_CHANNEL_ACCESS_TOKEN}
       LINE_CHANNEL_SECRET: ${!!process.env.LINE_CHANNEL_SECRET}
-      NEXT_PUBLIC_APP_URL: ${!!process.env.NEXT_PUBLIC_APP_URL}
     `)
   }
   
@@ -62,9 +61,10 @@ export async function POST(request: Request) {
     for (const event of events) {
       if (event.type === 'follow') {
         const lineUserId = event.source.userId
-        console.log('Follow event from user:', lineUserId) // デバッグ用ログ
+        console.log('Follow event from user:', lineUserId)
 
-        const appUrl = `${process.env.NEXT_PUBLIC_APP_URL}/settings/line-connect?lineUserId=${lineUserId}`
+        const appUrl = `https://nomikoi.vercel.app/settings/line-connect?lineUserId=${lineUserId}`
+        console.log('Generated URL:', appUrl) // デバッグ用
 
         await client.pushMessage(lineUserId, {
           type: 'flex',
