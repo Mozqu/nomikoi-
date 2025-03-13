@@ -139,7 +139,7 @@ export default function InterestedPage() {
                     </div>
                 </div>
 
-                <div className="panel bg-blue-500">
+                <div className="panel w-screen flex-shrink-0 h-full flex justify-center items-center bg-blue-500">
                     <div className="flex flex-wrap gap-4 w-full h-full">
                         {likes.slice(0, 5).map((like) => (
                             <LikeItem key={like.id} like={like} />
