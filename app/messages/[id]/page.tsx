@@ -1,15 +1,16 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "firebase/firestore"
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore"
 import { auth, db } from "@/app/firebase/config"
 import { onAuthStateChanged } from "firebase/auth"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ChevronLeft, Send } from "lucide-react"
+import { ChevronLeft, Send, X } from "lucide-react"
 import { use } from "react"
+import Link from "next/link"
 
 interface Message {
   id: string
@@ -25,6 +26,8 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   const [user, setUser] = useState<any>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
+  const [hasLineConnection, setHasLineConnection] = useState<boolean | null>(null)
+  const [showLinePrompt, setShowLinePrompt] = useState(true)
   const messagesEndRef = useRef<null | HTMLDivElement>(null)
   const router = useRouter()
   
@@ -66,12 +69,32 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
+  // ユーザーのLINE連携状態を確認
+  useEffect(() => {
+    const checkLineConnection = async () => {
+      if (!user) return
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid))
+        const userData = userDoc.data()
+        setHasLineConnection(!!userData?.lineUserId)
+      } catch (error) {
+        console.error("LINE連携状態の確認に失敗:", error)
+      }
+    }
+
+    if (user) {
+      checkLineConnection()
+    }
+  }, [user])
+
   // メッセージ送信
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newMessage.trim() || !user) return
 
     try {
+      // Firestoreにメッセージを保存
       const messagesRef = collection(db, "message_rooms", id, "messages")
       await addDoc(messagesRef, {
         text: newMessage,
@@ -80,22 +103,122 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
         user_name: user.displayName || "Anonymous",
         user_photo: user.photoURL || "/placeholder.svg"
       })
+
+      // パートナーのユーザー情報を取得
+      const roomDoc = await getDoc(doc(db, "message_rooms", id))
+      const roomData = roomDoc.data()
+      const partnerId = roomData?.user_ids.find((uid: string) => uid !== user.uid)
+
+      if (partnerId) {
+        const partnerDoc = await getDoc(doc(db, "users", partnerId))
+        const partnerData = partnerDoc.data()
+
+        // パートナーがLINE連携済みの場合、通知を送信
+        if (partnerData?.lineUserId) {
+          console.log("連携済みユーザー", partnerData.lineUserId)
+          await fetch('/api/line-message', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: newMessage,
+              lineUserId: partnerData.lineUserId
+            })
+          })
+        }
+      }
+
       setNewMessage("")
     } catch (error) {
       console.error("Error sending message:", error)
     }
   }
 
+  const formatRelativeTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return dateString; // パースできない場合は元の文字列を返す
+      }
+
+      const now = new Date();
+      const diffInMilliseconds = now.getTime() - date.getTime();
+      const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
+      const diffInDays = diffInHours / 24;
+      const diffInWeeks = diffInDays / 7;
+      const diffInMonths = diffInDays / 30;
+      const diffInYears = diffInDays / 365;
+
+      if (diffInHours < 24) {
+        const hours = Math.floor(diffInHours);
+        return hours === 0 ? 'たった今' : `${hours}時間前`;
+      } else if (diffInDays < 7) {
+        const days = Math.floor(diffInDays);
+        return `${days}日前`;
+      } else if (diffInDays < 30) {
+        const weeks = Math.floor(diffInWeeks);
+        return `${weeks}週間前`;
+      } else if (diffInDays < 365) {
+        const months = Math.floor(diffInMonths);
+        return `${months}ヶ月前`;
+      } else {
+        const years = Math.floor(diffInYears);
+        return `${years}年前`;
+      }
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return dateString; // エラーが発生した場合は元の文字列を返す
+    }
+  };
+
   if (!user) {
     return <div className="p-4">ログインが必要です</div>
   }
 
-  
-
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen relative">
+      {/* LINE連携プロンプト */}
+      {!hasLineConnection && showLinePrompt && (
+        <div className="absolute top-0 left-0 right-0 bg-blue-500 text-white p-4 z-50">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Image
+                src="/line-icon.png"
+                alt="LINE"
+                width={24}
+                height={24}
+                className="rounded"
+              />
+              <span>
+                LINEと連携すると、メッセージをLINEで受け取れるようになります
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link href="/settings/line-connect">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="whitespace-nowrap bg-white text-blue-500 hover:bg-white/90"
+                >
+                  連携する
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-blue-600"
+                onClick={() => setShowLinePrompt(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ヘッダー */}
-      <div className="w-full p-2 flex justify-between items-center">
+      <div className="w-full p-4 flex items-center border-b">
         <Button
           variant="ghost"
           size="icon"
@@ -105,7 +228,6 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
           <ChevronLeft className="h-6 w-6" />
         </Button>
         <h1 className="text-xl font-semibold">チャット</h1>
-        <div className="h-6 w-6"></div>
       </div>
 
       {/* メッセージ一覧 */}
@@ -139,18 +261,8 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
             >
               <p className="text-sm">{message.text}</p>
             </div>
-            <span className="text-xs text-gray-500 mt-1"
-              style={{  
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "flex-end",
-                alignItems: "flex-end",
-              }}
-              >
-
-                <div className="flex-1">
-                  {message.created_at.toLocaleString('ja-JP').split(' ')[0]}
-                </div>
+            <span className="text-xs text-gray-500 mt-1 block">
+              {formatRelativeTime(message.created_at)}
             </span>
           </div>
         ))}

@@ -415,7 +415,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                     onWillChange={(e: WillChangeEvent) => {handleImageIndex(e.index)}}
                     horizontal={true}
                     circular={false}
-                    bound={false}
+                    bound={true}
                     className="object-cover rounded-2xl"
                     style={{ zIndex: 0, height: "100%" }}
                     defaultIndex={0}
