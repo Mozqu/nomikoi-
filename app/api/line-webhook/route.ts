@@ -15,22 +15,19 @@ const config = {
 }
 
 // クライアントの初期化をtry-catchで囲む
-let client: Client
+let client: Client | undefined
 try {
-  // より詳細なデバッグ情報を出力
-  console.log('LINE_CHANNEL_ACCESS_TOKEN:', typeof process.env.LINE_CHANNEL_ACCESS_TOKEN, process.env.LINE_CHANNEL_ACCESS_TOKEN?.length)
-  console.log('LINE_CHANNEL_SECRET:', typeof process.env.LINE_CHANNEL_SECRET, process.env.LINE_CHANNEL_SECRET?.length)
-
-  if (!config.channelAccessToken) {
-    throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not set')
-  }
-  if (!config.channelSecret) {
-    throw new Error('LINE_CHANNEL_SECRET is not set')
+  if (!process.env.LINE_CHANNEL_ACCESS_TOKEN || !process.env.LINE_CHANNEL_SECRET) {
+    throw new Error(`環境変数が未設定です:
+      LINE_CHANNEL_ACCESS_TOKEN: ${!!process.env.LINE_CHANNEL_ACCESS_TOKEN}
+      LINE_CHANNEL_SECRET: ${!!process.env.LINE_CHANNEL_SECRET}
+      NEXT_PUBLIC_APP_URL: ${!!process.env.NEXT_PUBLIC_APP_URL}
+    `)
   }
   
   client = new Client({
-    channelAccessToken: config.channelAccessToken,
-    channelSecret: config.channelSecret
+    channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+    channelSecret: process.env.LINE_CHANNEL_SECRET
   })
   console.log('LINE client initialized successfully')
 } catch (error) {
@@ -54,10 +51,10 @@ export async function POST(request: Request) {
     const body = await request.text()
     const events = JSON.parse(body).events
 
-    // 署名の検証をスキップ（開発時のデバッグ用）
-    // if (!signature || !validateSignature(body, process.env.LINE_CHANNEL_SECRET!, signature)) {
-    //   return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
-    // }
+    if (!signature || !validateSignature(body, config.channelSecret, signature)) {
+      console.error('Invalid signature')
+      return new Response('OK', { status: 200 }) // LINEプラットフォームには常に200を返す
+    }
 
     console.log('Received events:', events) // デバッグ用ログ
 
