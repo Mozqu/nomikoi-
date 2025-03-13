@@ -7,7 +7,7 @@ import { onAuthStateChanged } from "firebase/auth"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useUser } from "@/hooks/users"
-import { Settings } from "lucide-react"
+import { Badge, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 
@@ -233,6 +233,19 @@ export default function MessagesPage() {
                         fill
                         className="rounded-full object-cover"
                         />
+                        <span
+                            className="rounded-full"
+                            style={{
+                                position: "absolute",
+                                top: "0",
+                                right: "0",
+                                background: 'red',
+                                color: 'white',
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                fontSize: '8px'
+                            }}
+                        >new</span>
                     </div>
                     <div className="flex-1 p-2">
                         <div className="flex justify-between items-center mb-1">
@@ -244,7 +257,7 @@ export default function MessagesPage() {
                         </span>
                         </div>
                         <p className="text-sm pink-text truncate">
-                            返信の有無などを表示
+                            {room.lastMessage?.text || "メッセージはありません"}
                         </p>
                     </div>
                     </div>

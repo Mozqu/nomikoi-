@@ -8,6 +8,8 @@ import { fetchUserImage } from "@/hooks/fetch-image"
 import Image from "next/image"
 import { useUser } from "@/hooks/users"
 import ProfileCardSmall from "@/components/profile/profile-card-small"
+import { Button } from "@/components/ui/button"
+import Flicking from "@egjs/react-flicking"
 
 interface Like {
   id: string
@@ -49,7 +51,8 @@ export default function InterestedPage() {
   const [user, setUser] = useState<any>(null)
   const [likes, setLikes] = useState<Like[]>([])
   const [loading, setLoading] = useState(true)
-
+  const [activeTab, setActiveTab] = useState('received')
+  const [isExpanded, setIsExpanded] = useState(false)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user)
@@ -103,18 +106,55 @@ export default function InterestedPage() {
   }
 
   return (
-    <div className="p-2 overflow-y-auto">
-      <h1 className="text-2xl font-bold mb-4">興味を持たれたユーザー</h1>
+    <div className="p-2 overflow-hidden flex-1 min-h-screen">
+        <h1 className="text-2xl font-bold mb-4">興味を持たれたユーザー</h1>
       
-      {likes.length === 0 ? (
-        <p>まだいいねはありません</p>
-      ) : (
-        <div className="flex flex-wrap gap-4">
-          {likes.map(like => (
-              <LikeItem key={like.id} like={like} />
-          ))}
+        <div className="w-full flex-1 ">
+            <Flicking
+                className="w-full h-[80vh]"
+                horizontal={true}
+                bound={true}
+                align="prev"
+                onChanged={(e) => {
+                    setIsExpanded(e.index === 0)
+                }}
+                onReady={(e) => {
+                    console.log("Flicking is ready")
+                }}
+            >
+                {/* 各スライドを1ページ幅に固定 */}
+                <div className="panel bg-red-500">
+                    <div className="flex flex-wrap gap-4 w-full h-full">
+                        {likes.slice(0, 5).map((like) => (
+                            <LikeItem key={like.id} like={like} />
+                        ))}
+                    </div>
+                </div>
+
+                <div className="panel bg-green-500">
+                    <div className="flex flex-wrap gap-4 w-full h-full">
+                        {likes.slice(0, 5).map((like) => (
+                            <LikeItem key={like.id} like={like} />
+                        ))}
+                    </div>
+                </div>
+
+                <div className="panel bg-blue-500">
+                    <div className="flex flex-wrap gap-4 w-full h-full">
+                        {likes.slice(0, 5).map((like) => (
+                            <LikeItem key={like.id} like={like} />
+                        ))}
+                    </div>
+                </div>
+            </Flicking>
+
+            <div className="flex justify-center gap-2 mt-4">
+                <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+            </div>
         </div>
-      )}
+      
     </div>
   )
 }
