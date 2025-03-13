@@ -53,7 +53,6 @@ return age
 export default function ProfileCardSmall({ user }: UserCardProps) {
     const router = useRouter()
     const age = calculateAge(user.birthday)
-    console.log(user)
     const handleClick = () => {
         router.push(`/profile/${user.id}`)
     }
@@ -74,7 +73,6 @@ export default function ProfileCardSmall({ user }: UserCardProps) {
                     );
                     
                     setImageUrls(urls);
-                    console.log(urls)
                 } catch (error) {
                     console.error('画像の取得に失敗しました:', error);
                     // デフォルト画像を設定

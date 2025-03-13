@@ -1,28 +1,39 @@
 import { NextResponse } from 'next/server'
+import { Client } from '@line/bot-sdk'
+
+// LINEクライアントの初期化
+let client: Client | undefined
+try {
+  if (!process.env.LINE_CHANNEL_ACCESS_TOKEN) {
+    throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not set')
+  }
+  
+  client = new Client({
+    channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN
+  })
+  console.log('LINE client initialized successfully in line-message')
+} catch (error) {
+  console.error('LINE client initialization error:', error)
+}
 
 export async function POST(request: Request) {
+  if (!client) {
+    console.error('LINE client not initialized')
+    return NextResponse.json(
+      { error: 'LINE client not initialized' },
+      { status: 500 }
+    )
+  }
+
   try {
     const { message, lineUserId } = await request.json()
+    console.log('Sending message to:', lineUserId) // デバッグログ
 
-    const response = await fetch('https://api.line.me/v2/bot/message/push', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
-      },
-      body: JSON.stringify({
-        to: lineUserId,
-        messages: [{
-          type: 'text',
-          text: `新しいメッセージが届きました\n${message}`
-        }]
-      })
+    // @line/bot-sdkのクライアントを使用
+    await client.pushMessage(lineUserId, {
+      type: 'text',
+      text: `新しいメッセージが届きました\n${message}`
     })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(JSON.stringify(errorData))
-    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
