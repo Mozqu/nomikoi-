@@ -115,9 +115,9 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   const handleLineConnect = () => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     if (isMobile) {
-      window.location.href = `https://lin.ee/${LINE_BOT_ID}`
+      window.location.href = `https://lin.ee/n3c1slA`
     } else {
-      window.location.href = `https://line.me/R/ti/p/${LINE_BOT_ID}/QR`
+      window.location.href = `https://lin.ee/${LINE_BOT_ID}/QR`
     }
   }
 
