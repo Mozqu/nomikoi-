@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const headersList = headers()
+    const headersList = await headers()
     const signature = headersList.get('x-line-signature')
     const body = await request.text()
     const events = JSON.parse(body).events
