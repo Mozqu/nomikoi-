@@ -209,7 +209,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   }
 
   return (
-    <div className="flex flex-col h-screen relative">
+    <div className="flex flex-col relative">
       {/* LINEモーダル */}
       <Dialog open={!hasLineConnection && showLineModal} onOpenChange={setShowLineModal}>
         <DialogContent className="sm:max-w-md">
