@@ -11,6 +11,13 @@ import { Input } from "@/components/ui/input"
 import { ChevronLeft, Send, X } from "lucide-react"
 import { use } from "react"
 import Link from "next/link"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 
 interface Message {
   id: string
@@ -27,7 +34,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [hasLineConnection, setHasLineConnection] = useState<boolean | null>(null)
-  const [showLinePrompt, setShowLinePrompt] = useState(true)
+  const [showLineModal, setShowLineModal] = useState(true)
   const messagesEndRef = useRef<null | HTMLDivElement>(null)
   const router = useRouter()
   
@@ -87,6 +94,31 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
       checkLineConnection()
     }
   }, [user])
+
+  // ローカルストレージを使用して表示制御
+  useEffect(() => {
+    const hasSeenModal = localStorage.getItem('hasSeenLineModal')
+    const lastPromptTime = localStorage.getItem('lastLinePromptTime')
+    const now = Date.now()
+    const oneWeek = 7 * 24 * 60 * 60 * 1000
+
+    if (!hasSeenModal || (lastPromptTime && now - Number(lastPromptTime) > oneWeek)) {
+      setShowLineModal(true)
+      localStorage.setItem('lastLinePromptTime', now.toString())
+    }
+  }, [])
+
+  // LINE公式アカウントのIDを環境変数から取得
+  const LINE_BOT_ID = process.env.NEXT_PUBLIC_LINE_BOT_BASIC_ID
+
+  const handleLineConnect = () => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    if (isMobile) {
+      window.location.href = `https://line.me/R/ti/p/${LINE_BOT_ID}`
+    } else {
+      window.location.href = `https://line.me/R/ti/p/${LINE_BOT_ID}/QR`
+    }
+  }
 
   // メッセージ送信
   const sendMessage = async (e: React.FormEvent) => {
@@ -178,44 +210,56 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="flex flex-col h-screen relative">
-      {/* LINE連携プロンプト */}
-      {!hasLineConnection && showLinePrompt && (
-        <div className="absolute top-0 left-0 right-0 bg-blue-500 text-white p-4 z-50">
-          <div className="max-w-2xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-2">
+      {/* LINEモーダル */}
+      <Dialog open={!hasLineConnection && showLineModal} onOpenChange={setShowLineModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
               <Image
                 src="/line-icon.png"
                 alt="LINE"
+                width={32}
+                height={32}
+                className="rounded"
+              />
+              LINE連携のお願い
+            </DialogTitle>
+            <DialogDescription className="pt-4">
+              LINEと連携すると、新しいメッセージをLINEで受け取れるようになります。
+              より便利にご利用いただけます。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 pt-4">
+            <Button
+              onClick={handleLineConnect}
+              className="bg-[#00B900] hover:bg-[#00A000] text-white w-full flex items-center justify-center gap-2"
+            >
+              <Image
+                src="/line-white-icon.png"
+                alt=""
                 width={24}
                 height={24}
                 className="rounded"
               />
-              <span>
-                LINEと連携すると、メッセージをLINEで受け取れるようになります
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link href="/settings/line-connect">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="whitespace-nowrap bg-white text-blue-500 hover:bg-white/90"
-                >
-                  連携する
-                </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-blue-600"
-                onClick={() => setShowLinePrompt(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+              LINE公式アカウントを追加
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowLineModal(false)}
+            >
+              後で設定する
+            </Button>
           </div>
-        </div>
-      )}
+          <div className="mt-4 text-sm text-gray-500">
+            <h3 className="font-medium mb-2">連携手順:</h3>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>上のボタンをタップしてLINEアプリを開く</li>
+              <li>「追加」ボタンをタップして友だち追加</li>
+              <li>メッセージ通知の受信設定を「オン」にする</li>
+            </ol>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ヘッダー */}
       <div className="w-full p-4 flex items-center border-b">
