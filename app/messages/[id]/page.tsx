@@ -110,11 +110,12 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
 
   // LINE公式アカウントのIDを環境変数から取得
   const LINE_BOT_ID = process.env.NEXT_PUBLIC_LINE_BOT_BASIC_ID
+  console.log(LINE_BOT_ID)
 
   const handleLineConnect = () => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     if (isMobile) {
-      window.location.href = `https://line.me/R/ti/p/${LINE_BOT_ID}`
+      window.location.href = `https://lin.ee/${LINE_BOT_ID}`
     } else {
       window.location.href = `https://line.me/R/ti/p/${LINE_BOT_ID}/QR`
     }
