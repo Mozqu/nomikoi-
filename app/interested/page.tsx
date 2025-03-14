@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { collection, getDocs, orderBy, query } from "firebase/firestore"
+import { collection, getDocs, orderBy, query, where, Timestamp } from "firebase/firestore"
 import { auth, db } from "@/app/firebase/config"
 import { onAuthStateChanged } from "firebase/auth"
 import { fetchUserImage } from "@/hooks/fetch-image"
@@ -19,14 +19,14 @@ interface Like {
   target_id: string
   uid: string
   type: string
-  created_at: Date
+  created_at: Timestamp | Date
 }
 
 interface User {
   id: string
   name: string
   photoURL: string
-  birthday: Date | null
+  birthday: Timestamp | null
   location: string
 }
 
@@ -57,11 +57,13 @@ export default function InterestedPage() {
 
     const [user, setUser] = useState<any>(null)
     const [likes, setLikes] = useState<Like[]>([])
+    const [liked, setLiked] = useState<Like[]>([])
+    const [matched, setMatched] = useState<Like[]>([])
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState('received')
     const [isExpanded, setIsExpanded] = useState(false)
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const unsubscribe = onAuthStateChanged(auth!, (user) => {
         setUser(user)
         console.log("Current user:", user?.uid)
         })
@@ -70,37 +72,55 @@ export default function InterestedPage() {
     }, [])
 
   const fetchLikes = async () => {
+
     if (!user) return
-
         try {
-        const likesRef = collection(db, "user_likes")
-        const q = query(
-            likesRef,
-            orderBy("created_at", "desc")
-        )
+            const likesRef = collection(db!, "user_likes")
+            // すべてのいいねを取得
+            const querySnapshot = await getDocs(likesRef)
+            const allLikes = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Like[]  // Likeインターフェースとして型付け
 
-        const querySnapshot = await getDocs(q)
-        console.log("Total documents:", querySnapshot.size)
+            console.log("allLikes", allLikes)
 
-        const allLikes = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            created_at: doc.data().created_at?.toDate()
-        })) as Like[]
+            // 自分が送ったいいね
+            const sentLikes = allLikes.filter(like => like.uid === user.uid)
+            // 自分が受け取ったいいね 
+            const receivedLikes = allLikes.filter(like => like.target_id === user.uid)
 
-        const filteredLikes = allLikes.filter(like => like.target_id === user.uid)
-        console.log("Filtered likes:", filteredLikes)
-        setLikes(filteredLikes)
+            // マッチしているいいねを抽出
+            const matchedLikes = sentLikes.filter(sent => 
+                receivedLikes.some(received => received.uid === sent.target_id)
+            )
+
+            // マッチしていないいいねを抽出
+            const unmatchedSentLikes = sentLikes.filter(sent =>
+                !matchedLikes.some(matched => 
+                    matched.target_id === sent.target_id && matched.uid === sent.uid
+                )
+            )
+            const unmatchedReceivedLikes = receivedLikes.filter(received =>
+                !matchedLikes.some(matched => 
+                    matched.uid === received.uid && matched.target_id === received.target_id
+                )
+            )
+
+            setLikes(unmatchedSentLikes)
+            setLiked(unmatchedReceivedLikes)
+            setMatched(matchedLikes)
+
         } catch (error) {
-        console.error("いいね一覧の取得に失敗:", error)
+            console.error("いいね一覧の取得に失敗:", error)
         } finally {
-        setLoading(false)
+            setLoading(false)
         }
     }
 
     useEffect(() => {
         if (user) {
-        fetchLikes()
+            fetchLikes()
         }
     }, [user])
 
@@ -130,10 +150,15 @@ export default function InterestedPage() {
     <div className="p-2 overflow-hidden flex-1 flex flex-col">
 
 
-        <div className="flex flex-row justify-center py-4">
+        <div 
+            className="flex flex-row justify-center my-4"
+            style={{
+                borderBottom: "1px solid rgba(255, 255, 255, 0.4)"
+            }}
+        >
             <div className="w-1/3 text-center mx-2"
                 style={{
-                    borderBottom: activeTab === 'liked' ? '2px solid #fff' : 'none'
+                    borderBottom: activeTab === 'liked' ? '1px solid #fff' : 'none'
                 }}
                 onClick={() => setActiveTab('liked')}
             >
@@ -141,7 +166,7 @@ export default function InterestedPage() {
             </div>
             <div className="w-1/3 text-center mx-2"
                 style={{
-                    borderBottom: activeTab === 'matched' ? '2px solid #fff' : 'none'
+                    borderBottom: activeTab === 'matched' ? '1px solid #fff' : 'none'
                 }}
                 onClick={() => setActiveTab('matched')}
             >
@@ -149,7 +174,7 @@ export default function InterestedPage() {
             </div>
             <div className="w-1/3 text-center mx-2"
                 style={{
-                    borderBottom: activeTab === 'like' ? '2px solid #fff' : 'none'
+                    borderBottom: activeTab === 'like' ? '1px solid #fff' : 'none'
                 }}
                 onClick={() => setActiveTab('like')}
             >
@@ -168,25 +193,26 @@ export default function InterestedPage() {
                     handleImageIndex(e.index)
                     console.log(e)
                 }}
-
-                circular={false}
+                circular={true}
                 horizontal={true}
-                bound={true}
+                bound={false}
+                duration={300}
+                threshold={40}
                 onReady={(e) => {
                     console.log("Flicking is ready")
                 }}
                 style={{height: "100%"}}
-                className="w-full"
+                className="w-full touch-pan-y"
             >
                 {/* 各スライドを1ページ幅に固定 */}
-                <div className="w-full h-full bg-green-500">
-                    <FlickingContents likes={likes} bgColor="bg-black"/>
+                <div className="w-full h-full">
+                    <FlickingContents likes={liked} type="liked"/>
                 </div>
-                <div className="w-full h-full bg-blue-500">
-                    <FlickingContents likes={likes} bgColor="bg-black"/>
+                <div className="w-full h-full">
+                    <FlickingContents likes={matched} type="matched"/>
                 </div>
-                <div className="w-full h-full bg-red-500">
-                    <FlickingContents likes={likes} bgColor="bg-black"/>
+                <div className="w-full h-full">
+                    <FlickingContents likes={likes} type="like"/>
                 </div>
             </Flicking>
         </div>
