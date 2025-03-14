@@ -26,17 +26,25 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { message, lineUserId } = await request.json()
-    console.log('Sending message to:', lineUserId) // デバッグログ
+    const { message, lineUserId, senderName, messageRoomId } = await request.json()
+    console.log('Sending message to:', lineUserId)
+    console.log('Message content:', message)
+    
+    // メッセージが長い場合は省略表示
+    const previewMessage = message.length > 30
+      ? message.substring(0, 30) + '...' 
+      : message
+    
+    const appUrl = `https://nomikoi.vercel.app/messages/${messageRoomId}`
 
-    // @line/bot-sdkのクライアントを使用
-    await client.pushMessage(lineUserId, {
+    const result = await client.pushMessage(lineUserId, {
       type: 'text',
-      text: `新しいメッセージが届きました\n${message}`
+      text: `${senderName}さんから新しいメッセージ\n\n「${previewMessage}」\n\n▼続きを読む\n${appUrl}`
     })
-
+    
+    console.log('Message sent successfully:', result)
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error('LINE送信エラー:', error)
     return NextResponse.json(
       { error: 'メッセージの送信に失敗しました' }, 

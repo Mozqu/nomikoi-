@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { collection, query, where, orderBy, getDocs } from "firebase/firestore"
+import { collection, query, where, orderBy, getDocs, getDoc, doc, limit, Timestamp } from "firebase/firestore"
 import { auth, db } from "@/app/firebase/config"
 import { onAuthStateChanged } from "firebase/auth"
 import { useRouter } from "next/navigation"
@@ -10,11 +10,15 @@ import { useUser } from "@/hooks/users"
 import { Badge, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
+import Link from "next/link"
+import { fetchUserImage } from "@/hooks/fetch-image"
+import { getStorage, ref, getDownloadURL, listAll } from "firebase/storage"
 
 interface MessageRoom {
   id: string
   user_ids: string[]
   created_at: string
+  messages: any[]
 }
 
 interface MessageDisplay extends MessageRoom {
@@ -25,6 +29,43 @@ interface MessageDisplay extends MessageRoom {
     location: string
   } | null
 }
+
+const formatRelativeTime = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return dateString; // パースできない場合は元の文字列を返す
+    }
+
+    const now = new Date();
+    const diffInMilliseconds = now.getTime() - date.getTime();
+    const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
+    const diffInDays = diffInHours / 24;
+    const diffInWeeks = diffInDays / 7;
+    const diffInMonths = diffInDays / 30;
+    const diffInYears = diffInDays / 365;
+
+    if (diffInHours < 24) {
+      const hours = Math.floor(diffInHours);
+      return hours === 0 ? 'たった今' : `${hours}時間前`;
+    } else if (diffInDays < 7) {
+      const days = Math.floor(diffInDays);
+      return `${days}日前`;
+    } else if (diffInDays < 30) {
+      const weeks = Math.floor(diffInWeeks);
+      return `${weeks}週間前`;
+    } else if (diffInDays < 365) {
+      const months = Math.floor(diffInMonths);
+      return `${months}ヶ月前`;
+    } else {
+      const years = Math.floor(diffInYears);
+      return `${years}年前`;
+    }
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return dateString; // エラーが発生した場合は元の文字列を返す
+  }
+};
 
 const calculateAge = (birthday: Timestamp | null | any): number | null => {
     if (!birthday) return null
@@ -76,86 +117,157 @@ export default function MessagesPage() {
   }, [])
 
   useEffect(() => {
-    const fetchMessageRooms = async () => {
-      if (!user) return
-
+    const fetchRooms = async () => {
+      if (!user) return;
+      console.log("fetchRooms", user.uid);
       try {
-        const roomsRef = collection(db, "message_rooms")
-        const q = query(
-          roomsRef,
-          where('user_ids', 'array-contains', user.uid),
-          orderBy("created_at", "desc")
-        )
-
-        console.log("Current user.uid:", user.uid)
-
-        const querySnapshot = await getDocs(q)
-        console.log("Query results:", querySnapshot.size)
-        console.log("Raw docs:", querySnapshot.docs.map(doc => doc.data()))
-
-        const allRooms = querySnapshot.docs.map(doc => {
-          const data = doc.data()
-          // Timestampを文字列に変換
-          const created_at = data.created_at?.toDate?.() 
-            ? data.created_at.toDate().toLocaleString('ja-JP')
-            : ''
-
-          return {
-            id: doc.id,
-            ...data,
-            created_at: created_at,
-            partnerInfo: null
+        setLoading(true);
+        const roomsRef = collection(db, "message_rooms");
+        const q = query(roomsRef, where("user_ids", "array-contains", user.uid));
+        const roomsSnap = await getDocs(q);
+        
+        console.log("Found rooms:", roomsSnap.size);
+        
+        if (roomsSnap.empty) {
+          console.log("No message rooms found");
+          setMessageRooms([]);
+          setLoading(false);
+          return;
+        }
+        
+        const roomsData = [];
+        const partnerIdsArray: string[] = [];
+        const storage = getStorage();
+        
+        for (const roomDoc of roomsSnap.docs) {
+          const roomData = roomDoc.data();
+          const partnerId = roomData.user_ids.find(id => id !== user.uid);
+          
+          if (partnerId) {
+            partnerIdsArray.push(partnerId);
           }
-        }) as MessageDisplay[]
-        console.log("Processed rooms:", allRooms)
-
-        const uniquePartnerIds = Array.from(new Set(
-          allRooms.map(room => room.user_ids.find(id => id !== user.uid) || '')
-        )).filter(id => id !== '')
-        setPartnerIds(uniquePartnerIds)
-
-        setMessageRooms(allRooms)
+          
+          // パートナー情報を取得
+          let partnerName = "ユーザー";
+          let partnerPhoto = "/placeholder.svg";
+          
+          if (partnerId) {
+            const partnerDoc = await getDoc(doc(db, "users", partnerId));
+            if (partnerDoc.exists()) {
+              const partnerData = partnerDoc.data();
+              partnerName = partnerData.name || "ユーザー";
+              
+              // ストレージからプロフィール画像を取得
+              try {
+                // プロフィール画像のフォルダパス
+                const profileFolderPath = `profile-image/${partnerId}`;
+                const profileFolderRef = ref(storage, profileFolderPath);
+                
+                // フォルダ内のファイル一覧を取得
+                const fileList = await listAll(profileFolderRef);
+                
+                if (fileList.items.length > 0) {
+                  // 最初の画像のURLを取得（または任意の選択ロジックを実装）
+                  const firstImageRef = fileList.items[0];
+                  partnerPhoto = await getDownloadURL(firstImageRef);
+                  console.log(`Partner ${partnerId} photo URL:`, partnerPhoto);
+                } else {
+                  console.log(`No profile images found for partner ${partnerId}`);
+                }
+              } catch (error) {
+                console.error("プロフィール画像の取得に失敗:", error);
+                // エラーが発生した場合はデフォルト画像を使用
+                partnerPhoto = "/placeholder.svg";
+              }
+            }
+          }
+          
+          // 最後のメッセージを取得
+          const messagesRef = collection(db, "message_rooms", roomDoc.id, "messages");
+          const messagesQuery = query(messagesRef, orderBy("created_at", "desc"), limit(1));
+          const messagesSnap = await getDocs(messagesQuery);
+          
+          console.log(`Room ${roomDoc.id} messages:`, messagesSnap.size); // メッセージ数をログ出力
+          
+          let lastMessage = null;
+          if (!messagesSnap.empty) {
+            const messageDoc = messagesSnap.docs[0];
+            const messageData = messageDoc.data();
+            console.log("Last message data:", messageData); // 最後のメッセージデータをログ出力
+            
+            lastMessage = {
+              id: messageDoc.id,
+              ...messageData,
+              created_at: messageData.created_at?.toDate?.()
+                ? messageData.created_at.toDate().toLocaleString('ja-JP')
+                : new Date().toLocaleString('ja-JP') // 日付がない場合は現在時刻を使用
+            };
+          }
+          
+          // 未読メッセージ数を取得
+          const unreadQuery = query(
+            messagesRef,
+            where("user_id", "!=", user.uid),
+            where("read", "==", false)
+          );
+          const unreadSnap = await getDocs(unreadQuery);
+          const unreadCount = unreadSnap.size;
+          
+          roomsData.push({
+            id: roomDoc.id,
+            ...roomData,
+            partner_id: partnerId,
+            partner_name: partnerName,
+            partner_photo: partnerPhoto,
+            lastMessage: lastMessage,
+            unreadCount: unreadCount // 未読メッセージ数を追加
+          });
+        }
+        
+        console.log("Processed rooms data:", roomsData);
+        setPartnerIds(partnerIdsArray);
+        setMessageRooms(roomsData);
       } catch (error) {
-        console.error("メッセージルームの取得に失敗:", error)
+        console.error("メッセージルームの取得に失敗:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-
+    };
+    
     if (user) {
-      fetchMessageRooms()
+      fetchRooms();
     }
-  }, [user])
+  }, [user]);
 
   // パートナー情報が取得できたら、messageRoomsを更新
   useEffect(() => {
     if (user) {
-      const updatedRooms = messageRooms.map(room => {
-        const partnerId = room.user_ids.find(id => id !== user.uid) || ''
-        let partnerData = null
+        const updatedRooms = messageRooms.map(room => {
+            const partnerId = room.user_ids.find(id => id !== user.uid) || ''
+            let partnerData = null
 
-        // パートナーデータを探す
-        if (partnerId === partnerIds[0]) {
-          partnerData = partner1Data.userData
-        } else if (partnerId === partnerIds[1]) {
-          partnerData = partner2Data.userData
-        }
-        // 必要に応じて追加
-        console.log(partnerData)
-        return {
-          ...room,
-          partnerInfo: partnerData ? {
-            name: partnerData.name || '',
-            photoURL: partnerData.photoURL || '/placeholder.svg',
-            age: calculateAge(partnerData.birthday) || 0,
-            location: partnerData.location || ''
-          } : null
-        }
-      })
+            // パートナーデータを探す
+            if (partnerId === partnerIds[0]) {
+                partnerData = partner1Data.userData
+            } else if (partnerId === partnerIds[1]) {
+                partnerData = partner2Data.userData
+            }
+            // 必要に応じて追加
+            console.log(partnerData)
+            return {
+                ...room,
+                partnerInfo: partnerData ? {
+                    name: partnerData.name || '',
+                    photoURL: partnerData.photoURL || '/placeholder.svg',
+                    age: calculateAge(partnerData.birthday) || 0,
+                    location: partnerData.location || ''
+                } : null
+            }
+        })
 
-      if (JSON.stringify(updatedRooms) !== JSON.stringify(messageRooms)) {
-        setMessageRooms(updatedRooms)
-      }
+        if (JSON.stringify(updatedRooms) !== JSON.stringify(messageRooms)) {
+                setMessageRooms(updatedRooms)
+        }
     }
   }, [user, partner1Data, partner2Data, messageRooms, partnerIds])
 
@@ -167,104 +279,64 @@ export default function MessagesPage() {
     return <div className="p-4">読み込み中...</div>
   }
 
-  console.log(messageRooms)
-
   return (
-    <>
-        {/* ヘッダー */}
-        <div className="w-full p-2 flex justify-between items-center">
-        {/* Back button */}
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.back()}
-                className="bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10"
-                >
-                <ChevronLeft className="h-6 w-6" />
-            </Button>
-
-
-        
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">メッセージ</h1>
+      
+      {loading ? (
+        <div className="text-center py-8">
+          <p>読み込み中...</p>
         </div>
-
-        <div className="p-4 overflow-y-auto flex-1">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">メッセージ</h1>
-            </div>
-
-            {/* マッチング一覧 
-            <div className="mb-8">
-                <h2 className="text-sm text-gray-600 mb-4">マッチング</h2>
-                <div className="flex gap-4 overflow-x-auto pb-4">
-                {messageRooms.map(room => (
-                    room.partnerInfo && (
-                    <div key={room.id} className="flex flex-col items-center min-w-[80px]">
-                        <div className="relative w-20 h-20">
-                        <Image
-                            src={room.partnerInfo.photoURL}
-                            alt={room.partnerInfo.name}
-                            fill
-                            className="rounded-full object-cover"
-                        />
-                        </div>
-                        <span className="text-sm mt-2">
-                        {room.partnerInfo.age}歳 {room.partnerInfo.location}
-                        </span>
-                    </div>
-                    )
-                ))}
+      ) : messageRooms.length > 0 ? (
+        <div className="space-y-2">
+          {messageRooms.map((room) => (
+            <Link
+              key={room.id}
+              href={`/messages/${room.id}`}
+              className="block p-2"
+            >
+              <div className="flex items-center gap-4">
+                <div className="relative w-12 h-12">
+                  <Image
+                    src={room.partner_photo || "/placeholder.svg"}
+                    alt={room.partner_name || "ユーザー"}
+                    fill
+                    className="rounded-full object-cover"
+                  />
                 </div>
-            </div>
-            */}
-
-            {/* メッセージ一覧 */}
-            <div className="space-y-4 w-full">
-                {messageRooms.map(room => (
-                room.partnerInfo && (
-                    <div
-                    key={room.id}
-                    className="flex items-center gap-4cursor-pointer"
-                    onClick={() => router.push(`/messages/${room.id}`)}
-                    >
-                    <div className="relative w-16 h-16">
-                        <Image
-                        src={room.partnerInfo.photoURL}
-                        alt={room.partnerInfo.name}
-                        fill
-                        className="rounded-full object-cover"
-                        />
-                        <span
-                            className="rounded-full"
-                            style={{
-                                position: "absolute",
-                                top: "0",
-                                right: "0",
-                                background: 'red',
-                                color: 'white',
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                fontSize: '8px'
-                            }}
-                        >new</span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium">{room.partner_name || "ユーザー"}</h3>
+                  <p className="text-sm text-gray-400 truncate">
+                    {room.lastMessage ? (
+                      <>
+                        {room.lastMessage.user_id === user?.uid ? "あなた: " : ""}
+                        {room.lastMessage.text}
+                      </>
+                    ) : "メッセージはありません"}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end">
+                  <div className="text-xs text-gray-500">
+                    {room.lastMessage?.created_at ? formatRelativeTime(room.lastMessage.created_at) : ""}
+                  </div>
+                  {room.unreadCount > 0 && (
+                    <div className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center mt-1">
+                      {room.unreadCount}
                     </div>
-                    <div className="flex-1 p-2">
-                        <div className="flex justify-between items-center mb-1">
-                        <span className="font-medium">
-                            {room.partnerInfo.name} {room.partnerInfo.age}歳 {room.partnerInfo.location}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                            {room.created_at.split(' ')[0]}
-                        </span>
-                        </div>
-                        <p className="text-sm pink-text truncate">
-                            {room.lastMessage?.text || "メッセージはありません"}
-                        </p>
-                    </div>
-                    </div>
-                )
-                ))}
-            </div>
+                  )}
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
-    </>
+      ) : (
+        <div className="text-center py-8 border rounded-lg">
+          <p className="mb-4">メッセージはまだありません</p>
+          <Button onClick={() => router.push("/discover")}>
+            ユーザーを探す
+          </Button>
+        </div>
+      )}
+    </div>
   )
 }
