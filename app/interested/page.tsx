@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { collection, getDocs, orderBy, query, where, Timestamp } from "firebase/firestore"
 import { auth, db } from "@/app/firebase/config"
 import { onAuthStateChanged } from "firebase/auth"
@@ -62,6 +62,8 @@ export default function InterestedPage() {
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState('received')
     const [isExpanded, setIsExpanded] = useState(false)
+    const flickingRef = useRef<Flicking>(null)
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth!, (user) => {
         setUser(user)
@@ -142,80 +144,107 @@ export default function InterestedPage() {
         } else if (index === 2) {
             setActiveTab('like')
         }
-        console.log(activeTab,imageIndex)
+        
+        // moveToを呼び出さない
+        console.log(activeTab, imageIndex)
     }
 
+    // タブクリック用の関数を修正
+    const handleTabClick = (index: number) => {
+        // 状態の更新
+        setImageIndex(index);
+        if (index === 0) {
+            setActiveTab('liked')
+        } else if (index === 1) {
+            setActiveTab('matched')
+        } else if (index === 2) {
+            setActiveTab('like')
+        }
+        
+        // moveToのみを呼び出し
+        if (flickingRef.current) {
+            try {
+                flickingRef.current.moveTo(index, 300)
+            } catch (error) {
+                console.log("移動エラー:", error)
+            }
+        }
+    }
 
-  return (
-    <div className="p-2 overflow-hidden flex-1 flex flex-col">
-
-
-        <div 
-            className="flex flex-row justify-center my-4"
-            style={{
-                borderBottom: "1px solid rgba(255, 255, 255, 0.4)"
-            }}
-        >
-            <div className="w-1/3 text-center mx-2"
+    return (
+        <div className="p-2 overflow-hidden flex-1 flex flex-col">
+            <div className="flex flex-row justify-center my-4"
                 style={{
-                    borderBottom: activeTab === 'liked' ? '1px solid #fff' : 'none'
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.4)"
                 }}
-                onClick={() => setActiveTab('liked')}
             >
-                liked
+                <div className="w-1/3 text-center mx-2 sky-text"
+                    style={{
+                        borderBottom: activeTab === 'liked' ? '1px solid #fff' : 'none'
+                    }}
+                    onClick={() => handleTabClick(0)}
+                >
+                    liked
+                </div>
+                <div className="w-1/3 text-center mx-2 neon-text"
+                    style={{
+                        borderBottom: activeTab === 'matched' ? '1px solid #fff' : 'none'
+                    }}
+                    onClick={() => handleTabClick(1)}
+                >
+                    matched
+                </div>
+                <div className="w-1/3 text-center mx-2 pink-text"
+                    style={{
+                        borderBottom: activeTab === 'like' ? '1px solid #fff' : 'none'
+                    }}
+                    onClick={() => handleTabClick(2)}
+                >
+                    like
+                </div>
             </div>
-            <div className="w-1/3 text-center mx-2"
-                style={{
-                    borderBottom: activeTab === 'matched' ? '1px solid #fff' : 'none'
-                }}
-                onClick={() => setActiveTab('matched')}
-            >
-                matched
-            </div>
-            <div className="w-1/3 text-center mx-2"
-                style={{
-                    borderBottom: activeTab === 'like' ? '1px solid #fff' : 'none'
-                }}
-                onClick={() => setActiveTab('like')}
-            >
-                like
+
+            <div className="flex-1">
+                <Flicking
+                    ref={flickingRef}
+                    viewportTag="div"
+                    cameraTag="div"
+                    cameraClass=""
+                    renderOnSameKey={false}
+                    align="prev"
+                    defaultIndex={1}
+                    onWillChange={(e: WillChangeEvent) => {
+                        // インデックスの更新のみ行い、moveToは呼び出さない
+                        setActiveTab(e.index === 0 ? 'liked' : e.index === 1 ? 'matched' : 'like')
+                        setImageIndex(e.index)
+                        console.log(e)
+                    }}
+                    circular={false}
+                    horizontal={true}
+                    bound={false}
+                    duration={300}
+                    threshold={40}
+                    onReady={(e) => {
+                        console.log("Flicking is ready")
+                        // moveToを呼び出さずに状態のみ更新
+                        setActiveTab('matched')
+                        setImageIndex(1)
+                    }}
+                    style={{height: "100%"}}
+                    className="w-full touch-pan-y"
+                >
+                    {/* 各スライドを1ページ幅に固定 */}
+                    <div className="w-full h-full">
+                        <FlickingContents likes={liked} type="liked"/>
+                    </div>
+                    <div className="w-full h-full">
+                        <FlickingContents likes={matched} type="matched"/>
+                    </div>
+                    <div className="w-full h-full">
+                        <FlickingContents likes={likes} type="like"/>
+                    </div>
+                </Flicking>
             </div>
         </div>
-
-        <div className="flex-1">
-            <Flicking
-                viewportTag="div"
-                cameraTag="div"
-                cameraClass=""
-                renderOnSameKey={false}
-                align="prev"
-                onWillChange={(e: WillChangeEvent) => {
-                    handleImageIndex(e.index)
-                    console.log(e)
-                }}
-                circular={true}
-                horizontal={true}
-                bound={false}
-                duration={300}
-                threshold={40}
-                onReady={(e) => {
-                    console.log("Flicking is ready")
-                }}
-                style={{height: "100%"}}
-                className="w-full touch-pan-y"
-            >
-                {/* 各スライドを1ページ幅に固定 */}
-                <div className="w-full h-full">
-                    <FlickingContents likes={liked} type="liked"/>
-                </div>
-                <div className="w-full h-full">
-                    <FlickingContents likes={matched} type="matched"/>
-                </div>
-                <div className="w-full h-full">
-                    <FlickingContents likes={likes} type="like"/>
-                </div>
-            </Flicking>
-        </div>
-    </div>
-  )
+    )
 }

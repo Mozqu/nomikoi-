@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore"
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, getDoc, doc, where, getDocs, writeBatch } from "firebase/firestore"
 import { auth, db } from "@/app/firebase/config"
 import { onAuthStateChanged } from "firebase/auth"
 import Image from "next/image"
@@ -26,6 +26,7 @@ interface Message {
   user_id: string
   user_name: string
   user_photo: string
+  read: boolean
 }
 
 export default function ChatRoom({ params }: { params: Promise<{ id: string }> }) {
@@ -40,12 +41,13 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   
   // 認証状態の監視
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth!, (user) => {
       if (!user) {
         router.push("/login")
         return
       }
       setUser(user)
+      console.log('user', user)
     })
     return () => unsubscribe()
   }, [router])
@@ -54,7 +56,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   useEffect(() => {
     if (!id) return
 
-    const messagesRef = collection(db, "message_rooms", id, "messages")
+    const messagesRef = collection(db!, "message_rooms", id, "messages")
     const q = query(messagesRef, orderBy("created_at", "asc"))
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -82,7 +84,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
       if (!user) return
 
       try {
-        const userDoc = await getDoc(doc(db, "users", user.uid))
+        const userDoc = await getDoc(doc(db!, "users", user.uid))
         const userData = userDoc.data()
         setHasLineConnection(!!userData?.lineUserId)
       } catch (error) {
@@ -110,7 +112,6 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
 
   // LINE公式アカウントのIDを環境変数から取得
   const LINE_BOT_ID = process.env.NEXT_PUBLIC_LINE_BOT_BASIC_ID
-  console.log(LINE_BOT_ID)
 
   const handleLineConnect = () => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
@@ -127,24 +128,32 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
     if (!newMessage.trim() || !user) return
 
     try {
+      // ユーザー情報を取得
+      const currentUserDoc = await getDoc(doc(db!, "users", user.uid))
+      const currentUserData = currentUserDoc.data()
+      const userName = currentUserData?.name || user.displayName || "匿名ユーザー"
+      
       // Firestoreにメッセージを保存
-      const messagesRef = collection(db, "message_rooms", id, "messages")
+      const messagesRef = collection(db!, "message_rooms", id, "messages")
       await addDoc(messagesRef, {
         text: newMessage,
         created_at: serverTimestamp(),
         user_id: user.uid,
-        user_name: user.displayName || "Anonymous",
-        user_photo: user.photoURL || "/placeholder.svg"
+        user_name: userName,
+        user_photo: user.photoURL || "/placeholder.svg",
+        read: false // 未読状態で保存
       })
 
       // パートナーのユーザー情報を取得
-      const roomDoc = await getDoc(doc(db, "message_rooms", id))
+      const roomDoc = await getDoc(doc(db!, "message_rooms", id))
       const roomData = roomDoc.data()
       const partnerId = roomData?.user_ids.find((uid: string) => uid !== user.uid)
 
       if (partnerId) {
-        const partnerDoc = await getDoc(doc(db, "users", partnerId))
+        const partnerDoc = await getDoc(doc(db!, "users", partnerId))
         const partnerData = partnerDoc.data()
+
+        console.log('user', user)
 
         // パートナーがLINE連携済みの場合、通知を送信
         if (partnerData?.lineUserId) {
@@ -156,7 +165,9 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
             },
             body: JSON.stringify({
               message: newMessage,
-              lineUserId: partnerData.lineUserId
+              lineUserId: partnerData.lineUserId,
+              senderName: userName,
+              messageRoomId: id
             })
           })
         }
@@ -167,6 +178,46 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
       console.error("Error sending message:", error)
     }
   }
+
+  // メッセージを読んだときに既読にする処理を追加
+  useEffect(() => {
+    if (!user || !id) return;
+
+    const markMessagesAsRead = async () => {
+      try {
+        // 相手からのメッセージで未読のものを取得
+        const messagesRef = collection(db!, "message_rooms", id, "messages");
+        const q = query(
+          messagesRef,
+          where("user_id", "!=", user.uid),
+          where("read", "==", false)
+        );
+        
+        const unreadSnap = await getDocs(q);
+        
+        // 未読メッセージを既読に更新
+        const batch = writeBatch(db!);
+        unreadSnap.docs.forEach(doc => {
+          batch.update(doc.ref, { read: true });
+        });
+        
+        if (unreadSnap.size > 0) {
+          await batch.commit();
+          console.log(`${unreadSnap.size}件のメッセージを既読にしました`);
+        }
+      } catch (error) {
+        console.error("既読の更新に失敗:", error);
+      }
+    };
+
+    // ページが表示されたときに実行
+    markMessagesAsRead();
+    
+    // メッセージが更新されたときにも実行
+    const intervalId = setInterval(markMessagesAsRead, 5000);
+    
+    return () => clearInterval(intervalId);
+  }, [user, id, messages]);
 
   const formatRelativeTime = (dateString: string) => {
     try {
@@ -210,7 +261,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   }
 
   return (
-    <div className="flex-1 flex flex-col relative">
+    <div className="flex-1 flex flex-col overflow-y-auto  relative">
       {/* LINEモーダル */}
       <Dialog open={!hasLineConnection && showLineModal} onOpenChange={setShowLineModal}>
         <DialogContent className="sm:max-w-md">
@@ -306,9 +357,12 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
             >
               <p className="text-sm">{message.text}</p>
             </div>
-            <span className="text-xs text-gray-500 mt-1 block">
-              {formatRelativeTime(message.created_at)}
-            </span>
+            <div className="flex flex-col items-start text-xs text-gray-500 mt-1">
+              <span>{formatRelativeTime(message.created_at)}</span>
+              {message.user_id === user.uid && (
+                <span>{message.read ? "既読" : "未読"}</span>
+              )}
+            </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
