@@ -238,7 +238,9 @@ export default function RegisterPage() {
     defaultValues: {
       drinking_location_preference: [],
       favorite_alcohol: {},
-      dislike_alcohol: {}
+      dislike_alcohol: {},
+      favorite_location: [],
+      favorite_timezone: []
     },
     mode: 'onChange'  // フォームの検証モードを追加
   })
@@ -354,7 +356,9 @@ const handleSubmitForm = async (data: any, redirectUrl: string, isLastStep: bool
       favorite_alcohol: {
         drinking_location_preference: data.drinking_location_preference || [],
         favorite_alcohol: (favorite_alcohol || []),
-        dislike_alcohol: (dislike_alcohol || [])
+        dislike_alcohol: (dislike_alcohol || []),
+        favorite_location: data.favorite_location || [],
+        favorite_timezone: data.favorite_timezone || []
       }
     }
 

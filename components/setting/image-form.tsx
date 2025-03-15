@@ -227,7 +227,12 @@ export default function ImageForm() {
                   </div>
                 ) : (
                   <div key={index} className="relative aspect-square">
-                    <label className="w-full h-full flex items-center justify-center border-2 border-dashed rounded-lg cursor-pointer">
+                    <label 
+                      className="w-full h-full flex items-center justify-center rounded-lg cursor-pointer"
+                      style={{
+                        border: '2px dashed #555',
+                      }}
+                    >
                       <input
                         type="file" 
                         accept="image/*"
