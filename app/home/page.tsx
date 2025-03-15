@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback, useRef } from "react"
 import { auth, db } from "@/app/firebase/config"
 import type { QueryDocumentSnapshot, Timestamp } from "firebase/firestore"
 import { useInView } from "react-intersection-observer"
-import { collection, query, limit, getDocs, startAfter, orderBy } from "firebase/firestore"
+import { collection, query, limit, getDocs, startAfter, orderBy, where } from "firebase/firestore"
 import { useRouter } from 'next/navigation'
 import { getDownloadURL } from "firebase/storage"
 import { listAll } from "firebase/storage"
@@ -171,6 +171,40 @@ async function fetchUsers(lastUser: QueryDocumentSnapshot | null = null, limitCo
   }
 }
 
+// 3日以内に登録したユーザーを取得する関数
+async function fetchRecentUsers() {
+  try {
+    // 3日前の日時を計算
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    
+    // usersコレクションへの参照
+    const usersRef = collection(db, "users");
+    
+    // 3日以内に作成されたユーザーを取得するクエリ
+    const q = query(
+      usersRef,
+      where("createdAt", ">=", threeDaysAgo)
+    );
+    
+    // クエリを実行
+    const snapshot = await getDocs(q);
+    
+    // 結果を配列に変換
+    const recentUsers = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    console.log(`最近登録した${recentUsers.length}人のユーザーを取得しました`);
+    return recentUsers;
+    
+  } catch (error) {
+    console.error("最近のユーザー取得に失敗しました:", error);
+    return [];
+  }
+}
+
 export default function DiscoverPage() {
   const [users, setUsers] = useState<User[]>([])
   const [newUsers, setNewUsers] = useState<User[]>([])
@@ -178,6 +212,7 @@ export default function DiscoverPage() {
   const [loading, setLoading] = useState(false)
   const [ref, inView] = useInView()
   const hasMoreUsers = useRef(true)
+  const [recentUsers, setRecentUsers] = useState<User[]>([])
 
   const loadMoreUsers = useCallback(async () => {
     if (loading || !hasMoreUsers.current) return
@@ -220,6 +255,15 @@ export default function DiscoverPage() {
       loadMoreUsers()
     }
   }, [users.length, loadMoreUsers])
+
+  useEffect(() => {
+    const getRecentUsers = async () => {
+      const users = await fetchRecentUsers();
+      setRecentUsers(users);
+    };
+    
+    getRecentUsers();
+  }, []);
 
   return (
     <div className="min-h-screen [--scroll-mt:9.875rem] lg:[--scroll-mt:6.3125rem]">
