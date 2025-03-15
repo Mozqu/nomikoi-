@@ -18,9 +18,9 @@ export const OptionalStatusRadio = dynamic(
   () => Promise.resolve(({title, label, options, userData }: OptionalStatusRadioProps) => {
     const [selectedValue, setSelectedValue] = useState(() => {
       // 初期値を設定
-      return userData?.profile?.[label] || ""
+      return userData?.profile?.[title] || ""
     })
-    const [text, setText] = useState(userData?.profile?.[`${label}Detail`] || "")
+    const [text, setText] = useState(userData?.profile?.[`${title}Detail`] || "")
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     // userDataが変更されたら値を更新
@@ -34,9 +34,9 @@ export const OptionalStatusRadio = dynamic(
     
 
 
-    const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>, label: string) => {
-      if (!auth.currentUser || isSubmitting) {
-        console.log('処理をスキップ:', { isAuthenticated: !!auth.currentUser, isSubmitting })
+    const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+      if (!auth?.currentUser || !db || isSubmitting) {
+        console.log('処理をスキップ:', { isAuthenticated: !!auth?.currentUser, isSubmitting })
         return
       }
 
@@ -47,7 +47,7 @@ export const OptionalStatusRadio = dynamic(
       try {
         const userRef = doc(db, "users", auth.currentUser.uid)
         await updateDoc(userRef, {
-          [`profile.${label}`]: newValue,
+          [`profile.${title}`]: newValue,
           updatedAt: new Date()
         })
         console.log(`更新成功: ${title} => ${newValue}`)
@@ -61,15 +61,34 @@ export const OptionalStatusRadio = dynamic(
       }
     }
 
+    const handleDetailChange = async (detailValue: string) => {
+      if (!auth?.currentUser || !db || isSubmitting) return;
+      
+      setIsSubmitting(true);
+      try {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        await updateDoc(userRef, {
+          [`profile.${title}Detail`]: detailValue,
+          updatedAt: new Date()
+        });
+        console.log(`詳細更新成功: ${title}Detail => ${detailValue}`);
+      } catch (error) {
+        console.error("詳細更新エラー:", error);
+        alert("設定の更新に失敗しました。");
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
     return (
       <div className="p-4 space-y-4">
-        <h2 className="text-xl font-bold">{label}</h2>
+        <h2 className="text-xl font-bold">{userData?.profile?.[title] ? userData.profile[title] : title}</h2>
         <select 
           key={selectedValue}
           defaultValue={selectedValue}
           onChange={(e) => {
             console.log('onChange:', e.target.value)
-            handleChange(e, label)
+            handleChange(e)
           }}
           className="w-full p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
           style={{
@@ -92,7 +111,8 @@ export const OptionalStatusRadio = dynamic(
         <input
           type="text"
           className="w-full mt-4 p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          placeholder={userData?.profile?.[`${title}Detail`] ?? userData?.profile?.[title] ?? "その他の詳細を入力"}
+          placeholder={userData?.profile?.[`${title}Detail`] ?? "その他の詳細を入力"}
+          value={text}
           onChange={(e) => {
             setText(e.target.value)
           }}
@@ -105,21 +125,10 @@ export const OptionalStatusRadio = dynamic(
           }}
           onKeyDown={async (e) => {
             if (e.key !== 'Enter') return;
-            if (!auth.currentUser || isSubmitting) return;
-            
-            setIsSubmitting(true);
-            try {
-              const userRef = doc(db, "users", auth.currentUser.uid);
-              await updateDoc(userRef, {
-                [`profile.${label}detail`]: e.target.value,
-                updatedAt: new Date()
-              });
-            } catch (error) {
-              console.error("更新エラー:", error);
-              alert("設定の更新に失敗しました。");
-            } finally {
-              setIsSubmitting(false);
-            }
+            handleDetailChange(e.currentTarget.value);
+          }}
+          onBlur={(e) => {
+            handleDetailChange(e.currentTarget.value);
           }}
         />
       )}
@@ -132,11 +141,13 @@ export const OptionalStatusRadio = dynamic(
 // チェックボックス用のコンポーネント
 export const OptionalStatusCheck = dynamic(
   () => Promise.resolve(({title, label, options, userData}: OptionalStatusRadioProps) => {
-    const [selectedValues, setSelectedValues] = useState(userData?.profile?.[`${label}`] || [])
+    const [selectedValues, setSelectedValues] = useState<string[]>(() => {
+      return Array.isArray(userData?.profile?.[title]) ? userData.profile[title] : []
+    })
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     // userDataが変更されたら値を更新
-    useLayoutEffect(() => {
+    useEffect(() => {
       if (userData?.profile && userData.profile[title]) {
         setSelectedValues(Array.isArray(userData.profile[title]) 
           ? userData.profile[title] 
@@ -144,14 +155,8 @@ export const OptionalStatusCheck = dynamic(
       }
     }, [userData, title])
 
-    if (userData?.profile && userData.profile[title]) {
-      setSelectedValues(Array.isArray(userData.profile[title]) 
-        ? userData.profile[title] 
-        : [])
-    }
-
-    const handleChange = async (option: string, checked: boolean, label: string) => {
-      if (!auth.currentUser || isSubmitting) return
+    const handleChange = async (option: string, checked: boolean) => {
+      if (!auth?.currentUser || !db || isSubmitting) return
 
       setIsSubmitting(true)
       const newValues = checked 
@@ -161,10 +166,11 @@ export const OptionalStatusCheck = dynamic(
       try {
         const userRef = doc(db, "users", auth.currentUser.uid)
         await updateDoc(userRef, {
-          [`profile.${label}`]: newValues,
+          [`profile.${title}`]: newValues,
           updatedAt: new Date()
         })
         setSelectedValues(newValues)
+        console.log(`更新成功: ${title} => ${newValues.join(', ')}`)
       } catch (error) {
         console.error("更新エラー:", error)
         alert("設定の更新に失敗しました。")
@@ -176,17 +182,17 @@ export const OptionalStatusCheck = dynamic(
 
     return (    
       <div className="p-4 space-y-4">
-        <h2 className="text-xl font-bold">{label}</h2>
+        <h2 className="text-xl font-bold">{userData?.profile?.[title]?.length > 0 ? userData.profile[title].join(', ') : title}</h2>
         <div className="flex flex-wrap gap-4">
           {options.map((option: string) => (
             <div key={option} className="">
 
                 <input
                     type="checkbox"
-                    id={option}
+                    id={`${title}-${option}`}
                     checked={selectedValues.includes(option)}
                     onChange={(e) => {
-                        handleChange(option, e.target.checked, label)
+                        handleChange(option, e.target.checked)
                         console.log("selectedValues", selectedValues)
                     }}
                     className=""
@@ -195,7 +201,7 @@ export const OptionalStatusCheck = dynamic(
                     }}
                 />
                 <label 
-                    htmlFor={option} 
+                    htmlFor={`${title}-${option}`} 
                     className={`text-lg px-4 py-2 font-medium rounded-full border border-gray-400 focus:ring-2 focus:ring-purple-600
                     ${selectedValues.includes(option) ? "pink-border text-white" : ""}`}>
                         {selectedValues.includes(option) ? <CheckIcon className="w-4 h-4 mr-2 inline-block" /> : ""}

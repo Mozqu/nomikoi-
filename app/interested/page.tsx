@@ -184,7 +184,7 @@ export default function InterestedPage() {
                     }}
                     onClick={() => handleTabClick(0)}
                 >
-                    liked
+                    相手からの🩷
                 </div>
                 <div className="w-1/3 text-center mx-2 neon-text"
                     style={{
@@ -192,7 +192,7 @@ export default function InterestedPage() {
                     }}
                     onClick={() => handleTabClick(1)}
                 >
-                    matched
+                    マッチング中
                 </div>
                 <div className="w-1/3 text-center mx-2 pink-text"
                     style={{
@@ -200,7 +200,7 @@ export default function InterestedPage() {
                     }}
                     onClick={() => handleTabClick(2)}
                 >
-                    like
+                    自分の🩷
                 </div>
             </div>
 

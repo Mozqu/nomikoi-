@@ -1,7 +1,15 @@
+'use client'
 import Flicking from "@egjs/react-flicking"
 import ProfileCardSmall from "../profile/profile-card-small"
 import { useUser } from "@/hooks/users"
 import { fetchUserImage } from "@/hooks/fetch-image"
+import { db } from "@/app/firebase/config"
+import { collection } from "firebase/firestore"
+import { doc } from "firebase/firestore"
+import { Button } from "../ui/button"
+import { serverTimestamp, setDoc } from "firebase/firestore"
+import { useRouter } from "next/navigation"
+import { auth } from "@/app/firebase/config"
 
 interface Like {
     id: string
@@ -54,6 +62,13 @@ const LikeItem = ({ like, type }: { like: Like, type: string }) => {
   
 
 export default function FlickingContents({ likes, type }: { likes: any[], type: string }) {
+    const router = useRouter()
+
+    const handleClick = (userId: string) => {
+        console.log("Navigating to user:", userId)
+        router.push(`/users/${userId}`)
+    }
+
     return (
         
         <div className={`panel w-full h-full`}>
@@ -62,7 +77,39 @@ export default function FlickingContents({ likes, type }: { likes: any[], type: 
                 className="flex flex-wrap gap-4 w-full h-full" 
             >
                 {likes.length > 0 ? likes.slice(0, 5).map((like) => (
-                    <LikeItem key={like.id} like={like} type={type} />
+                    <div key={like.id} className="">
+                        <LikeItem like={like} type={type} />
+                        {/* メッセージボタン */}
+                        {type === 'matched' && (
+                            <div className="mt-2">
+                            <Button
+                                className="w-full bg-sky hover:bg-sky/90 text-white"
+                                onClick={async (e) => {
+                                e.stopPropagation()
+                                try {
+                                    // メッセージルームの作成
+                                    const roomsRef = collection(db, "message_rooms")
+                                    const newRoomRef = doc(roomsRef)
+                                    
+                                    await setDoc(newRoomRef, {
+                                    user_ids: [auth.currentUser?.uid, like.target_id],
+                                    created_at: serverTimestamp(),
+                                    updated_at: serverTimestamp(),
+                                    visitedUsers: {}
+                                    })
+
+                                    // 作成したルームに遷移
+                                    router.push(`/messages/${newRoomRef.id}`)
+                                } catch (error) {
+                                    console.error("メッセージルームの作成に失敗:", error)
+                                }
+                                }}
+                            >
+                                メッセージを送る
+                            </Button>
+                            </div>
+                        )}
+                    </div>
                 )) : (
                     <div className="w-full h-full">
                         <p>データがありません</p>
