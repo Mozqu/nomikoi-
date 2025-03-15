@@ -109,8 +109,6 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                 setIsExpanded(!isExpanded);
             }
         }, 100); // 100ミリ秒のデバウンス
-        console.log(e.target.scrollTop)
-        console.log(isExpanded)
     }
 
     const [imageIndex, setImageIndex] = useState(0);

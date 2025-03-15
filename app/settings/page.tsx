@@ -460,7 +460,7 @@ export default function SettingsPage() {
                 <OptionalStatusRadio 
                   key={key}
                   title={key}
-                  label={key}
+                  label={value.label}
                   options={value.options}
                   userData={userData} 
                 />
@@ -468,7 +468,7 @@ export default function SettingsPage() {
                 <OptionalStatusCheck 
                   key={key}
                   title={key}
-                  label={key}
+                  label={value.label}
                   options={value.options}
                   userData={userData}
                 />
@@ -479,13 +479,13 @@ export default function SettingsPage() {
                     type="text"
                     className="w-full p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder={`${value.label}を入力してください`}
-                    value={userData?.profile?.[key] || ""}
+                    value={userData?.profile?.[value.label] || ""}
                     onChange={(e) => {
                       setUserData({
                         ...userData,
                         profile: {
                           ...userData?.profile,
-                          [key]: e.target.value
+                          [value.label]: e.target.value
                         }
                       });
                     }}
@@ -494,7 +494,7 @@ export default function SettingsPage() {
                       try {
                         const userRef = doc(db, "users", auth.currentUser.uid);
                         await updateDoc(userRef, {
-                          [`profile.${key}`]: e.target.value,
+                          [`profile.${value.label}`]: e.target.value,
                           updatedAt: new Date()
                         });
                       } catch (error) {
