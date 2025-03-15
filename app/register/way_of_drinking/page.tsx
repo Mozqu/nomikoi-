@@ -329,41 +329,42 @@ function QuestionStep({
       <h1 className="text-2xl font-bold mt-6 mb-6">{question.title}</h1>
 
       <div className="flex-1 overflow-y-auto pb-24">
-      <div className="space-y-4">
-          {Object.entries(question.options as radioItem).map(([label, value], index) => {
-            const uniqueKey = `${question.id}-radio-${label}-${index}`;
-            return (
-              
-              <label
-                key={uniqueKey}
-                className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-3 hover:bg-white/5 transition-colors cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  value={value}
-                  {...register(question.id, {
-                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                      setIsValid(!!e.target.value);
-                    }
-                  })}
-                  id="test-radio"
-                  className="w-5 h-5 border-2 border-white rounded-full accent-pink-500"
-                />
-                <div className={`${question.id === "drinking_amount" ? "flex flex-col"  : ""}`}>
-                  <span className="text-lg">{label}</span>
-                  {/* 飲酒量の質問の時だけ補足をつける */}
-                  {question.id === "drinking_amount" && (               
-                    <span className="block text-sm text-gray-400">{descriptions1[index]}</span>
-                  )}
-                  {question.id === "drinking_amount" && (               
-                    <span className="block text-sm text-gray-400">{descriptions2[index]}</span>
-                  )}
-                </div>
-              </label>
-            );
-          })}
-          
-        
+        <div className="flex flex-col">
+          <div className="flex-1 space-y-4 ">
+            {Object.entries(question.options as radioItem).map(([label, value], index) => {
+              const uniqueKey = `${question.id}-radio-${label}-${index}`;
+              return (
+                
+                <label
+                  key={uniqueKey}
+                  className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-3 hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  <input
+                    type="radio"
+                    value={value}
+                    {...register(question.id, {
+                      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                        setIsValid(!!e.target.value);
+                      }
+                    })}
+                    id="test-radio"
+                    className="w-5 h-5 border-2 border-white rounded-full accent-pink-500"
+                  />
+                  <div className={`${question.id === "drinking_amount" ? "flex flex-col"  : ""}`}>
+                    <span className="text-lg">{label}</span>
+                    {/* 飲酒量の質問の時だけ補足をつける */}
+                    {question.id === "drinking_amount" && (               
+                      <span className="block text-sm text-gray-400">{descriptions1[index]}</span>
+                    )}
+                    {question.id === "drinking_amount" && (               
+                      <span className="block text-sm text-gray-400">{descriptions2[index]}</span>
+                    )}
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+          {/* ボタン */}
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm">
             <div className="container max-w-lg mx-auto">
               <Button
@@ -383,7 +384,9 @@ function QuestionStep({
                 次へ
               </Button>
             </div>
-          </div>      
+          </div>   
+
+
         </div>
 
         {question.warning && (
