@@ -169,6 +169,37 @@ const questions: Record<number, Question> = {
             subtypes: ["紹興酒", "マッコリ", "白酒", "ホッピー"]
             }
         ] as const as toggleListItem[]  
+    }, 
+    4: {
+        id: "favorite_location",
+        title: "飲み生息地、開拓したい街、好きな街などを選んでください",
+        type: "checklist" as QuestionType,
+        options: [
+          "新宿", "銀座", "東京", "横浜", "池袋", 
+          "新橋", "上野", "恵比寿", "吉祥寺", "渋谷", 
+          "みなとみらい", "赤羽", "赤坂見附", 
+          "大宮", "有楽町", "六本木・麻布十番", 
+          "蒲田", "下北沢", "浅草", "横浜中華街", 
+          "野毛・桜木町", "神楽坂", "新大久保", 
+          "中目黒", "錦糸町", "三軒茶屋", "荻窪", 
+          "川崎", "関内", "高円寺", "自由が丘", "秋葉原", 
+          "人形町", "溝の口", "五反田", "目黒"
+          
+        ]
+    },
+
+    5: {
+        id: "favorite_timezone",
+        title: "飲みたい時間帯を選んでください",
+        type: "checklist" as QuestionType,
+        options: [
+          "平日昼OK",
+          "平日夜OK",
+          "金/土/祝の前夜OK",
+          "土/日/祝の昼OK",
+          "日/祝の夜OK",
+          "いつでも合わせられる"
+        ]
     }
 }
 
@@ -279,7 +310,7 @@ export default function RegisterPage() {
               <QuestionStep
                 key={step}
                 question={questions[step]}
-                onNext={step === totalSteps ? () => handleSubmit((data) => router.push('/register/acceptable_drinking_habit'))() : nextStep}
+                onNext={step === totalSteps ? () => handleSubmit((data) => router.push('/register/profile_image'))() : nextStep}
                 nextStep={nextStep}
                 prevStep={prevStep}
                 router={router}
@@ -376,7 +407,7 @@ function QuestionStep({
     ([_, q]) => q.id === question.id
   )?.[0]
   const isLastStep = Number(currentQuestionNumber) === totalSteps
-
+  console.log("isLastStep", isLastStep, totalSteps, currentQuestionNumber)
   useEffect(() => {
     if (question.type === 'checklist') {
       setIsValid(Array.isArray(selectedItems) && selectedItems.length > 0);
@@ -406,7 +437,7 @@ function QuestionStep({
   }, [isValid])
 
   useEffect(() => {
-    console.log("isLastStep", isLastStep)
+    console.log("isLastStep", isLastStep, totalSteps)
     setOpenPopup(null)
   }, [isLastStep])
 
@@ -665,7 +696,7 @@ function QuestionStep({
                   if (isLastStep) {
                     const formData = watch();
                     console.log("formData", formData)
-                    await handleSubmitForm(formData, '/register/talking_stance', isLastStep, router);
+                    await handleSubmitForm(formData, '/register/upload-profile-images', isLastStep, router);
                   } else {
                     nextStep()
                   }
