@@ -95,6 +95,24 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
       }
     };
 
+    const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    const handleScroll = (e: any) => {
+        // スクロールイベントをデバウンス
+        if (scrollTimeout.current) {
+            clearTimeout(scrollTimeout.current);
+        }
+        
+        scrollTimeout.current = setTimeout(() => {
+            // スクロール位置が0（一番上）の場合、isExpandedをfalseに設定
+            if (e.target.scrollTop < 0.5) {
+                setIsExpanded(!isExpanded);
+            }
+        }, 100); // 100ミリ秒のデバウンス
+        console.log(e.target.scrollTop)
+        console.log(isExpanded)
+    }
+
     const [imageIndex, setImageIndex] = useState(0);
 
 
@@ -221,7 +239,9 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                             style={{
                             overflow: isExpanded ? "hidden" : "scroll",
                             transition: "all 0.5s ease-in-out",
-                            }}>
+                            }}
+                            onScroll={(e) => handleScroll(e)}
+                            >
 
 
                                 <div className="flex flex-row">
@@ -252,32 +272,30 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 height: isExpanded ? "0px" : "500px",
                                 transition: "all 0.5s ease-in-out",
                                 }}>
-
+                                {userData?.answers?.favorite_alcohol && (
                                 <section className="space-y-3 m-4">
-
                                     <h2 className="text-xl font-semibold">好きなお酒</h2>
                                     <div className="flex flex-wrap gap-2">
-                                        {userData?.answers?.favorite_alcohol? 
-                                            Object.entries(userData.answers.favorite_alcohol.favorite_alcohol || {}).map(([alcoholName, details]) => (
-                                            <Badge
-                                                key={alcoholName + "name"}
-                                                variant="secondary"
-                                                className=" border-white/20 bg-white/5"
-                                            >
-                                                {details}
-                                            </Badge>
-                                            ))
-                                        : 
-                                            <p className="text-[#c2b5ff]">データがありません</p>
-                                        }
+                                        {Object.entries(userData.answers.favorite_alcohol.favorite_alcohol || {}).map(([alcoholName, details]) => (
+                                        <Badge
+                                            key={alcoholName + "name"}
+                                            variant="secondary"
+                                            className=" border-white/20 bg-white/5"
+                                        >
+                                            {details || ""}
+                                        </Badge>
+                                        ))}
                                     </div>
                                 </section>
+                                )}
 
                                 {/* 苦手なお酒 */}
+                                {userData?.answers?.favorite_alcohol && (
+
                                 <section className="m-4 space-y-3">
                                     <h2 className="text-xl font-semibold">苦手なお酒</h2>
                                     <div className="flex flex-wrap gap-2">
-                                    {userData?.answers?.favorite_alcohol ? 
+                                        {userData?.answers?.favorite_alcohol && (
                                         Object.entries(userData.answers.favorite_alcohol.dislike_alcohol || {}).map(([alcoholName, details]) => (
                                         <Badge
                                             key={alcoholName + "name"}
@@ -287,13 +305,13 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                             {details}
                                         </Badge>
                                         ))
-                                    : 
-                                        <p className="text-[#c2b5ff]">データがありません</p>
-                                    }
+                                        )}
                                     </div>
                                 </section>
+                                )}
 
                                 {/* お気に入りのバー */}
+                                {userData?.answers?.favorite_alcohol && (
                                 <section className="m-4 space-y-3">
                                     <h2 className="text-xl font-semibold">よく飲むお店</h2>
                                     <div className="flex flex-wrap gap-2">
@@ -313,6 +331,9 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
 
                                     </div>
                                 </section>
+                                )}
+
+
 
                                 <section className="m-4 space-y-3">
                                     <h2 className="text-xl font-semibold">基本情報</h2>

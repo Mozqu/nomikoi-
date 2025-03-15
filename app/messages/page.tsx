@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { collection, query, where, orderBy, getDocs, getDoc, doc, limit, Timestamp } from "firebase/firestore"
+import { collection, query, where, orderBy, getDocs, getDoc, doc, limit, Timestamp, writeBatch, serverTimestamp } from "firebase/firestore"
 import { auth, db } from "@/app/firebase/config"
 import { onAuthStateChanged } from "firebase/auth"
 import { useRouter } from "next/navigation"
@@ -123,7 +123,14 @@ export default function MessagesPage() {
       try {
         setLoading(true);
         const roomsRef = collection(db, "message_rooms");
-        const q = query(roomsRef, where("user_ids", "array-contains", user.uid));
+        
+        // updated_atでソートするクエリを作成
+        const q = query(
+          roomsRef, 
+          where("user_ids", "array-contains", user.uid),
+          orderBy("updated_at", "desc") // 降順（最新順）でソート
+        );
+        
         const roomsSnap = await getDocs(q);
         
         console.log("Found rooms:", roomsSnap.size);
@@ -213,16 +220,29 @@ export default function MessagesPage() {
           const unreadSnap = await getDocs(unreadQuery);
           const unreadCount = unreadSnap.size;
           
+          // 訪問履歴を確認
+          const visitedUsers = roomData.visitedUsers || {};
+          const isNewRoom = !visitedUsers[user.uid];
+          
           roomsData.push({
             id: roomDoc.id,
             ...roomData,
+            updated_at: roomData.updated_at?.toDate?.() 
+              ? roomData.updated_at.toDate() 
+              : new Date(0), // updated_atがない場合は古い日付を設定
             partner_id: partnerId,
             partner_name: partnerName,
             partner_photo: partnerPhoto,
             lastMessage: lastMessage,
-            unreadCount: unreadCount // 未読メッセージ数を追加
+            unreadCount: unreadCount,
+            isNewRoom: isNewRoom
           });
         }
+        
+        // 念のため、JavaScriptでもソート
+        roomsData.sort((a, b) => {
+          return b.updated_at.getTime() - a.updated_at.getTime();
+        });
         
         console.log("Processed rooms data:", roomsData);
         setPartnerIds(partnerIdsArray);
@@ -271,6 +291,62 @@ export default function MessagesPage() {
     }
   }, [user, partner1Data, partner2Data, messageRooms, partnerIds])
 
+  // 一度だけ実行する初期化処理
+  useEffect(() => {
+    const initializeUpdatedAt = async () => {
+      if (!user) return;
+      
+      try {
+        const roomsRef = collection(db, "message_rooms");
+        const q = query(
+          roomsRef, 
+          where("user_ids", "array-contains", user.uid)
+        );
+        const roomsSnap = await getDocs(q);
+        
+        const batch = writeBatch(db);
+        let updateCount = 0;
+        
+        for (const roomDoc of roomsSnap.docs) {
+          const roomData = roomDoc.data();
+          
+          // updated_atフィールドがない場合のみ更新
+          if (!roomData.updated_at) {
+            // 最後のメッセージを取得して、その日時をupdated_atに設定
+            const messagesRef = collection(db, "message_rooms", roomDoc.id, "messages");
+            const messagesQuery = query(messagesRef, orderBy("created_at", "desc"), limit(1));
+            const messagesSnap = await getDocs(messagesQuery);
+            
+            if (!messagesSnap.empty) {
+              const lastMessage = messagesSnap.docs[0].data();
+              batch.update(roomDoc.ref, { 
+                updated_at: lastMessage.created_at 
+              });
+            } else {
+              // メッセージがない場合はルームの作成日時を使用
+              batch.update(roomDoc.ref, { 
+                updated_at: roomData.created_at || serverTimestamp() 
+              });
+            }
+            
+            updateCount++;
+          }
+        }
+        
+        if (updateCount > 0) {
+          await batch.commit();
+          console.log(`${updateCount}件のメッセージルームのupdated_atを初期化しました`);
+        }
+      } catch (error) {
+        console.error("updated_atの初期化に失敗:", error);
+      }
+    };
+    
+    if (user) {
+      initializeUpdatedAt();
+    }
+  }, [user]);
+
   if (!user) {
     return <div className="p-4">ログインが必要です</div>
   }
@@ -280,7 +356,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-2">
       <h1 className="text-2xl font-bold mb-4">メッセージ</h1>
       
       {loading ? (
@@ -293,16 +369,21 @@ export default function MessagesPage() {
             <Link
               key={room.id}
               href={`/messages/${room.id}`}
-              className="block p-2"
+              className="block p-1"
             >
               <div className="flex items-center gap-4">
-                <div className="relative w-12 h-12">
+                <div className="relative w-16 h-16">
                   <Image
                     src={room.partner_photo || "/placeholder.svg"}
                     alt={room.partner_name || "ユーザー"}
                     fill
-                    className="rounded-full object-cover"
+                    className="rounded-xl object-cover"
                   />
+                  {room.isNewRoom && (
+                    <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold rounded-full px-2 py-1">
+                      NEW
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium">{room.partner_name || "ユーザー"}</h3>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, getDoc, doc, where, getDocs, writeBatch } from "firebase/firestore"
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, getDoc, doc, where, getDocs, writeBatch, updateDoc } from "firebase/firestore"
 import { auth, db } from "@/app/firebase/config"
 import { onAuthStateChanged } from "firebase/auth"
 import Image from "next/image"
@@ -135,13 +135,23 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
       
       // Firestoreにメッセージを保存
       const messagesRef = collection(db!, "message_rooms", id, "messages")
-      await addDoc(messagesRef, {
+      
+      // 未読状態を明示的に設定
+      const messageData = {
         text: newMessage,
         created_at: serverTimestamp(),
         user_id: user.uid,
         user_name: userName,
         user_photo: user.photoURL || "/placeholder.svg",
-        read: false // 未読状態で保存
+        read: false
+      }
+      
+      await addDoc(messagesRef, messageData)
+
+      // メッセージルームのupdated_atを更新
+      const roomRef = doc(db!, "message_rooms", id)
+      await updateDoc(roomRef, {
+        updated_at: serverTimestamp()
       })
 
       // パートナーのユーザー情報を取得
@@ -218,6 +228,36 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
     
     return () => clearInterval(intervalId);
   }, [user, id, messages]);
+
+  // メッセージルームに入ったときに訪問履歴を記録
+  useEffect(() => {
+    if (!id || !user) return;
+
+    const updateVisitHistory = async () => {
+      try {
+        // メッセージルームのドキュメントを取得
+        const roomRef = doc(db!, "message_rooms", id);
+        const roomDoc = await getDoc(roomRef);
+        
+        if (roomDoc.exists()) {
+          // 訪問履歴を更新
+          const roomData = roomDoc.data();
+          const visitedUsers = roomData.visitedUsers || {};
+          
+          // 現在のユーザーが訪問済みでなければ更新
+          if (!visitedUsers[user.uid]) {
+            visitedUsers[user.uid] = serverTimestamp();
+            await updateDoc(roomRef, { visitedUsers });
+            console.log(`ユーザー ${user.uid} の訪問履歴を記録しました`);
+          }
+        }
+      } catch (error) {
+        console.error("訪問履歴の更新に失敗:", error);
+      }
+    };
+    
+    updateVisitHistory();
+  }, [id, user]);
 
   const formatRelativeTime = (dateString: string) => {
     try {

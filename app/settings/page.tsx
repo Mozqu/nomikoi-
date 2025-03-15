@@ -355,8 +355,10 @@ export default function SettingsPage() {
   const handleLogout = async () => {
     setIsLoading(true)
     try {
-      await signOut(auth)
-      router.push("/login")
+      if (auth) {
+        await signOut(auth)
+        router.push("/login")
+      }
     } catch (error) {
       console.error("ログアウトに失敗しました:", error)
     } finally {
@@ -369,10 +371,12 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const userRef = doc(db, "users", auth?.currentUser?.uid as string)
-        const userDoc = await getDoc(userRef)
-        if (userDoc.exists()) {
-          setUserData({ id: userDoc.id, ...userDoc.data() })
+        if (auth?.currentUser?.uid && db) {
+          const userRef = doc(db, "users", auth.currentUser.uid)
+          const userDoc = await getDoc(userRef)
+          if (userDoc.exists()) {
+            setUserData({ id: userDoc.id, ...userDoc.data() })
+          }
         }
       } catch (error) {
         console.error("ユーザー情報の取得に失敗しました:", error)
@@ -381,6 +385,22 @@ export default function SettingsPage() {
 
     fetchUser()
   }, [])
+
+  const handleSaveBio = async () => {
+    if (!auth?.currentUser?.uid || !db || !userData) return;
+    
+    try {
+      const userRef = doc(db, "users", auth.currentUser.uid)
+      await updateDoc(userRef, {
+        bio: userData.bio || "",
+        updatedAt: new Date()
+      })
+      alert("自己紹介を保存しました")
+    } catch (error) {
+      console.error("自己紹介の保存に失敗しました:", error)
+      alert("自己紹介の保存に失敗しました")
+    }
+  }
 
   return (
     
@@ -423,18 +443,12 @@ export default function SettingsPage() {
                 className="w-full mt-3 p-2 border border-gray-300 bg-transparent rounded-md"
                 rows={5}
                 placeholder="あなたについて教えて下さい"
-                value={userData?.bio}
+                value={userData?.bio || ""}
                 onChange={(e) => setUserData({ ...userData, bio: e.target.value })}
               />
               <Button 
                 className="w-full mt-3 neon-bg"
-                onClick={() => {
-                  console.log(userData)
-                  const userRef = doc(db, "users", auth?.currentUser?.uid as string)
-                  updateDoc(userRef, {
-                    bio: userData?.bio
-                  })
-                }}
+                onClick={handleSaveBio}
               >
                 保存
               </Button>
@@ -446,7 +460,7 @@ export default function SettingsPage() {
                 <OptionalStatusRadio 
                   key={key}
                   title={key}
-                  label={value.label}
+                  label={key}
                   options={value.options}
                   userData={userData} 
                 />
@@ -454,10 +468,48 @@ export default function SettingsPage() {
                 <OptionalStatusCheck 
                   key={key}
                   title={key}
-                  label={value.label}
+                  label={key}
                   options={value.options}
                   userData={userData}
                 />
+              ) : value.type === "text" ? (
+                <div key={key} className="p-4 space-y-4">
+                  <h2 className="text-xl font-bold">{value.label}</h2>
+                  <input
+                    type="text"
+                    className="w-full p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder={`${value.label}を入力してください`}
+                    value={userData?.profile?.[key] || ""}
+                    onChange={(e) => {
+                      setUserData({
+                        ...userData,
+                        profile: {
+                          ...userData?.profile,
+                          [key]: e.target.value
+                        }
+                      });
+                    }}
+                    onBlur={async (e) => {
+                      if (!auth?.currentUser?.uid || !db) return;
+                      try {
+                        const userRef = doc(db, "users", auth.currentUser.uid);
+                        await updateDoc(userRef, {
+                          [`profile.${key}`]: e.target.value,
+                          updatedAt: new Date()
+                        });
+                      } catch (error) {
+                        console.error(`${value.label}の更新に失敗しました:`, error);
+                      }
+                    }}
+                    style={{
+                      backgroundColor: "transparent",
+                      borderBottom: "1px solid white",
+                      outline: "none",
+                      boxShadow: "none",
+                      color: "#aaa"
+                    }}
+                  />
+                </div>
               ) : null
             ))}
 
