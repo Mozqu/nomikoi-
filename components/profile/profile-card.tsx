@@ -99,6 +99,9 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
 
     const handleScroll = (e: any) => {
         // スクロールイベントをデバウンス
+        if (isExpanded) {
+            return;
+        }
         if (scrollTimeout.current) {
             clearTimeout(scrollTimeout.current);
         }
@@ -242,28 +245,28 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                             >
 
 
-                                <div className="flex flex-row">
-                                    {/* 呑みスタンス */}
-                                    <section className="space-y-3 m-4">
-                                        <p className="text-sm">
-                                            {userData.bio}
-                                        </p>
-                                    </section>
-                                </div>
-
-                                {/* chart */}
-                                <section className="space-y-3 flex-1" onClick={() => handleClick()}>
-                                    <div className="w-full h-40 relative">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <RadarChart cx="50%" cy="50%" outerRadius="60%" data={profileData.personalityTraits}>
-                                                <PolarGrid stroke="#6f2cff" />
-                                                <PolarRadiusAxis domain={[0, 5]} tickCount={6} style={{ display: "none" }}/>
-                                                <PolarAngleAxis dataKey="name" tick={{ fill: "#c2b5ff", fontSize: 10 }} />
-                                                <Radar name="性格" dataKey="value" stroke="#fff" fill="#000" fillOpacity={0.6} />
-                                            </RadarChart>
-                                        </ResponsiveContainer>
-                                    </div>
+                            <div className="flex flex-row">
+                                {/* 呑みスタンス */}
+                                <section className="space-y-3 m-4">
+                                    <p className="text-sm">
+                                        {userData.bio}
+                                    </p>
                                 </section>
+                            </div>
+
+                            {/* chart */}
+                            <section className="space-y-3 flex-1" onClick={() => handleClick()}>
+                                <div className="w-full h-40 relative">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RadarChart cx="50%" cy="50%" outerRadius="60%" data={profileData.personalityTraits}>
+                                            <PolarGrid stroke="#6f2cff" />
+                                            <PolarRadiusAxis domain={[0, 5]} tickCount={6} style={{ display: "none" }}/>
+                                            <PolarAngleAxis dataKey="name" tick={{ fill: "#c2b5ff", fontSize: 10 }} />
+                                            <Radar name="性格" dataKey="value" stroke="#fff" fill="#000" fillOpacity={0.6} />
+                                        </RadarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </section>
 
 
                             <div style={{
@@ -309,11 +312,11 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 )}
 
                                 {/* お気に入りのバー */}
-                                {userData?.answers?.favorite_alcohol && (
+                                {userData?.answers?.favorite_alcohol.drinking_location_preference && (
                                 <section className="m-4 space-y-3">
                                     <h2 className="text-xl font-semibold">よく飲むお店</h2>
                                     <div className="flex flex-wrap gap-2">
-                                        {userData?.answers?.favorite_alcohol ? 
+                                        {userData?.answers?.favorite_alcohol && (
                                             Object.entries(userData.answers.favorite_alcohol.drinking_location_preference || {}).map(([alcoholName, details]) => (
                                             <Badge
                                                 key={alcoholName + "name"}
@@ -323,14 +326,50 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                                 {details}
                                             </Badge>
                                             ))
-                                        : 
-                                            <p className="text-[#c2b5ff]">データがありません</p>
-                                        }
-
+                                        )}
+                                    </div>
+                                </section>
+                                )}
+                            
+                                {/* お気に入りのエリア */}
+                                {userData?.answers?.favorite_alcohol.favorite_location && (
+                                <section className="m-4 space-y-3">
+                                    <h2 className="text-xl font-semibold">お気に入りのエリア</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {userData?.answers?.favorite_alcohol.favorite_location && (
+                                            Object.entries(userData.answers.favorite_alcohol.favorite_location || {}).map(([alcoholName, details]) => (
+                                                <Badge
+                                                    key={alcoholName + "name"}
+                                                    variant="secondary"
+                                                    className="text-white border-white/20 bg-white/5"
+                                                >
+                                                    {details}
+                                                </Badge>
+                                            ))
+                                        )}
                                     </div>
                                 </section>
                                 )}
 
+                                {/* お気に入りの時間帯 */}
+                                {userData?.answers?.favorite_alcohol.favorite_timezone && (
+                                <section className="m-4 space-y-3">
+                                    <h2 className="text-xl font-semibold">お気に入りの時間帯</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {userData?.answers?.favorite_alcohol.favorite_timezone && (
+                                            Object.entries(userData.answers.favorite_alcohol.favorite_timezone || {}).map(([alcoholName, details]) => (
+                                            <Badge
+                                                key={alcoholName + "name"}
+                                                variant="secondary"
+                                                className="text-white border-white/20 bg-white/5"
+                                            >   
+                                                {details}
+                                            </Badge>
+                                            ))
+                                        )}
+                                    </div>
+                                </section>
+                                )}
 
 
                                 <section className="m-4 space-y-3">
