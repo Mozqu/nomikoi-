@@ -71,7 +71,7 @@ export default function FlickingContents({ likes, type }: { likes: any[], type: 
 
     return (
         
-        <div className={`panel w-full h-full`}>
+        <div className={`panel w-full h-full overflow-y-auto z-10`}>
             {/* 各スライドを1ページ幅に固定 */}
             <div 
                 className="flex flex-wrap gap-4 w-full h-full" 

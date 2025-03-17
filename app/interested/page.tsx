@@ -204,7 +204,7 @@ export default function InterestedPage() {
                 </div>
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 overflow-hidden">
                 <Flicking
                     ref={flickingRef}
                     viewportTag="div"
