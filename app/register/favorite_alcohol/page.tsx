@@ -172,7 +172,7 @@ const questions: Record<number, Question> = {
     }, 
     4: {
         id: "favorite_location",
-        title: "飲み生息地、開拓したい街、好きな街などを選んでください",
+        title: "飲みたいエリア（駅名）を選んでください。例）普段飲むエリア、開拓したいエリア、好きなエリアなど※スキップも可能",
         type: "checklist" as QuestionType,
         options: [
           "新宿", "銀座", "東京", "横浜", "池袋", 
