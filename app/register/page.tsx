@@ -163,7 +163,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="flex-1 px-4 flex">
+        <div className="flex-1 px-4 flex overflow-scroll">
           <AnimatePresence mode="wait">
             <QuestionStep 
               key={step} 
@@ -172,7 +172,7 @@ export default function RegisterPage() {
             />
           </AnimatePresence>
         </div>
-        <div className="fixed bottom-0 w-full mt-auto py-4">
+        <div className="w-full mt-auto py-4">
           <Button
             onClick={isLastStep ? handleFinalStep : nextStep}
             disabled={!watch(questions[step].id)}

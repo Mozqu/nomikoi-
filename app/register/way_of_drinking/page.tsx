@@ -378,7 +378,7 @@ function QuestionStep({
         )}
       </div>
       {/* ボタン */}
-      <div className="p-4 bg-black/80 backdrop-blur-sm">
+      <div className="pt-4 bg-black/80 backdrop-blur-sm">
         <div className="container max-w-lg mx-auto">
           <Button
             onClick={async () => {
