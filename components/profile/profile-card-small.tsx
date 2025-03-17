@@ -90,8 +90,8 @@ export default function ProfileCardSmall({ user }: UserCardProps) {
       <div 
         className="relative rounded-xl "
         style={{
-            width: '180px',
-            height: '240px',
+            width: '160px',
+            height: '220px',
         }}
         onClick={handleClick}
       >
