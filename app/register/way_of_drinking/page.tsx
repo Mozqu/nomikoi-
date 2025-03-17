@@ -145,7 +145,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       <div className="w-full mt-auto py-4">
         <Button
           onClick={onNext}
-          className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+          className="w-full h-14 text-sm font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
         >
           プロフィールを入力する
         </Button>
@@ -352,13 +352,13 @@ function QuestionStep({
                     className="w-5 h-5 border-2 border-white rounded-full accent-pink-500"
                   />
                   <div className={`${question.id === "drinking_amount" ? "flex flex-col"  : ""}`}>
-                    <span className="text-lg">{label}</span>
+                    <span className="text-sm">{label}</span>
                     {/* 飲酒量の質問の時だけ補足をつける */}
                     {question.id === "drinking_amount" && (               
-                      <span className="block text-sm text-gray-400">{descriptions1[index]}</span>
+                      <span className="block text-xs text-gray-400">{descriptions1[index]}</span>
                     )}
                     {question.id === "drinking_amount" && (               
-                      <span className="block text-sm text-gray-400">{descriptions2[index]}</span>
+                      <span className="block text-xs text-gray-400">{descriptions2[index]}</span>
                     )}
                   </div>
                 </label>
@@ -392,7 +392,7 @@ function QuestionStep({
               }
             }}
             disabled={!isValid}
-            className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+            className="w-full h-14 text-sm font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
           >
             次へ
           </Button>

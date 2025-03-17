@@ -180,3 +180,9 @@
 .line-prompt-enter {
   animation: slideDown 0.3s ease-out;
 }
+
+
+.register {
+  background: inherit;
+}
+

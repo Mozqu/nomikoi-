@@ -402,6 +402,43 @@ export default function SettingsPage() {
     }
   }
 
+  // LogOutボタンコンポーネント
+  const LogoutButton = () => {
+    const router = useRouter()
+    
+    const handleLogout = async () => {
+      try {
+        // Firebaseからログアウト
+        if (auth) {
+          await signOut(auth)
+        }
+        
+        // セッションクッキーを削除するAPIを呼び出す
+        await fetch('/api/logout', {
+          method: 'POST',
+        })
+        
+        // ログインページにリダイレクト
+        router.push('/login')
+      } catch (error) {
+        console.error('ログアウトエラー:', error)
+        alert('ログアウトに失敗しました')
+      }
+    }
+    
+    return (
+      <button 
+        onClick={handleLogout}
+        className="flex items-center justify-between p-2 rounded-full"
+      >
+        <span className="flex items-center text-sm">
+          <LogOut className="mr-2" />
+          logout
+        </span>
+      </button>
+    )
+  }
+
   return (
     
     <>
@@ -416,6 +453,8 @@ export default function SettingsPage() {
           >
             <ChevronLeft className="h-6 w-6" />
           </Button>
+
+          <LogoutButton />
   
         </div>
 
