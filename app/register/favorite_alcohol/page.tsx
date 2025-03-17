@@ -414,7 +414,11 @@ function QuestionStep({
   console.log("isLastStep", isLastStep, totalSteps, currentQuestionNumber)
   useEffect(() => {
     if (question.type === 'checklist') {
-      setIsValid(Array.isArray(selectedItems) && selectedItems.length > 0);
+      if (question.id === 'favorite_location') {
+        setIsValid(Array.isArray(selectedItems) && selectedItems.length > 2);
+      } else {
+        setIsValid(Array.isArray(selectedItems) && selectedItems.length > 0);
+      }
     } else if (question.type === 'toggleList') {
       // 特別なオプションの選択状態を確認
       const hasAllOption = alcoholPreferences['全部好き！']?.subtypes !== undefined;
@@ -504,6 +508,7 @@ function QuestionStep({
   }
 
   const IconComponent = question.id === 'dislike_alcohol' ? X : Heart;
+
   const getIconStyle = (questionId: string) => {
     const baseStyle = "fill-current";
     const colorStyle = questionId === 'dislike_alcohol' 
@@ -543,7 +548,7 @@ function QuestionStep({
                   onClick={() => handleChecklistChange(option)}
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 
                     ${isSelected ? getBorderStyle(question.id) : "border-gray-600 hover:border-gray-400"}
-                    transition-colors cursor-pointer`}
+                    transition-colors cursor-pointer text-sm`}
                 >
                   {option}
                   <IconComponent
@@ -560,7 +565,8 @@ function QuestionStep({
               const uniqueKey = `${question.id}-toggle-${option.name || ''}-${index}`;
               const isSpecialOption = option.name === '全部好き！' || 
                                      option.name === 'どれもOK' || 
-                                     option.name === '特になし';
+                                     option.name === '特になし' ||
+                                     option.name === '特にこだわり無し';
               const isSelected = isSpecialOption 
                 ? alcoholPreferences[option.name as string]?.subtypes !== undefined
                 : (alcoholPreferences[option.name as string]?.subtypes || []).length > 0;
@@ -578,9 +584,10 @@ function QuestionStep({
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 
                       ${isSelected ? getBorderStyle(question.id) : "border-gray-600 hover:border-gray-400"}
                       ${isSpecialOption ? 'font-bold' : ''}
-                      transition-colors cursor-pointer`}
+                      transition-colors cursor-pointer text-sm`}
                   >
                     {option.name}
+
                     {!isSpecialOption && option.subtypes && option.subtypes.length > 0 && (
                       <ChevronDown className={`w-4 h-4 transition-transform ${openPopup === option.name ? 'rotate-180' : ''}`} />
                     )}

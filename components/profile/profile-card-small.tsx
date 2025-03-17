@@ -112,7 +112,7 @@ export default function ProfileCardSmall({ user }: UserCardProps) {
             />
           )}
           
-          {/* お気に入りボタン */}
+          {/* お気に入りボタン 
           <div className="absolute top-2 right-2">
             <Button 
               variant="ghost" 
@@ -126,6 +126,7 @@ export default function ProfileCardSmall({ user }: UserCardProps) {
               <Star className="h-4 w-4" />
             </Button>
           </div>
+          */}
     
           {/* NEWバッジ 
           {isNew && (

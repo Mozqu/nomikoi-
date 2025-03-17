@@ -80,7 +80,10 @@ export default function SignupPage() {
     try {
       const provider = new GoogleAuthProvider()
       const result = await signInWithPopup(auth, provider)
-      await saveUserToFirestore(result.user)
+      await saveUserToFirestore({
+        uid: result.user.uid,
+        email: result.user.email,
+      })
       router.push("/register")
     } catch (error) {
       setError("Googleでのサインアップに失敗しました。")
@@ -106,6 +109,7 @@ export default function SignupPage() {
           </p>
         ) : (
           <div className="space-y-4">
+            {/* メールアドレスで登録 
             <form onSubmit={handleSignup} className="space-y-4">
               <Input
                 type="email"
@@ -125,6 +129,7 @@ export default function SignupPage() {
                 メールアドレスで登録
               </Button>
             </form>
+            
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -134,6 +139,7 @@ export default function SignupPage() {
                 <span className="px-2 bg-gray-900 text-gray-400">または</span>
               </div>
             </div>
+            */}
 
             <Button
               type="button"

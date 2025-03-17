@@ -172,11 +172,11 @@ export default function RegisterPage() {
             />
           </AnimatePresence>
         </div>
-        <div className="w-full mt-auto py-4">
+        <div className="w-full mt-auto p-4">
           <Button
             onClick={isLastStep ? handleFinalStep : nextStep}
             disabled={!watch(questions[step].id)}
-            className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+            className="w-full h-14 text-sm font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
           >
             次へ
           </Button>
@@ -236,7 +236,7 @@ function QuestionRenderer({
           {question.options?.map((option) => (
             <label
               key={option}
-              className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-4 hover:bg-white/5 transition-colors cursor-pointer"
+              className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-3 hover:bg-white/5 transition-colors cursor-pointer"
             >
               <input
                 type="radio"
@@ -244,7 +244,7 @@ function QuestionRenderer({
                 {...register(question.id)}
                 className="w-6 h-6 border-2 border-white rounded-full"
               />
-              <span className="text-lg">{option}</span>
+              <span className="text-sm">{option}</span>
             </label>
           ))}
         </div>
@@ -256,15 +256,15 @@ function QuestionRenderer({
           {question.options?.map((option) => (
             <label
               key={option}
-              className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-4 hover:bg-white/5 transition-colors cursor-pointer"
+              className="flex items-center space-x-4 rounded-lg border-2 border-gray-800 p-3 hover:bg-white/5 transition-colors cursor-pointer"
             >
               <input
                 type="checkbox"
                 value={option}
                 {...register(question.id)}
-                className="w-6 h-6 sshrink-0 border-2 border-white rounded"
+                className="w-6 h-6 shrink-0 border-2 border-white rounded"
               />
-              <span className="text-lg">{option}</span>
+              <span className="text-sm">{option}</span>
             </label>
           ))}
         </div>
@@ -275,7 +275,7 @@ function QuestionRenderer({
         <Input
           type="date"
           {...register(question.id)}
-          className="w-full bg-transparent border-2 border-gray-800 p-4 text-xl"
+          className="w-full bg-transparent border-2 border-gray-800 p-3 text-xl"
         />
       )
 
@@ -286,7 +286,7 @@ function QuestionRenderer({
           min={question.min}
           max={question.max}
           {...register(question.id)}
-          className="w-full bg-transparent border-2 border-gray-800 p-4 text-xl"
+          className="w-full bg-transparent border-2 border-gray-800 p-3 text-xl"
         />
       )
 
@@ -294,7 +294,7 @@ function QuestionRenderer({
       return (
         <textarea
           {...register(question.id)}
-          className="w-full bg-transparent border-2 border-gray-800 p-4 text-xl min-h-[150px] rounded"
+          className="w-full bg-transparent border-2 border-gray-800 p-3 text-xl min-h-[150px] rounded"
           placeholder={question.description}
         />
       )
