@@ -74,10 +74,14 @@ export default function FlickingContents({ likes, type }: { likes: any[], type: 
         <div className={`panel w-full h-full overflow-y-auto z-10`}>
             {/* 各スライドを1ページ幅に固定 */}
             <div 
-                className="flex flex-wrap gap-4 w-full h-full" 
+                className="flex flex-wrap w-full h-full" 
             >
                 {likes.length > 0 ? likes.slice(0, 5).map((like) => (
-                    <div key={like.id} className="">
+                    <div key={like.id} className="p-2"
+                        style={{
+                            width: '50%',
+                        }}
+                    >
                         <LikeItem like={like} type={type} />
                         {/* メッセージボタン */}
                         {type === 'matched' && (
