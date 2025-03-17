@@ -329,9 +329,9 @@ function QuestionStep({
     >
       <h1 className="text-2xl font-bold mt-6 mb-6">{question.title}</h1>
 
-      <div className="flex-1 pb-24">
-        <div className="flex flex-col ">
-          <div className="flex-1 space-y-4 overflow-y-auto">
+      <div className="flex-1 pb-24 overflow-y-auto">
+        <div className="flex flex-col">
+          <div className="flex-1 space-y-4">
             {Object.entries(question.options as radioItem).map(([label, value], index) => {
               const uniqueKey = `${question.id}-radio-${label}-${index}`;
               return (
@@ -365,27 +365,6 @@ function QuestionStep({
               );
             })}
           </div>
-          {/* ボタン */}
-          <div className="p-4 bg-black/80 backdrop-blur-sm">
-            <div className="container max-w-lg mx-auto">
-              <Button
-                onClick={async () => {
-                  console.log(watch())
-                  if (isLastStep) {
-                    const formData = watch();
-                    await handleSubmitForm(formData, '/register/favorite_alcohol', isLastStep, router);
-                  } else {
-                    console.log(formData)
-                    nextStep()
-                  }
-                }}
-                disabled={!isValid}
-                className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
-              >
-                次へ
-              </Button>
-            </div>
-          </div>   
 
 
         </div>
@@ -398,6 +377,28 @@ function QuestionStep({
           </div>
         )}
       </div>
+      {/* ボタン */}
+      <div className="p-4 bg-black/80 backdrop-blur-sm">
+        <div className="container max-w-lg mx-auto">
+          <Button
+            onClick={async () => {
+              console.log(watch())
+              if (isLastStep) {
+                const formData = watch();
+                await handleSubmitForm(formData, '/register/favorite_alcohol', isLastStep, router);
+              } else {
+                console.log(formData)
+                nextStep()
+              }
+            }}
+            disabled={!isValid}
+            className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+          >
+            次へ
+          </Button>
+        </div>
+      </div>   
+
     </motion.div>
   )
 }
