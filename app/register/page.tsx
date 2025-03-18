@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useForm, FormProvider, useFormContext } from "react-hook-form"
 import { ChevronLeft } from "lucide-react"
@@ -76,6 +76,7 @@ const questions: Record<number, Question> = {
 }
 
 export default function RegisterPage() {
+  const [isAgeValid, setIsAgeValid] = useState(true)
   const router = useRouter()
   const [step, setStep] = useState(1)
   const methods = useForm<FormData>({
@@ -87,9 +88,6 @@ export default function RegisterPage() {
     }
   })
   const { handleSubmit, watch } = methods
-
-  // デバッグ用
-  console.log('Current form values:', watch())
 
   const onSubmit = async (data: FormData) => {
     if (!auth.currentUser) {
@@ -141,6 +139,33 @@ export default function RegisterPage() {
 
   const isLastStep = step === 4
 
+  useEffect(() => {
+    console.log('isAgeValid:', isAgeValid)
+    console.log('watch:', watch(questions[step].id))
+  }, [isAgeValid])
+
+  useEffect(() => {
+    // 生年月日のステップでのみ実行
+    if (step === 2) {
+      const birthdate = watch('birthdate');
+      if (birthdate) {
+        const birthDate = new Date(birthdate);
+        const today = new Date();
+        
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        
+        // 状態を更新
+        setIsAgeValid(age >= 20);
+        console.log('年齢チェック:', age, '歳, 有効:', age >= 20);
+      }
+    }
+  }, [watch('birthdate'), step]);
+
   return (
     <FormProvider {...methods}>
       <div className="min-h-screen bg-black text-white flex flex-col overflow-y-auto">
@@ -169,13 +194,15 @@ export default function RegisterPage() {
               key={step} 
               question={questions[step]} 
               onNext={step === 4 ? handleFinalStep : nextStep} 
+              isAgeValid={isAgeValid}
+              setIsAgeValid={setIsAgeValid}
             />
           </AnimatePresence>
         </div>
         <div className="w-full mt-auto p-4 z-10">
           <Button
             onClick={isLastStep ? handleFinalStep : nextStep}
-            disabled={!watch(questions[step].id)}
+            disabled={!watch(questions[step].id) || (step === 2 && !isAgeValid)}
             className="w-full h-14 text-sm font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
           >
             次へ
@@ -187,7 +214,17 @@ export default function RegisterPage() {
 }
 
 // 質問表示コンポーネント
-function QuestionStep({ question, onNext }: { question: Question; onNext: () => void }) {
+function QuestionStep({ 
+  question, 
+  onNext, 
+  isAgeValid, 
+  setIsAgeValid 
+}: { 
+  question: Question; 
+  onNext: () => void; 
+  isAgeValid: boolean;
+  setIsAgeValid: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
   const { register, watch } = useFormContext()
   const value = watch(question.id)
 
@@ -204,6 +241,8 @@ function QuestionStep({ question, onNext }: { question: Question; onNext: () => 
         question={question} 
         register={register} 
         value={value} 
+        isAgeValid={isAgeValid}
+        setIsAgeValid={setIsAgeValid}
       />
 
       {question.warning && (
@@ -223,12 +262,43 @@ function QuestionStep({ question, onNext }: { question: Question; onNext: () => 
 function QuestionRenderer({ 
   question, 
   register, 
-  value 
+  value,  
+  isAgeValid,
+  setIsAgeValid
 }: { 
   question: Question;
   register: any;
   value: any;
+  isAgeValid: boolean;
+  setIsAgeValid: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value
+    
+    if (!inputValue) {
+      setIsAgeValid(false)
+      return
+    }
+    
+    const birthDate = new Date(inputValue)
+    const today = new Date()
+    
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const m = today.getMonth() - birthDate.getMonth()
+    
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+
+    console.log('年齢:', age)
+    
+    if (age < 20) {
+      setIsAgeValid(false)
+    } else {
+      setIsAgeValid(true)
+    }
+  } 
+
   switch (question.type) {
     case 'radio':
       return (
@@ -272,11 +342,39 @@ function QuestionRenderer({
 
     case 'date':
       return (
-        <Input
-          type="date"
-          {...register(question.id)}
-          className="w-full bg-transparent border-2 border-gray-800 p-3 text-xl"
-        />
+        <div>
+          <Input
+            type="date"
+            style={{
+              borderColor: isAgeValid ? "gray" : "red",
+              borderWidth: "2px"
+            }}
+            onChange={(e) => {
+              handleChange(e);
+            }}
+            {...register(question.id, {
+              validate: (value) => {
+                if (!value) return false;
+                
+                const birthDate = new Date(value);
+                const today = new Date();
+                
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const m = today.getMonth() - birthDate.getMonth();
+                
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                  age--;
+                }
+                
+                return age >= 20;
+              }
+            })}
+            className="w-full bg-transparent p-3 text-xl"
+          />
+          {!isAgeValid && (
+            <p className="text-red-500 mt-2 text-sm">※20歳以上である必要があります</p>
+          )}
+        </div>
       )
 
     case 'number':
