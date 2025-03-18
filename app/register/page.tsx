@@ -172,7 +172,7 @@ export default function RegisterPage() {
             />
           </AnimatePresence>
         </div>
-        <div className="w-full mt-auto p-4">
+        <div className="w-full mt-auto p-4 z-10">
           <Button
             onClick={isLastStep ? handleFinalStep : nextStep}
             disabled={!watch(questions[step].id)}
