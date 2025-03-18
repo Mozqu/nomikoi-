@@ -183,7 +183,7 @@ export default function RegisterPage() {
             <motion.div
               initial={{ width: "0%" }}
               animate={{ width: `${(step / 4) * 100}%` }}
-              className="absolute left-0 top-0 h-full bg-gradient-to-r from-pink-500 to-purple-600"
+              className="absolute left-0 top-0 h-full neon-bg"
             />
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function RegisterPage() {
           <Button
             onClick={isLastStep ? handleFinalStep : nextStep}
             disabled={!watch(questions[step].id) || (step === 2 && !isAgeValid)}
-            className="w-full h-14 text-sm font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+            className="w-full h-14 text-sm font-medium neon-bg"
           >
             次へ
           </Button>

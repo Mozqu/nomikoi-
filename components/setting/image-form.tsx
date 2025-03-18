@@ -131,6 +131,95 @@ export default function ImageForm() {
 
     const router = useRouter()
 
+    // 改善されたダイアログコンポーネント
+    const showDeleteConfirmationDialog = (onConfirm: () => void) => {
+        const dialog = document.createElement('dialog');
+        
+        // 洗練されたスタイルを適用
+        dialog.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-0 rounded-xl shadow-2xl backdrop-filter backdrop-blur-sm bg-opacity-90 bg-black text-white border border-gray-700 z-50 w-[90%] max-w-md overflow-hidden';
+        
+        dialog.innerHTML = `
+            <div class="p-6 space-y-4">
+                <div class="flex items-center justify-center mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-center">画像を削除しますか?</h3>
+                <p class="text-gray-400 text-center text-sm">この操作は取り消せません。</p>
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button class="w-full px-4 py-3 text-sm font-medium rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors" id="cancel">
+                        キャンセル
+                    </button>
+                    <button class="w-full px-4 py-3 text-sm font-medium rounded-lg bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-700 hover:to-red-600 transition-colors" id="confirm">
+                        削除する
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // ダイアログを表示する前にアニメーションのためのクラスを追加
+        document.body.appendChild(dialog);
+        
+        // アニメーション用のスタイルシートを追加
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translate(-50%, -40%); }
+                to { opacity: 1; transform: translate(-50%, -50%); }
+            }
+            
+            dialog {
+                animation: fadeIn 0.3s ease-out forwards;
+            }
+            
+            dialog::backdrop {
+                background-color: rgba(0, 0, 0, 0.7);
+                transition: opacity 0.3s ease;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // ダイアログを表示
+        dialog.showModal();
+        
+        // ボタンのイベントリスナー
+        const cancelButton = dialog.querySelector('#cancel');
+        const confirmButton = dialog.querySelector('#confirm');
+        
+        cancelButton?.addEventListener('click', () => {
+            dialog.classList.add('fade-out');
+            dialog.close();
+            document.body.removeChild(dialog);
+            document.head.removeChild(style);
+        });
+        
+        confirmButton?.addEventListener('click', () => {
+            dialog.close();
+            document.body.removeChild(dialog);
+            document.head.removeChild(style);
+            onConfirm();
+        });
+        
+        // バックドロップクリックで閉じる（オプション）
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
+                dialog.close();
+                document.body.removeChild(dialog);
+                document.head.removeChild(style);
+            }
+        });
+    };
+
+    // 使用例
+    const handleDeleteButtonClick = () => {
+        showDeleteConfirmationDialog(() => {
+            // 削除確認後の処理
+            console.log('画像を削除しました');
+            // ここに画像削除のロジックを追加
+        });
+    };
+
     return (
         
 
@@ -157,56 +246,7 @@ export default function ImageForm() {
                       alt={`Photo ${index + 1}`}
                       fill
                       className="object-cover rounded-lg"
-                      onClick={async () => {
-                        console.log("画像を削除します");
-                        try {
-                          if (!auth?.currentUser) return;
-                          
-                          // 削除確認モーダルを表示
-                          const dialog = document.createElement('dialog');
-                          dialog.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-6 bg-white rounded-lg shadow-xl';
-                          
-                          dialog.innerHTML = `
-                            <div class="space-y-4">
-                              <h3 class="text-lg font-medium">画像を削除しますか?</h3>
-                              <p class="text-gray-500">この操作は取り消せません。</p>
-                              <div class="flex justify-end gap-3">
-                                <button class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg" id="cancel">
-                                  キャンセル
-                                </button>
-                                <button class="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg" id="confirm">
-                                  削除する
-                                </button>
-                              </div>
-                            </div>
-                          `;
-
-                          document.body.appendChild(dialog);
-                          dialog.showModal();
-
-                          const result = await new Promise((resolve) => {
-                            dialog.querySelector('#confirm')?.addEventListener('click', () => resolve(true));
-                            dialog.querySelector('#cancel')?.addEventListener('click', () => resolve(false));
-                          });
-
-                          dialog.close();
-                          document.body.removeChild(dialog);
-
-                          if (!result) return;
-                          
-                          // Storageから画像を削除
-                          const imageRef = ref(storage, `profile-image/${auth.currentUser.uid}/${photo.id}`);
-                          await deleteObject(imageRef);
-                          
-                          // 画像リストから削除
-                          setPhotos(prev => prev.filter(p => p.id !== photo.id));
-                          console.log("画像を削除しました");
-                        } catch (error) {
-                          console.error("画像の削除に失敗しました:", error);
-                          alert("画像の削除に失敗しました");
-                        }
-                      }}
-
+                      onClick={handleDeleteButtonClick}
                     />
                     <button 
                       className="absolute top-2 right-2 p-1 bg-black/50 rounded-full z-index-10"
