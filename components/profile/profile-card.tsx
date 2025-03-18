@@ -80,11 +80,88 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
         ]
     }
     const [isExpanded, setIsExpanded] = useState(true);
+    const [isShrinked, setIsShrinked] = useState(false);
+    const startY = useRef<number | null>(null);
+    const showContentsRef = useRef<HTMLDivElement>(null);
+    {/* タッチイベントハンドラーの追加 
+    // タッチイベントハンドラーの追加
+    const handleTouchStart = (e: React.TouchEvent) => {
+      startY.current = e.touches[0].clientY;
+      console.log('タッチ開始:', startY.current);
+    };
 
+    const handleTouchMove = (e: React.TouchEvent) => {
+      if (!startY.current) return;
+      
+      const currentY = e.touches[0].clientY;
+      const diffY = currentY - startY.current; // 下スワイプが正の値になるように計算
+      
+      console.log('タッチ移動中:', {
+        startY: startY.current,
+        currentY,
+        diffY,
+        isExpanded
+      });
+      
+      // diffYが正の値なら下スワイプ、負の値なら上スワイプ
+      if (diffY > 50 && isExpanded) {
+        // 下スワイプで開いている状態なら閉じる
+        console.log('下にスワイプ: カードを閉じます');
+        setIsExpanded(false);
+        startY.current = null;
+      } else if (diffY < -50 && !isExpanded) {
+        // 上スワイプで閉じている状態なら開く
+        console.log('上にスワイプ: カードを開きます');
+        setIsExpanded(true);
+        startY.current = null;
+      }
+    };
+
+    const handleTouchEnd = () => {
+      console.log('タッチ終了');
+      startY.current = null;
+    };
+
+    */}
     const handleClick = () => {
-      setIsExpanded(!isExpanded);
-      if (!isExpanded) {
-        // hideContentsの要素を取得して最上部までスクロール
+        console.log('クリックでの切り替え:', !isExpanded ? '開く' : '閉じる');
+        if (isShrinked) {
+            setIsExpanded(true);
+            setIsShrinked(false);
+        } else {
+            setIsExpanded(!isExpanded);
+        }
+        if (!isExpanded) {
+          // hideContentsの要素を取得して最上部までスクロール
+          const hideContents = document.querySelector('#hide-contents');
+          if (hideContents) {
+            hideContents.scrollTo({
+              top: 0,
+              behavior: 'smooth'
+            });
+          }
+        }
+      };
+  
+    const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    const handleScroll = (e: any) => {
+        // スクロールイベントをデバウンス
+        if (scrollTimeout.current) {
+            clearTimeout(scrollTimeout.current);
+        }
+        
+        scrollTimeout.current = setTimeout(() => {
+            console.log('スクロール位置:', e.target.scrollTop);
+            // スクロール位置が0（一番上）の場合、isExpandedをfalseに設定
+            if (e.target.scrollTop < 0.5) {
+                console.log('最上部でのスクロール: カードを閉じます');
+                setIsExpanded(!isExpanded);
+            }
+        }, 100); // 100ミリ秒のデバウンス
+    }
+
+    const handleScrollDown = (e: any) => {
         const hideContents = document.querySelector('#hide-contents');
         if (hideContents) {
           hideContents.scrollTo({
@@ -92,27 +169,11 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
             behavior: 'smooth'
           });
         }
-      }
-    };
-
-    const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
-
-    const handleScroll = (e: any) => {
-        // スクロールイベントをデバウンス
-        if (isExpanded) {
-            return;
-        }
-        if (scrollTimeout.current) {
-            clearTimeout(scrollTimeout.current);
-        }
-        
-        scrollTimeout.current = setTimeout(() => {
-            // スクロール位置が0（一番上）の場合、isExpandedをfalseに設定
-            if (e.target.scrollTop < 0.5) {
-                setIsExpanded(!isExpanded);
-            }
-        }, 100); // 100ミリ秒のデバウンス
     }
+
+    useEffect(() => {
+        setIsShrinked(false);
+    }, [isExpanded]);
 
     const [imageIndex, setImageIndex] = useState(0);
 
@@ -166,7 +227,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             id="card-container" 
-            className="w-full h-full overflow-hidden rounded-2xl relative" 
+            className="w-full h-full overflow-hidden rounded-2xl relative"
             >
                 {/* like action */}
                 {!isOwnProfile && (
@@ -200,7 +261,6 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                     </div>
                     <div
                         style={{
-                            
                             transition: "all 0.5s ease-in-out",
                             flex: isExpanded ? 0 : 1,
                             background: "rgba(0, 0, 0, 0.6)",
@@ -212,20 +272,74 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                         }}
                         className={`flex flex-col shadow-black-bg rounded-2xl ${isExpanded ? "expanded-card" : ""}`}
                         >
+
+
                         
                         {/* show contents */}
                         <div 
-                            className="p-4 rounded-2xl"
+                            ref={showContentsRef}
+                            className="pt-4 px-4 pb-2 rounded-2xl"
                             style={{
                                 transition: "all 0.5s ease-in-out",
                             }}
-                            onClick={() => handleClick()}>
+                            onClick={() => handleClick()}
+                            onTouchStart={(e) => {
+                                // イベントバブリングを防止せず、親要素のハンドラも実行されるようにする
+                                startY.current = e.touches[0].clientY;
+                                console.log('showContents タッチ開始:', startY.current);
+                            }}
+                            onTouchMove={(e) => {
+                                if (!startY.current) return;
+                                
+                                const currentY = e.touches[0].clientY;
+                                const diffY = currentY - startY.current;
+                                
+                                console.log('showContents タッチ移動:', {
+                                    startY: startY.current,
+                                    currentY,
+                                    diffY,
+                                    isExpanded
+                                });
+                                
+                                if (isExpanded) { // 普通の状態
+                                    if (diffY > 30) {
+                                        setIsShrinked(true);
+                                    } else if (diffY < -30) {
+                                        console.log('showContents 上にスワイプ: カードを開きます');
+                                        setIsExpanded(false);
+                                        setIsShrinked(false);
+                                        startY.current = null;
+                                    }
+                                } else{ // 大きい状態
+                                    if (diffY > 30) {
+                                        console.log('showContents 下にスワイプ: カードを閉じます');
+                                        setIsExpanded(true);
+                                        startY.current = null;
+                                    }
+                                }
+
+                                
+
+                            }}
+                            onTouchEnd={() => {
+                                console.log('showContents タッチ終了');
+                                startY.current = null;
+                            }}
+                        >
+                            <div className="absolute top-0 left-0 p-2 flex justify-center items-center w-full">
+                                <span className="block h-1 w-10 bg-white rounded-full"></span>
+                            </div>
+
+
+                                
                             <p className=" text-2xl">
                                 {userData?.name || "Loading..."} (
                                     {calculateAge(userData?.birthday) || ""}
                                 )
                             </p>
 
+
+                            
                             <p className="text-sm">
                                 {basicInfo?.居住地}
                             </p>
@@ -238,37 +352,41 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                         <div 
                             id="hide-contents"
                             style={{
-                            overflow: isExpanded ? "hidden" : "scroll",
-                            transition: "all 0.5s ease-in-out",
+                                overflow: isExpanded ? "hidden" : "scroll",
+                                transition: "all 0.5s ease-in-out",
+                                transform: isShrinked ? "translateY(100%)" : "translateY(0)",
+                                opacity: isShrinked ? 0 : 1,
+                                position: "relative",
                             }}
                             onScroll={(e) => handleScroll(e)}
-                            >
+                        >
 
+                            <div className="flex">
+                                <div className="flex flex-row">
+                                    {/* 呑みスタンス */}
 
-                            <div className="flex flex-row">
-                                {/* 呑みスタンス */}
-                                <section className="space-y-3 m-4">
-                                    <p className="text-sm">
-                                        {userData.bio}
-                                    </p>
-                                </section>
-                            </div>
-
-                            {/* chart */}
-                            <section className="space-y-3 flex-1" onClick={() => handleClick()}>
-                                <div className="w-full h-40 relative">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <RadarChart cx="50%" cy="50%" outerRadius="60%" data={profileData.personalityTraits}>
-                                            <PolarGrid stroke="#6f2cff" />
-                                            <PolarRadiusAxis domain={[0, 5]} tickCount={6} style={{ display: "none" }}/>
-                                            <PolarAngleAxis dataKey="name" tick={{ fill: "#c2b5ff", fontSize: 10 }} />
-                                            <Radar name="性格" dataKey="value" stroke="#fff" fill="#000" fillOpacity={0.6} />
-                                        </RadarChart>
-                                    </ResponsiveContainer>
                                 </div>
-                            </section>
 
+                                {/* chart */}
+                                <section
+                                    style={{
+                                        transition: "all 0.3s ease-in-out",
+                                        maxHeight: isShrinked ? "0" : "300px",
+                                    }}
+                                    className="space-y-3 flex-1" onClick={() => handleClick()}>
+                                    <div className="w-full h-40 relative">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <RadarChart cx="50%" cy="50%" outerRadius="60%" data={profileData.personalityTraits}>
+                                                <PolarGrid stroke="#6f2cff" />
+                                                <PolarRadiusAxis domain={[0, 5]} tickCount={6} style={{ display: "none" }}/>
+                                                <PolarAngleAxis dataKey="name" tick={{ fill: "#c2b5ff", fontSize: 10 }} />
+                                                <Radar name="性格" dataKey="value" stroke="#fff" fill="#000" fillOpacity={0.6} />
+                                            </RadarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </section>
 
+                            </div>
                             <div style={{
                                 height: isExpanded ? "0px" : "500px",
                                 transition: "all 0.5s ease-in-out",
@@ -290,25 +408,31 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 </section>
                                 )}
 
+                                <section className="space-y-3 m-4">
+                                    <p className="text-sm">
+                                        {userData.bio}
+                                    </p>
+                                </section>
+
                                 {/* 苦手なお酒 */}
                                 {userData?.answers?.favorite_alcohol && (
 
-                                <section className="m-4 space-y-3">
-                                    <h2 className="text-xl font-semibold">苦手なお酒</h2>
-                                    <div className="flex flex-wrap gap-2">
-                                        {userData?.answers?.favorite_alcohol && (
-                                        Object.entries(userData.answers.favorite_alcohol.dislike_alcohol || {}).map(([alcoholName, details]) => (
-                                        <Badge
-                                            key={alcoholName + "name"}
-                                            variant="secondary"
-                                            className="text-white border-white/20 bg-white/5"
-                                        >
-                                            {details}
-                                        </Badge>
-                                        ))
-                                        )}
-                                    </div>
-                                </section>
+                                    <section className="m-4 space-y-3">
+                                        <h2 className="text-xl font-semibold">苦手なお酒</h2>
+                                        <div className="flex flex-wrap gap-2">
+                                            {userData?.answers?.favorite_alcohol && (
+                                                Object.entries(userData.answers.favorite_alcohol.dislike_alcohol || {}).map(([alcoholName, details]) => (
+                                                <Badge
+                                                    key={alcoholName + "name"}
+                                                    variant="secondary"
+                                                    className="text-white border-white/20 bg-white/5"
+                                                >
+                                                    {details}
+                                                </Badge>
+                                                ))
+                                            )}
+                                        </div>
+                                    </section>
                                 )}
 
                                 {/* お気に入りのバー */}

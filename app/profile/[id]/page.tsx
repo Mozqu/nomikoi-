@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ChevronLeft, Settings } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -80,6 +80,8 @@ export default function ProfilePage() {
   }, [params.id])
 
   if (!userData) return <div>Loading...</div>
+
+  
 
   return (
     <>

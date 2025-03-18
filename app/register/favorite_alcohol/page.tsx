@@ -172,7 +172,8 @@ const questions: Record<number, Question> = {
     }, 
     4: {
         id: "favorite_location",
-        title: "飲みたいエリア（駅名）を選んでください。例）普段飲むエリア、開拓したいエリア、好きなエリアなど※スキップも可能",
+        title: "飲みたいエリア（駅名）を選んでください。",
+        description: "例）普段飲むエリア、開拓したいエリア、好きなエリアなど※スキップも可能",
         type: "checklist" as QuestionType,
         options: [
           "新宿", "銀座", "東京", "横浜", "池袋", 
@@ -216,12 +217,12 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         次に、あなたの好みについて教えて下さい！
       </h1>
       <p className="text-gray-400">
-        
+        ※後からでも編集可能です。
       </p>
       <div className="w-full mt-auto py-4">
         <Button
           onClick={onNext}
-          className="w-full h-14 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+          className="w-full h-14 text-lg font-medium neon-bg"
         >
           好みを入力する
         </Button>
@@ -249,7 +250,7 @@ export default function RegisterPage() {
   // 開発環境でのみデバッグログを表示
   if (process.env.NODE_ENV === 'development') {
 
-}
+  }
 
   const nextStep = () => {
     // フォームの現在の値を保存
@@ -303,7 +304,7 @@ export default function RegisterPage() {
                 <motion.div
                   initial={{ width: "0%" }}
                   animate={{ width: `${(step / totalSteps) * 100}%` }}
-                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-pink-500 to-purple-600"
+                  className="absolute left-0 top-0 h-full neon-bg"
                 />
               </div>
             </div>
@@ -400,6 +401,7 @@ function QuestionStep({
   const { register, setValue, watch } = useFormContext()
   const value = watch(question.id)
   const [isValid, setIsValid] = useState(false)
+  const [isLocationSkip, setIsLocationSkip] = useState(true)
   const [openPopup, setOpenPopup] = useState<string | null>(null)
   const [selectedItems, setSelectedItems] = useState<string[]>(value || [])
   const [alcoholPreferences, setAlcoholPreferences] = useState<
@@ -413,9 +415,14 @@ function QuestionStep({
   const isLastStep = Number(currentQuestionNumber) === totalSteps
   console.log("isLastStep", isLastStep, totalSteps, currentQuestionNumber)
   useEffect(() => {
+
+    if (selectedItems.length === 0) {
+      setIsValid(false)
+    }
+    
     if (question.type === 'checklist') {
       if (question.id === 'favorite_location') {
-        setIsValid(Array.isArray(selectedItems) && selectedItems.length > 2);
+        setIsValid(Array.isArray(selectedItems) && selectedItems.length > 0);
       } else {
         setIsValid(Array.isArray(selectedItems) && selectedItems.length > 0);
       }
@@ -442,7 +449,9 @@ function QuestionStep({
   }, [question.type, selectedItems, alcoholPreferences, value]);
 
   useEffect(() => {
-  }, [isValid])
+  }, [isValid
+
+  ])
 
   useEffect(() => {
     console.log("isLastStep", isLastStep, totalSteps)
@@ -534,7 +543,9 @@ function QuestionStep({
       className="w-full flex flex-col h-[calc(100vh-100px)]"
     >
       <h1 className="text-2xl font-bold mt-6 mb-6">{question.title}</h1>
-
+      {question.description && (  
+        <p className="text-gray-400 mb-6">{question.description}</p>
+      )}
       <div className="flex-1 overflow-y-auto pb-24">
         <div className="flex flex-wrap gap-4">
           {question.type === 'checklist' ? (
@@ -700,7 +711,25 @@ function QuestionStep({
           )}
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm">
             <div className="container max-w-lg mx-auto">
-              <Button
+              {question.id === 'favorite_location' ?(
+                <Button
+                  onClick={async () => {
+                    console.log("formdata", watch())
+                    console.log("isLastStep", isLastStep)
+                    if (isLastStep) {
+                      const formData = watch();
+                      console.log("formData", formData)
+                      await handleSubmitForm(formData, '/register/upload-profile-images', isLastStep, router);
+                    } else {
+                      nextStep()
+                    }
+                  }}
+                  className={`w-full h-14 text-lg hover:from-pink-600 hover:to-purple-700 ${isValid ? "neon-bg" : "emerald-bg"}`}
+                >
+                  {isValid ? "次へ" : "スキップ"}
+                </Button>
+              ) : (
+                <Button
                 onClick={async () => {
                   console.log("formdata", watch())
                   console.log("isLastStep", isLastStep)
@@ -712,11 +741,12 @@ function QuestionStep({
                     nextStep()
                   }
                 }}
-                disabled={!isValid}
+                disabled={!isValid || !isLocationSkip}
                 className="w-full h-14 text-lg neon-bg hover:from-pink-600 hover:to-purple-700"
               >
                 次へ
               </Button>
+              )}
             </div>
           </div>
         </div>

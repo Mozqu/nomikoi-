@@ -13,6 +13,7 @@ import { getDownloadURL } from "firebase/storage"
 import { listAll } from "firebase/storage"
 import { ref } from "firebase/storage"
 import { getStorage } from "firebase/storage"
+import ProfileCardSmall from "@/components/profile/profile-card-small"
 
 // User型を定義
 interface User {
@@ -297,7 +298,7 @@ export default function DiscoverPage() {
           <div className="overflow-x-auto flex gap-4 pb-4 snap-x snap-mandatory -mx-4 px-4">
             {newUsers.map((user, index) => (
               <div key={`new-${user.id}-${index}`} className="snap-start shrink-0 w-40">
-                <UserCard user={user} isNew />
+                <ProfileCardSmall user={user} />
               </div>
             ))}
           </div>
