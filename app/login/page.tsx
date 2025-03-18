@@ -105,7 +105,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* メールアドレスとパスワードの入力 
+        {/* メールアドレスとパスワードの入力 */}
         <form onSubmit={handleEmailLogin}>
           <div className="mb-4">
             <label className="block mb-2">メールアドレス</label>
@@ -137,7 +137,7 @@ export default function LoginPage() {
             {loading ? 'ログイン中...' : 'ログイン'}
           </button>
         </form>
-        */}
+        
         
         <div className="mt-4">
           <Button
