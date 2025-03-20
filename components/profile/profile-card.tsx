@@ -10,7 +10,9 @@ import { Radar, PolarAngleAxis, PolarGrid, RadarChart, ResponsiveContainer, Pola
 import { LikeAction } from '@/components/like-action';
 import { collection, query, where } from 'firebase/firestore';
 import { getDocs } from 'firebase/firestore';
-import { db } from '@/app/firebase/config';
+import { auth, db } from '@/app/firebase/config';
+import { Button } from '../ui/button';
+import Link from 'next/link';
 
 function calculateAge(birthday: any) {
     if (!birthday) return null;
@@ -398,12 +400,12 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                         transition: "all 0.3s ease-in-out",
                                         maxHeight: isShrinked ? "0" : "300px",
                                     }}
-                                    className="space-y-3 flex-1 flex" onClick={() => handleClick()}>
+                                    className="flex-1 flex" onClick={() => handleClick()}>
 
                                     {characterResults ? (
                                         <div className="w-full h-40 relative flex justify-center items-center">
-                                            <div className="text-center">
-                                                <p className="text-sm">キャラクタータイプ</p>
+                                            <div className="text-center p-2">
+                                                <p className="text-sm">飲みタイプ</p>
                                                 <div className="flex flex-col justify-center items-center">
                                                     <p className="text-sm">{characterResults.characterType}</p>
                                                     <p className="text-sm">x</p>
@@ -411,14 +413,17 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                                 </div>
                                             </div>
                                         </div>
-                                    ): (
+                                    ) : isOwnProfile ? (
                                         <div className="w-full h-40 relative">
-                                            <div className="text-center">
-                                                <p className="text-sm font-semibold">キャラクタータイプ</p>
-                                                <p className="text-sm">診断してください</p>
+                                            <div className="text-center p-2 space-y-2">
+                                                <p className="text-sm">飲みタイプがありません</p>
+                                                <p className="text-sm">診断しましょう！</p>
+                                                <Button variant="secondary" className="neon-bg text-white px-4 py-2 rounded-md">
+                                                    <Link href="/register/drinking_character">診断する</Link>
+                                                </Button>
                                             </div>
                                         </div>
-                                    )}
+                                    ) : null}
                                     
                                     <div className="w-full h-40 relative">
                                         <ResponsiveContainer width="100%" height="100%">
