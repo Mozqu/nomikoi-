@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/app/firebase/config';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
+import { X } from 'lucide-react';
 
 export default function CharacterConfirmation() {
   const searchParams = useSearchParams();
@@ -78,17 +79,44 @@ export default function CharacterConfirmation() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">診断結果</h1>
       
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
+      <div className="shadow rounded-lg mb-6">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-purple-600 mb-4">
-            {results.characterType}
-          </h2>
+            <p className="mb-4">
+                あなたの飲み方タイプは...
+            </p>
+            <div className="text-center mb-8 flex items-center justify-center">
+                <h2 className="text-3xl font-bold text-purple-600 mb-0">
+                    {results.characterType}
+                </h2>
+                <X className="w-10 h-10" />
+                <h2 className="text-3xl font-bold text-purple-600 mb-0">
+                    {results.characterName}
+                </h2>
+            </div>
         </div>
-            
+
         <div className="space-y-6">
-          <div className="text-center text-gray-600">
-            {results.description}
-          </div>
+            <div className="flex items-center justify-center">
+                <div style={{flexShrink: 0}} className="text-center w-20 h-20 p-4 bg-pink-500 text-white rounded-xl flex items-center justify-center">
+                    <div className="text-center">
+                        {results.characterType}
+                    </div>
+                </div>
+                <div className="p-4">
+                    {results.typeDescription}
+                </div>
+
+            </div>
+            <div className="flex items-center justify-center">
+                <div style={{flexShrink: 0}} className="text-center w-20 h-20 p-4 bg-pink-500 text-white rounded-xl flex items-center justify-center">
+                    <div className="text-center">
+                        {results.characterName}
+                    </div>
+                </div>
+                <div className="p-4">
+                    {results.nameDescription}
+                </div>
+            </div>
         </div>
       </div>
     </div>
