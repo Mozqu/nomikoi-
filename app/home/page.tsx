@@ -14,6 +14,7 @@ import { listAll } from "firebase/storage"
 import { ref } from "firebase/storage"
 import { getStorage } from "firebase/storage"
 import ProfileCardSmall from "@/components/profile/profile-card-small"
+import LoadingSpinner from '@/app/components/LoadingSpinner'
 
 // User型を定義
 interface User {
@@ -22,6 +23,9 @@ interface User {
   photoURL: string;
   birthday: Timestamp | null;
   location?: string;
+  age: number;
+  gender: string;
+  createdAt: string;
 }
 
 const calculateAge = (birthday: Timestamp | null | any): number | null => {
@@ -206,111 +210,88 @@ async function fetchRecentUsers() {
   }
 }
 
-export default function DiscoverPage() {
-  const [users, setUsers] = useState<User[]>([])
-  const [newUsers, setNewUsers] = useState<User[]>([])
-  const [lastUser, setLastUser] = useState<QueryDocumentSnapshot | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [ref, inView] = useInView()
-  const hasMoreUsers = useRef(true)
-  const [recentUsers, setRecentUsers] = useState<User[]>([])
+export default function Home() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [recentUsers, setRecentUsers] = useState<User[]>([]);
 
-  const loadMoreUsers = useCallback(async () => {
-    if (loading || !hasMoreUsers.current) return
-    setLoading(true)
-    try {
-      const { users: fetchedUsers, lastUser: newLastUser } = await fetchUsers(lastUser)
-      if (fetchedUsers.length === 0) {
-        hasMoreUsers.current = false
-      } else {
-        // ユーザーIDで重複を排除
-        const uniqueUsers = fetchedUsers.filter(newUser => 
-          !users.some(existingUser => existingUser.id === newUser.id) &&
-          !newUsers.some(existingUser => existingUser.id === newUser.id)
-        )
+  useEffect(() => {
+    const checkAuthAndFetchData = async () => {
+      try {
+        // 認証状態の確認
+        if (!auth.currentUser) {
+          router.push('/login');
+          return;
+        }
 
-        // First 3 unique users go to recommendations
-        const recommendationUsers = uniqueUsers.slice(0, 3)
-        // Rest go to new users
-        const newUsersList = uniqueUsers.slice(3)
+        // 新規ユーザーデータの取得
+        const response = await fetch('/api/users/recent');
+        if (!response.ok) {
+          throw new Error('Failed to fetch recent users');
+        }
 
-        setUsers(prev => [...prev, ...recommendationUsers])
-        setNewUsers(prev => [...prev, ...newUsersList])
-        setLastUser(newLastUser)
+        const data = await response.json();
+        setRecentUsers(data.users);
+
+      } catch (error) {
+        console.error('Error:', error);
+        setError(error instanceof Error ? error.message : '予期せぬエラーが発生しました');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error loading more users:", error)
-    } finally {
-      setLoading(false)
-    }
-  }, [lastUser, loading, users, newUsers])
-
-  useEffect(() => {
-    if (inView && !loading && hasMoreUsers.current) {
-      loadMoreUsers()
-    }
-  }, [inView, loading, loadMoreUsers])
-
-  useEffect(() => {
-    if (users.length === 0) {
-      loadMoreUsers()
-    }
-  }, [users.length, loadMoreUsers])
-
-  useEffect(() => {
-    const getRecentUsers = async () => {
-      const users = await fetchRecentUsers();
-      setRecentUsers(users);
     };
-    
-    getRecentUsers();
-  }, []);
 
-  return (
-    <div className="min-h-screen [--scroll-mt:9.875rem] lg:[--scroll-mt:6.3125rem]">
-      <div className="max-w-lg mx-auto px-4 py-6">
-        
-        {/* あなたの好みかも 
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold">あなたの好みかも</h2>
-            <button className="text-gray-400">
-              <span className="sr-only">Help</span>？
-            </button>
-          </div>
-          <div className="overflow-x-auto flex gap-4 pb-4 snap-x snap-mandatory -mx-4 px-4">
-            {users.map((user, index) => (
-              <div key={`recommendation-${user.id}-${index}`} className="snap-start shrink-0 w-40">
-                <UserCard user={user} />
-              </div>
-            ))}
-          </div>
-        </div>
-        */}
+    checkAuthAndFetchData();
+  }, [router]);
 
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold">新しく登録したお相手</h2>
-            <button className="text-gray-400">
-              <span className="sr-only">Help</span>？
-            </button>
-          </div>
-          <div className="overflow-x-auto flex gap-4 pb-4 snap-x snap-mandatory -mx-4 px-4">
-            {newUsers.map((user, index) => (
-              <div key={`new-${user.id}-${index}`} className="snap-start shrink-0 w-40">
-                <ProfileCardSmall user={user} />
-              </div>
-            ))}
-          </div>
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600">{error}</p>
         </div>
       </div>
+    );
+  }
 
-      {loading && <div className="text-center py-4">Loading...</div>}
-      {!loading && !hasMoreUsers.current && (
-        <div className="text-center py-4 text-gray-500">これ以上ユーザーはいません</div>
-      )}
-      <div ref={ref} className="h-10" />
+  return (
+    <div className="container w-full px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">新規ユーザー</h1>
+      
+      <div className="relative">
+        <div
+          className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
+        >
+          {recentUsers.map(user => (
+            <div 
+              key={user.id}
+              className="flex-none"
+              style={{
+                width: '160px',
+              }}
+            >
+              <ProfileCardSmall 
+                user={user}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-  )
+  );
 }
 
