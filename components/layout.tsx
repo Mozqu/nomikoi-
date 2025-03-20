@@ -18,7 +18,6 @@ export default function Layout({ children, noBorder = false }: LayoutProps) {
         noBorder ? '' : 'border border-neon-blue/20'
       } rounded-lg pb-16 md:pb-0`}
     >
-      <Header />
       <main>{children}</main>
     </div>
   )

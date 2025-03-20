@@ -3,6 +3,10 @@ import Layout from "../components/layout"
 import HeroSection from "@/components/hero-section"
 import FeaturesSection from "@/components/features-section"
 import CtaSection from "@/components/cta-section"
+import Image from "next/image"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+
 
 export default function Home() {
   return (
@@ -21,9 +25,21 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <HeroSection />
-      <FeaturesSection />
-      <CtaSection />
+      
+      <div className="flex space-y-2 flex-col items-center justify-center h-screen">
+        <div className="m-4 flex flex-col space-y-2">
+          <Image src="/main-logo.png" alt="吞恋" width={300} height={300} />
+          <Button
+            className="w-full rounded-full neon-bg">
+            <Link href="/signup">新しく始める</Link>
+          </Button>
+          <Button variant="outline" className="w-full rounded-full">
+            <Link href="/login">既に登録されている方</Link>
+          </Button>
+        </div>
+      </div>
+
+      
     </Layout>
   )
 }

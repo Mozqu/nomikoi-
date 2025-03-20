@@ -233,7 +233,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                 {!isOwnProfile && (
                 <div id="like-action" className="absolute inline-block z-30"
                     style={{
-                        bottom: isExpanded ? "19rem" : "1.5rem",
+                        bottom: isShrinked ? "5.5rem" : isExpanded ? "15.5rem" : "1.5rem",
                         right: "1rem",
                         transition: "all 0.5s ease-in-out",
                     }}

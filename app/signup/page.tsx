@@ -49,7 +49,7 @@ export default function SignupPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       await saveUserToFirestore(userCredential.user)
-      router.push("/register")
+      router.push("/register/caution")
     } catch (error: any) {
       // Firebase Authentication のエラーをハンドリング
       switch (error.code) {
