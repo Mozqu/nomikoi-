@@ -115,8 +115,10 @@ export async function POST(request: Request) {
 
     const processedResults = {
       factorScores,
-      characterType: `${frontCharModifier.value}${backCharModifier.value}`, // 仮の値、実際の計算ロジックは後ほど実装
-      description: `${frontCharModifier.description}${backCharModifier.description}`,
+      characterType: `${frontCharModifier.value}`, 
+      characterName: `${backCharModifier.value}`,
+      typeDescription: `${frontCharModifier.description}`,
+      nameDescription: `${backCharModifier.description}`,
       timestamp: new Date(),
     };
 
