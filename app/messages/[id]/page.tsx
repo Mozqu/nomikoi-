@@ -45,6 +45,8 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
       if (!user) {
         router.push("/login")
         return
+      } else {
+
       }
       setUser(user)
       console.log('user', user)
@@ -303,6 +305,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="flex-1 flex flex-col overflow-y-auto  relative">
       {/* LINEモーダル */}
+      {hasLineConnection && (
       <Dialog open={!hasLineConnection && showLineModal} onOpenChange={setShowLineModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -350,8 +353,9 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
               <li>メッセージ通知の受信設定を「オン」にする</li>
             </ol>
           </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* ヘッダー */}
       <div className="w-full p-4 flex items-center border-b">

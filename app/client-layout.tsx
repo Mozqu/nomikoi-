@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation"
 import BottomNav from "@/components/bottom-nav"
 
-const hideNavPaths = ["/", "/login", "/signup", "/register", "/register/acceptable_drinking_habit", "/register/way_of_drinking", "/register/favorite_alcohol", "/register/talking_stance", "/register/upload-profile-images"]
+const hideNavPaths = ["/", "/login", "/signup", "/register", "/register/acceptable_drinking_habit", "/register/way_of_drinking", "/register/favorite_alcohol", "/register/talking_stance", "/register/upload-profile-images", "/register/caution", "/register/drinking_character"]
 
 export default function ClientLayout({
   children,
