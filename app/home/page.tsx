@@ -315,7 +315,7 @@ export default function Home() {
       </div>
 
       <div className="container w-full px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">おすすめユーザー</h1>
+        <h1 className="text-2xl font-bold mb-6">マッチしてるかも</h1>
         <div className="relative">
           <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide"
             style={{
