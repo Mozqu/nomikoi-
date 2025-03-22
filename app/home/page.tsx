@@ -4,10 +4,10 @@ import { Home, Heart, MessageCircle, User as UserIcon, Star } from "lucide-react
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState, useCallback, useRef } from "react"
-import { auth, db } from "@/app/firebase/config"
+import { auth, db } from "../firebase/config"
 import type { QueryDocumentSnapshot, Timestamp } from "firebase/firestore"
 import { useInView } from "react-intersection-observer"
-import { collection, query, limit, getDocs, startAfter, orderBy, where } from "firebase/firestore"
+import { collection, query, limit, getDocs, startAfter, orderBy, where, getDoc, doc } from "firebase/firestore"
 import { useRouter } from 'next/navigation'
 import { getDownloadURL } from "firebase/storage"
 import { listAll } from "firebase/storage"
@@ -15,6 +15,7 @@ import { ref } from "firebase/storage"
 import { getStorage } from "firebase/storage"
 import ProfileCardSmall from "@/components/profile/profile-card-small"
 import LoadingSpinner from '@/app/components/LoadingSpinner'
+import { Firestore } from "firebase/firestore"
 
 // User型を定義
 interface User {
@@ -215,35 +216,65 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
+  const [recommendedUsers, setRecommendedUsers] = useState<User[]>([]);
+  const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
     const checkAuthAndFetchData = async () => {
       try {
-        // 認証状態の確認
-        if (!auth.currentUser) {
-          router.push('/login');
+        if (!auth?.currentUser) {
+          router.push("/login");
           return;
         }
 
-        // 新規ユーザーデータの取得
-        const response = await fetch('/api/users/recent');
-        if (!response.ok) {
-          throw new Error('Failed to fetch recent users');
+        if (!db) {
+          throw new Error("Firestore is not initialized");
+        }
+        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+
+        if (!userDoc.exists()) {
+          throw new Error("User data not found");
         }
 
-        const data = await response.json();
-        setRecentUsers(data.users);
+        const userData = userDoc.data();
+
+        // 最近のユーザーとおすすめユーザーを並行して取得
+        const [recentResponse, recommendedResponse] = await Promise.all([
+          fetch(`/api/users/recent?userId=${auth.currentUser.uid}&gender=${userData.gender}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
+          }),
+          fetch(`/api/users/recommended?userId=${auth.currentUser.uid}&gender=${userData.gender}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
+          })
+        ]);
+
+        if (!recentResponse.ok || !recommendedResponse.ok) {
+          throw new Error(`API error: ${!recentResponse.ok ? recentResponse.status : recommendedResponse.status}`);
+        }
+
+        const [recentUsers, recommendedUsers] = await Promise.all([
+          recentResponse.json(),
+          recommendedResponse.json()
+        ]);
+
+        setUserData(userData);
+        setRecentUsers(recentUsers);
+        setRecommendedUsers(recommendedUsers);
+        setLoading(false);
 
       } catch (error) {
-        console.error('Error:', error);
-        setError(error instanceof Error ? error.message : '予期せぬエラーが発生しました');
-      } finally {
+        console.error("Error fetching user data:", error);
+        setError(error instanceof Error ? error.message : "データの取得に失敗しました。");
         setLoading(false);
       }
     };
 
     checkAuthAndFetchData();
-  }, [router]);
+  }, []);
 
   if (loading) {
     return (
@@ -264,34 +295,43 @@ export default function Home() {
   }
 
   return (
-    <div className="container w-full px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">新規ユーザー</h1>
-      
-      <div className="relative">
-        <div
-          className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide"
-          style={{
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
-          }}
-        >
-          {recentUsers.map(user => (
-            <div 
-              key={user.id}
-              className="flex-none"
-              style={{
-                width: '160px',
-              }}
-            >
-              <ProfileCardSmall 
-                user={user}
-              />
-            </div>
-          ))}
+    <>
+      <div className="container w-full px-4 py-8">
+        <h1 className="text-2xl font-bold mb-6">新規ユーザー</h1>
+        <div className="relative">
+          <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide"
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}>
+            {recentUsers.map(user => (
+              <div key={user.id} className="flex-none" style={{ width: '160px' }}>
+                <ProfileCardSmall user={user} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+
+      <div className="container w-full px-4 py-8">
+        <h1 className="text-2xl font-bold mb-6">おすすめユーザー</h1>
+        <div className="relative">
+          <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide"
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}>
+            {recommendedUsers.map(user => (
+              <div key={user.id} className="flex-none" style={{ width: '160px' }}>
+                <ProfileCardSmall user={user} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 

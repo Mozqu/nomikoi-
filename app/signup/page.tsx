@@ -18,13 +18,17 @@ export default function SignupPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (auth === null || db === null) {
+    if (auth === null) {
       setError("Firebase initialization failed.")
     }
     setIsLoading(false)
   }, [])
 
   const saveUserToFirestore = async (user: any) => {
+    if (!db) {
+      setError("データベースの初期化に失敗しました。")
+      return
+    }
     await setDoc(doc(db, "users", user.uid), {
       email: user.email,
       uid: user.uid,
@@ -42,7 +46,7 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (auth === null || db === null) {
+    if (auth === null) {
       setError("Firebase is not initialized.")
       return
     }
@@ -73,7 +77,7 @@ export default function SignupPage() {
   }
 
   const handleGoogleSignup = async () => {
-    if (auth === null || db === null) {
+    if (auth === null) {
       setError("Firebase is not initialized.")
       return
     }
