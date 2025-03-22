@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import admin from 'firebase-admin'
-import { getApps } from 'firebase-admin/app'
+import { getApps, initializeApp, cert } from 'firebase-admin/app'
 
 // デバッグ用のログ
 console.log('API Route: Loading...')
@@ -12,36 +12,34 @@ console.log('Environment variables exist:', {
   privateKey: !!process.env.FIREBASE_PRIVATE_KEY,
 })
 
-// Firebase Admin SDKの初期化（まだ初期化されていない場合）
-if (!getApps().length) {
-  try {
-    console.log('Initializing Firebase Admin...')
-    
-    // 環境変数のチェック
-    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-      throw new Error('Missing Firebase Admin environment variables')
-    }
-    
-    // privateKeyの処理
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-    
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: privateKey,
-      }),
-    })
-    console.log('Firebase Admin initialized successfully')
-  } catch (error) {
-    console.error('Firebase Admin initialization error:', error)
-    if (error instanceof Error) {
-      console.error('Error details:', error.message)
-    }
-  }
-}
+export const runtime = 'nodejs'; // Edge Runtimeを使用しないことを明示
 
 export async function POST(request: Request) {
+  console.log('Environment check at request time:', {
+    NODE_ENV: process.env.NODE_ENV,
+    FIREBASE_PROJECT_ID: !!process.env.FIREBASE_PROJECT_ID,
+    FIREBASE_CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
+    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY?.substring(0, 10) + '...',
+  });
+
+  if (!getApps().length) {
+    try {
+      console.log('Initializing Firebase in request...');
+      const app = initializeApp({
+        credential: cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        }),
+      });
+    } catch (error) {
+      console.error('Detailed initialization error:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+    }
+  }
+
   console.log('API Route: POST request received')
   
   try {
