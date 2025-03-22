@@ -2,26 +2,24 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// 保護するパスのリスト
-const protectedPaths = [
-  '/dashboard',
-  '/settings',
-  '/messages',
-  '/profile',
+// 保護しないパスのリスト
+const publicPaths = [
+  '/',
+  '/login',
+  '/signup',
 ]
 
 export async function middleware(request: NextRequest) {
-    console.log('==== middleware ====')
   const session = request.cookies.get('session')?.value
   const pathname = request.nextUrl.pathname
 
-  // 保護されたパスかどうかをチェック
-  const isProtectedPath = protectedPaths.some(path => 
+  // 保護しないパスかどうかをチェック
+  const isPublicPath = publicPaths.some(path => 
     pathname === path || pathname.startsWith(`${path}/`)
   )
 
-  // 保護されたパスでない場合は、そのまま次へ
-  if (!isProtectedPath) {
+  // 保護しないパスの場合は、そのまま次へ
+  if (isPublicPath) {
     return NextResponse.next()
   }
 
@@ -47,14 +45,11 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * 以下のパスにマッチする場合にミドルウェアを実行:
-     * - /dashboard, /dashboard/任意のパス
-     * - /settings, /settings/任意のパス
-     * など
+     * 以下のパス以外の全てのパスにマッチする場合にミドルウェアを実行:
+     * - / (ルート)
+     * - /login
+     * - /signup
      */
-    '/dashboard/:path*',
-    '/settings/:path*',
-    '/messages/:path*',
-    '/profile/:path*',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }

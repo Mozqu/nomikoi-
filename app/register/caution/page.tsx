@@ -3,27 +3,40 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/app/firebase/config";
+import { auth, db } from "@/app/firebase/config";
 import { doc, setDoc } from "firebase/firestore";
-import { db } from "@/app/firebase/config";
+
 export default function Caution() {
     const router = useRouter();
     const [isValid, setIsValid] = useState(false);
+    const [error, setError] = useState("");
 
     const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setIsValid(e.target.checked);
     }
 
     const handleNext = async () => {
-        if (auth?.currentUser) {
+        try {
+            if (!auth?.currentUser) {
+                router.push("/signup");
+                return;
+            }
+            
+            if (!db) {
+                throw new Error("Firestore is not initialized");
+            }
+
             await setDoc(doc(db, "users", auth.currentUser.uid), {
                 agreement: true
             }, { merge: true });
-        } else {
-            router.push("/signup")
+            
+            router.push("/register");
+        } catch (error) {
+            console.error("Error updating user agreement:", error);
+            setError("エラーが発生しました。もう一度お試しください。");
         }
-        router.push("/register/way_of_drinking")
     }
+
     return (
         <div className="flex flex-col items-center space-between h-screen">
             <div className="flex flex-col items-center justify-center flex-1">
@@ -52,6 +65,7 @@ export default function Caution() {
                     onClick={handleNext}
                 >同意する</Button>
             </div>
+            {error && <p className="text-red-500 text-sm">{error}</p>}
         </div>
     )
 }
