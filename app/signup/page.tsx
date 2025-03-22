@@ -88,7 +88,7 @@ export default function SignupPage() {
         uid: result.user.uid,
         email: result.user.email,
       })
-      router.push("/register")
+      router.push("/register/caution")
     } catch (error) {
       setError("Googleでのサインアップに失敗しました。")
     }
