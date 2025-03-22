@@ -8,7 +8,7 @@ export function getFirebaseAdmin() {
     try {
       // 秘密鍵の処理
       const privateKey = process.env.FIREBASE_PRIVATE_KEY
-        ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n').replace(/^"(.*)"$/, '$1')
+        ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
         : undefined;
 
       app = initializeApp({
