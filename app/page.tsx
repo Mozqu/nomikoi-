@@ -28,7 +28,7 @@ export default function Home() {
       
       <div className="flex space-y-2 flex-col items-center justify-center h-screen">
         <div className="m-4 flex flex-col space-y-2">
-          <Image src="/main-logo.png" alt="吞恋" width={300} height={300} />
+          <Image src="https://firebasestorage.googleapis.com/v0/b/nomikoi.firebasestorage.app/o/main-logo.png?alt=media&token=e49c1c2a-795b-4ffc-bbad-b4caae39e3e8" alt="吞恋" width={300} height={300} />
           <Button
             className="w-full rounded-full neon-bg">
             <Link href="/signup">新しく始める</Link>

@@ -698,6 +698,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                 >
                     
                     {imageUrls.length > 0 && (
+                        
                         imageUrls.map((_, index) => (
                             <div 
                                 key={`pagination-dot-${index}`}
