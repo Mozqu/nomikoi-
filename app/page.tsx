@@ -22,7 +22,7 @@ export default function Home() {
         <meta property="og:image" content="/og-image.jpg" />
         <meta property="og:url" content="https://nomiren.com" />
         <meta property="og:type" content="website" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.png" />
       </Head>
 
       
