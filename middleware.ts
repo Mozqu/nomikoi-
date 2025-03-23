@@ -7,7 +7,6 @@ const publicPaths = [
   '/',
   '/login',
   '/signup',
-  '/register/caution',
 ]
 
 // 登録フローのパスとその条件
@@ -43,24 +42,6 @@ export async function middleware(request: NextRequest) {
     const url = new URL('/login', request.url)
     url.searchParams.set('callbackUrl', pathname)
     return NextResponse.redirect(url)
-  }
-
-  // ユーザー登録状態のチェック
-  try {
-    const response = await fetch(`${request.nextUrl.origin}/api/auth/check`, {
-      headers: {
-        Cookie: `session=${session}`
-      }
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (!data.agreement) {
-        return NextResponse.redirect(new URL('/register/caution', request.url))
-      }
-    }
-  } catch (error) {
-    console.error('Error checking user registration status:', error)
   }
 
   return NextResponse.next()
