@@ -168,7 +168,8 @@ export default function RegisterPage() {
 
   return (
     <FormProvider {...methods}>
-      <div className="min-h-screen bg-black text-white flex flex-col overflow-y-auto">
+      <div className="min-h-screen bg-black text-white flex flex-col">
+
         {/* Progress Bar */}
         <div className="w-full px-4 pt-8">
           <div className="flex items-center mb-2">
@@ -188,6 +189,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
+        {/* 質問表示コンポーネント */}
         <div className="flex-1 px-4 flex overflow-scroll">
           <AnimatePresence mode="wait">
             <QuestionStep 
@@ -199,6 +201,8 @@ export default function RegisterPage() {
             />
           </AnimatePresence>
         </div>
+
+        {/* 次へボタン */}
         <div className="w-full mt-auto p-4 z-10">
           <Button
             onClick={isLastStep ? handleFinalStep : nextStep}
