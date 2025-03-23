@@ -547,7 +547,7 @@ function QuestionStep({
         <p className="text-gray-400 mb-6">{question.description}</p>
       )}
       <div className="flex-1 overflow-y-auto pb-24">
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-4" style={{ marginBottom: '20rem' }}>
           {question.type === 'checklist' ? (
             // checklistの場合の表示
             question.options.map((option: string, index: number) => {
@@ -709,6 +709,8 @@ function QuestionStep({
               )
             })
           )}
+
+          {/* 次へボタン */}
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm">
             <div className="container max-w-lg mx-auto">
               {question.id === 'favorite_location' ?(
