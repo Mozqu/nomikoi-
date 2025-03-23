@@ -41,13 +41,12 @@ const convertOptions = (options: Record<string, number>): QuestionOption[] => {
 const questions: Record<number, Question> = {
     1: {
         "id": "drinking_location_preference",
-        "title": "好きな飲みシュチュエーションは？",
+        "title": "飲みデートで行きたいTOP5を選んでください",
         "options": [
           "場末・立ち飲み居酒屋",
           "ファミレス",
           "大衆系レストラン・居酒屋",
           "おしゃれ系レストラン・居酒屋",
-          "レストラン系",
           "高級系（フレンチ）",
           "クラブ系",
           "オーセンティックバー",

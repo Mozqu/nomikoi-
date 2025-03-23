@@ -109,16 +109,13 @@ export async function POST(request: Request) {
     const frontCharModifier = characterModifiers[backChar];
     const backCharModifier = characterNames[frontChar];
 
-
-
-
-
     const processedResults = {
       factorScores,
       characterType: `${frontCharModifier.value}`, 
       characterName: `${backCharModifier.value}`,
       typeDescription: `${frontCharModifier.description}`,
       nameDescription: `${backCharModifier.description}`,
+      alphabet: characterType,
       timestamp: new Date(),
     };
 
