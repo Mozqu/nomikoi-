@@ -204,7 +204,7 @@ export default function RegisterPage() {
           </div>
 
           {/* 次へボタン */}
-          <div className="fw-full pt-4">
+          <div className="fixed bottom-0 left-0 right-0 w-full p-4">
             <Button
               onClick={nextStep}
               disabled={!watch(questions[step].id) || (questions[step].id === "birthdate" && !isAgeValid)}
