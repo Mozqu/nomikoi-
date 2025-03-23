@@ -12,7 +12,6 @@ import { auth, db } from "@/app/firebase/config"
 import { QuestionRenderer } from "@/app/components/question-renderer"
 import type { Question, QuestionType } from "@/types/questions"
 import { checkListItem, radioItem, toggleListItem } from "@/types/questions"
-import { watch } from "fs"
 
 type QuestionOption = {
   label: string;

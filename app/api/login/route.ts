@@ -13,56 +13,54 @@ console.log('Environment variables exist:', {
 
 export const runtime = 'nodejs'; // Edge Runtimeを使用しないことを明示
 
-export async function POST(request: Request) {
-  console.log('API Route: POST request received')
-  
-  try {
-    const body = await request.json()
-    console.log('Request body received (idToken length):', body.idToken ? body.idToken.length : 'missing')
+const COOKIE_NAME = "session"
 
-    if (!body || !body.idToken) {
-      console.error('Missing idToken in request')
-      return NextResponse.json({ error: 'idToken is required' }, { status: 400 })
-    }
-    
-    const { idToken } = body
+export async function POST(request: Request) {
+  console.log('\n=== Login API Start ===')
+  try {
+    const { idToken } = await request.json()
+    console.log('ID Token received, length:', idToken.length)
+
     const auth = getFirebaseAuth()
-    
-    // セッションの有効期限（2週間）
-    const expiresIn = 60 * 60 * 24 * 14 * 1000
-    
-    try {
-      console.log('Verifying ID token...')
-      
-      // まずトークンを検証
-      const decodedToken = await auth.verifyIdToken(idToken)
-      console.log('Token verified for user:', decodedToken.uid)
-      
-      // セッションクッキーを作成
-      console.log('Creating session cookie...')
-      const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn })
-      
-      // クッキーを設定
-      console.log('Setting session cookie...')
-      cookies().set('session', sessionCookie, {
-        maxAge: expiresIn / 1000,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        sameSite: 'lax',
-      })
-      
-      console.log('Session created successfully')
-      return NextResponse.json({ success: true })
-    } catch (error) {
-      console.error('Firebase authentication error:', error)
-      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 })
-    }
+    const decodedToken = await auth.verifyIdToken(idToken)
+    console.log('Token verified for user:', decodedToken.uid)
+
+    // セッションクッキーを作成（5日間）
+    const expiresIn = 60 * 60 * 24 * 5 * 1000
+    console.log('Creating session cookie...')
+    const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn })
+
+    // クッキーを設定
+    console.log('Setting session cookie...')
+    const cookieStore = await cookies()
+    cookieStore.set('session', sessionCookie, {
+      maxAge: expiresIn / 1000,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      path: "/",
+      sameSite: 'lax'  // CSRF対策として追加
+    })
+
+    console.log('Session cookie set successfully')
+    return new NextResponse(
+      JSON.stringify({ 
+        status: "success",
+        redirect: '/home'  // リダイレクト先を指定
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
+
   } catch (error) {
-    console.error('Unexpected error in API route:', error)
-    if (error instanceof Error) {
-      console.error('Error details:', error.message)
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("Session creation error:", error)
+    return new NextResponse(
+      JSON.stringify({ error: "Internal server error" }), 
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
   }
 }

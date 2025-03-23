@@ -295,21 +295,21 @@ export default function Home() {
   }
 
   return (
-    <>
+    <div className="min-h-screen overflow-y-auto" style={{ paddingBottom: '10rem' }}>
       <div className="container w-full px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">新規ユーザー</h1>
         <div className="relative">
-          <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide"
+          <div className="flex overflow-x-scroll gap-4 pb-4 no-scrollbar"
             style={{
               WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none'
             }}>
-            {recentUsers.map(user => (
-              <div key={user.id} className="flex-none" style={{ width: '160px' }}>
-                <ProfileCardSmall user={user} />
-              </div>
-            ))}
+            <div className="flex gap-4">
+              {recentUsers.map(user => (
+                <div key={user.id} className="flex-none w-[160px]">
+                  <ProfileCardSmall user={user} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -317,21 +317,21 @@ export default function Home() {
       <div className="container w-full px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">マッチしてるかも</h1>
         <div className="relative">
-          <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide"
+          <div className="flex overflow-x-scroll gap-4 pb-4 no-scrollbar"
             style={{
               WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none'
             }}>
-            {recommendedUsers.map(user => (
-              <div key={user.id} className="flex-none" style={{ width: '160px' }}>
-                <ProfileCardSmall user={user} />
-              </div>
-            ))}
+            <div className="flex gap-4">
+              {recommendedUsers.map(user => (
+                <div key={user.id} className="flex-none w-[160px]">
+                  <ProfileCardSmall user={user} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
