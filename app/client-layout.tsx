@@ -62,7 +62,9 @@ export default function ClientLayout({
       </div>
       ) : (
         <div>
-
+          <div id="content" className="flex-1 flex flex-col overflow-hidden">
+            {children}
+          </div>
         </div>
       )}
     </>
