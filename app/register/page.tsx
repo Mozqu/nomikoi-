@@ -190,7 +190,7 @@ export default function RegisterPage() {
         </div>
 
         {/* 質問表示コンポーネント */}
-        <div className="flex-1 px-4 flex overflow-scroll">
+        <div className="flex-1 px-4 overflow-y-auto">
           <AnimatePresence mode="wait">
             <QuestionStep 
               key={step} 
