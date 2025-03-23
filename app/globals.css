@@ -58,6 +58,14 @@
   .neon-text-gray {
     text-shadow: 0 0 5px #aaa, 0 0 10px #aaa;
   }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 .cyberpunk-bg {
