@@ -87,7 +87,7 @@ export default function ProfilePage() {
     <>
       {/* ヘッダー */}
       <div className="w-full p-2 flex justify-between items-center">
-        {params.id !== auth?.currentUser?.uid && (
+        {params.id !== auth?.currentUser?.uid ? (
           <Button
             variant="ghost"
             size="icon"
@@ -96,6 +96,8 @@ export default function ProfilePage() {
           >
             <ChevronLeft className="h-6 w-6" />
           </Button>
+        ) : (
+          <div></div>
         )}
 
         {/* プロフィール編集ボタン */}

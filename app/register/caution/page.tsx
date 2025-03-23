@@ -58,7 +58,7 @@ export default function Caution() {
                     </label>
                 </div>
             </div>
-            <div className="flex items-center p-4 w-full">
+            <div className="fixed bottom-0 p-4 w-full">
                 <Button
                     className="w-full neon-bg"
                     disabled={!isValid}
