@@ -131,6 +131,9 @@ export default function RegisterPage() {
 
   const nextStep = () => {
     setStep((prev) => Math.min(prev + 1, 4))
+    if (step === 4) {
+      handleFinalStep()
+    }
   }
 
   const prevStep = () => {
@@ -201,6 +204,7 @@ export default function RegisterPage() {
                   setIsAgeValid={setIsAgeValid}
                 />
             </AnimatePresence>
+
           </div>
 
           {/* 次へボタン */}
@@ -304,7 +308,7 @@ function QuestionRenderer({
   switch (question.type) {
     case 'radio':
       return (
-        <div className="space-y-4 overflow-y-auto">
+        <div className="space-y-4 mb-20">
           {question.options?.map((option) => (
             <label
               key={option}
@@ -332,7 +336,7 @@ function QuestionRenderer({
 
     case 'checklist':
       return (
-        <div className="space-y-4 overflow-y-auto">
+        <div className="space-y-4 mb-20">
           {question.options?.map((option) => (
             <label
               key={option}
