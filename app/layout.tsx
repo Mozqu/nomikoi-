@@ -19,6 +19,7 @@ export default function RootLayout({children,}: Readonly<{children: React.ReactN
 
 
   if (auth === null) {
+
   }
   return (
     <html lang="ja">
