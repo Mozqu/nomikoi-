@@ -99,7 +99,7 @@ export default function RegisterPage() {
       const userData = {
         gender: data.gender,      // 性別
         birthday: data.birthdate, // 生年月日
-        address: data.location,   // お住い
+        profile: { 居住地: data.location },
         name: data.nickname,      // ニックネーム
         profileCompleted: true
       }
@@ -108,8 +108,8 @@ export default function RegisterPage() {
       console.log('保存するユーザー情報:', {
         性別: userData.gender,
         生年月日: userData.birthday,
-        お住い: userData.address,
-        ニックネーム: userData.name
+        ニックネーム: userData.name,
+        profile: { 居住地: userData.address }
       })
 
       // undefined値を除外
