@@ -308,7 +308,7 @@ function QuestionRenderer({
   switch (question.type) {
     case 'radio':
       return (
-        <div className="space-y-4 mb-20">
+        <div className="space-y-4" style={{ marginBottom: '20rem' }}>
           {question.options?.map((option) => (
             <label
               key={option}
@@ -336,7 +336,7 @@ function QuestionRenderer({
 
     case 'checklist':
       return (
-        <div className="space-y-4 mb-20">
+        <div className="space-y-4" style={{ marginBottom: '20rem' }}>
           {question.options?.map((option) => (
             <label
               key={option}
