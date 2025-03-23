@@ -323,7 +323,7 @@ function QuestionStep({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="w-full flex flex-col h-[calc(100vh-100px)] "
+      className="w-full flex flex-col"
     >
       <h1 className="text-2xl font-bold mt-6 mb-6">{question.title}</h1>
 
@@ -363,8 +363,6 @@ function QuestionStep({
               );
             })}
           </div>
-
-
         </div>
 
         {question.warning && (
@@ -376,7 +374,7 @@ function QuestionStep({
         )}
       </div>
       {/* ボタン */}
-      <div className="pt-4 bg-black/80 backdrop-blur-sm">
+      <div className="fixed bottom-0 left-0 right-0 w-full p-4 bg-black/80 backdrop-blur-sm">
         <div className="container max-w-lg mx-auto">
           <Button
             onClick={async () => {
