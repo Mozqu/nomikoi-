@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 
 export default function LoginPage() {
+  console.log("===============")
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -88,6 +89,8 @@ export default function LoginPage() {
       setLoading(false)
     }
   }
+
+  console.log("===============")
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-cyber-dark cyberpunk-bg">

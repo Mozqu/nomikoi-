@@ -7,6 +7,8 @@ const publicPaths = [
   '/',
   '/login',
   '/signup',
+  '/api/login',
+  '/api/logout',
 ]
 
 // 登録フローのパスとその条件
@@ -20,6 +22,12 @@ export async function middleware(request: NextRequest) {
   const session = request.cookies.get('session')?.value
   const pathname = request.nextUrl.pathname
 
+  // 明示的に除外する（保険）
+  if (pathname === "/login" || pathname === "/signup") {
+    console.log("保険")
+    return NextResponse.next();
+  }
+
   // 保護しないパスかどうかをチェック
   const isPublicPath = publicPaths.some(path => 
     pathname === path || pathname.startsWith(`${path}/`)
@@ -27,11 +35,13 @@ export async function middleware(request: NextRequest) {
 
   // 保護しないパスの場合は、そのまま次へ
   if (isPublicPath) {
+    console.log('Public path accessed:', pathname)
     return NextResponse.next()
   }
 
   // セッションがない場合はログインページにリダイレクト
   if (!session) {
+    console.log('No session found, redirecting to login')
     const url = new URL('/login', request.url)
     url.searchParams.set('callbackUrl', pathname)
     return NextResponse.redirect(url)
@@ -39,6 +49,7 @@ export async function middleware(request: NextRequest) {
 
   // セッションの基本的な形式チェックのみを行う
   if (!session.includes('.')) {
+    console.log('Invalid session format, redirecting to login')
     const url = new URL('/login', request.url)
     url.searchParams.set('callbackUrl', pathname)
     return NextResponse.redirect(url)
@@ -55,7 +66,9 @@ export const config = {
      * - / (ルート)
      * - /login
      * - /signup
+     * - /api/login
+     * - /api/logout
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api/login|api/logout|login|signup|_next/static|_next/image|favicon.ico).*)',
   ],
 }
