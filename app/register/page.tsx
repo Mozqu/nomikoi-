@@ -167,53 +167,56 @@ export default function RegisterPage() {
   }, [watch('birthdate'), step]);
 
   return (
-    <FormProvider {...methods}>
-      <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen h-full">
+      <FormProvider {...methods}>
+        <div className="h-full container px-4 py-4 flex flex-col">
 
-        {/* Progress Bar */}
-        <div className="w-full px-4 pt-8">
-          <div className="flex items-center mb-2">
-            {step > 1 && (
-              <button onClick={prevStep} className="p-2 -ml-2">
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-            )}
-            <div className="flex-1 text-center text-sm text-gray-400">{step}/4</div>
+          {/* Progress Bar */}
+          <div className="w-full py-4">
+            <div className="flex items-center mb-2">
+              {step > 1 && (
+                <button onClick={prevStep} className="p-2 -ml-2">
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+              )}
+              <div className="flex-1 text-center text-sm text-gray-400">{step}/4</div>
+            </div>
+            <div className="relative w-full h-1 bg-gray-600 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: "0%" }}
+                animate={{ width: `${(step / 4) * 100}%` }}
+                className="absolute left-0 top-0 h-full neon-bg"
+              />
+            </div>
           </div>
-          <div className="relative w-full h-1 bg-gray-600 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: "0%" }}
-              animate={{ width: `${(step / 4) * 100}%` }}
-              className="absolute left-0 top-0 h-full neon-bg"
-            />
+
+          {/* 質問表示コンポーネント */}
+          <div className="flex-1 relative h-full overflow-hidden">
+            <AnimatePresence mode="wait">
+                <QuestionStep 
+                  key={step} 
+                  question={questions[step]} 
+                  onNext={step === 4 ? handleFinalStep : nextStep} 
+                  isAgeValid={isAgeValid}
+                  setIsAgeValid={setIsAgeValid}
+                />
+            </AnimatePresence>
           </div>
-        </div>
 
-        {/* 質問表示コンポーネント */}
-        <div className="flex-1 px-4 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            <QuestionStep 
-              key={step} 
-              question={questions[step]} 
-              onNext={step === 4 ? handleFinalStep : nextStep} 
-              isAgeValid={isAgeValid}
-              setIsAgeValid={setIsAgeValid}
-            />
-          </AnimatePresence>
-        </div>
+          {/* 次へボタン */}
+          <div className="fw-full pt-4">
+            <Button
+              onClick={nextStep}
+              disabled={!watch(questions[step].id) || (questions[step].id === "birthdate" && !isAgeValid)}
+              className="w-full h-14 text-sm font-medium neon-bg"
+            >
+              次へ
+            </Button>
+          </div>
 
-        {/* 次へボタン */}
-        <div className="w-full mt-auto p-4 z-10">
-          <Button
-            onClick={isLastStep ? handleFinalStep : nextStep}
-            disabled={!watch(questions[step].id) || (step === 2 && !isAgeValid)}
-            className="w-full h-14 text-sm font-medium neon-bg"
-          >
-            次へ
-          </Button>
         </div>
-      </div>
-    </FormProvider>
+      </FormProvider>
+    </div>
   )
 }
 
@@ -237,25 +240,20 @@ function QuestionStep({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="w-full flex flex-col"
+      className="w-full h-full flex flex-col"
     >
-      <h1 className="text-2xl font-bold mt-6">{question.title}</h1>
+      <h1 className="text-2xl font-bold my-3">{question.title}</h1>
 
-      <QuestionRenderer 
-        question={question} 
-        register={register} 
-        value={value} 
-        isAgeValid={isAgeValid}
-        setIsAgeValid={setIsAgeValid}
-      />
+      <div className="flex-1 overflow-y-auto">
+        <QuestionRenderer 
+          question={question} 
+          register={register} 
+          value={value} 
+          isAgeValid={isAgeValid}
+          setIsAgeValid={setIsAgeValid}
+        />
+      </div>
 
-      {question.warning && (
-        <div className="text-sm text-gray-400 space-y-2">
-          {question.warning.map((text, index) => (
-            <p key={index}>{text}</p>
-          ))}
-        </div>
-      )}
 
 
     </motion.div>
@@ -306,7 +304,7 @@ function QuestionRenderer({
   switch (question.type) {
     case 'radio':
       return (
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto">
           {question.options?.map((option) => (
             <label
               key={option}
@@ -321,12 +319,20 @@ function QuestionRenderer({
               <span className="text-sm">{option}</span>
             </label>
           ))}
+          {question.warning && (
+            <div className="text-sm text-gray-400 space-y-2">
+              {question.warning.map((text, index) => (
+                <p key={index}>{text}</p>
+              ))}
+            </div>
+          )}
         </div>
+        
       )
 
     case 'checklist':
       return (
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto">
           {question.options?.map((option) => (
             <label
               key={option}
@@ -341,7 +347,15 @@ function QuestionRenderer({
               <span className="text-sm">{option}</span>
             </label>
           ))}
+          {question.warning && (
+            <div className="text-sm text-gray-400 space-y-2">
+              {question.warning.map((text, index) => (
+                <p key={index}>{text}</p>
+              ))}
+            </div>
+          )}
         </div>
+
       )
 
     case 'date':
@@ -378,37 +392,71 @@ function QuestionRenderer({
           {!isAgeValid && (
             <p className="text-red-500 mt-2 text-sm">※20歳以上である必要があります</p>
           )}
+          {question.warning && (
+            <div className="text-sm text-gray-400 space-y-2">
+              {question.warning.map((text, index) => (
+                <p key={index}>{text}</p>
+              ))}
+            </div>
+          )}
         </div>
       )
 
     case 'number':
       return (
-        <Input
-          type="number"
-          min={question.min}
-          max={question.max}
-          {...register(question.id)}
-          className="w-full bg-transparent border-2 border-gray-800 p-3 text-xl"
-        />
+        <div>
+          <Input
+            type="number"
+            min={question.min}
+            max={question.max}
+            {...register(question.id)}
+              className="w-full bg-transparent border-2 border-gray-800 p-3 text-xl"
+            />
+          {question.warning && (
+            <div className="text-sm text-gray-400 space-y-2">
+              {question.warning.map((text, index) => (
+                <p key={index}>{text}</p>
+              ))}
+            </div>
+          )}
+        </div>  
       )
 
     case 'textarea':
       return (
-        <textarea
-          {...register(question.id)}
-          className="w-full bg-transparent border-2 border-gray-800 p-3 text-xl min-h-[150px] rounded"
-          placeholder={question.description}
-        />
+        <div>
+          <textarea
+            {...register(question.id)}
+            className="w-full bg-transparent border-2 border-gray-800 p-3 text-xl min-h-[150px] rounded"
+            placeholder={question.description}
+          />
+          {question.warning && (
+            <div className="text-sm text-gray-400 space-y-2">
+              {question.warning.map((text, index) => (
+                <p key={index}>{text}</p>
+              ))}
+            </div>
+          )}
+        </div>
       )
 
     default:
       return (
-        <Input
-          type="text"
-          {...register(question.id)}
-          className="w-full bg-transparent border-b-2 border-gray-600 p-2 text-xl focus:border-white"
-          placeholder={question.description}
-        />
+        <div>
+          <Input
+            type="text"
+            {...register(question.id)}
+            className="w-full bg-transparent border-b-2 border-gray-600 p-2 text-xl focus:border-white"
+            placeholder={question.description}
+          />
+          {question.warning && (
+            <div className="text-sm text-gray-400 space-y-2">
+              {question.warning.map((text, index) => (
+                <p key={index}>{text}</p>
+              ))}
+            </div>
+          )}
+        </div>
       )
   }
 }
