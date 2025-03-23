@@ -87,15 +87,16 @@ export default function ProfilePage() {
     <>
       {/* ヘッダー */}
       <div className="w-full p-2 flex justify-between items-center">
-        {/* Back button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-          className="bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </Button>
+        {params.id !== auth?.currentUser?.uid && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+            className="bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
+        )}
 
         {/* プロフィール編集ボタン */}
         {isOwnProfile && (

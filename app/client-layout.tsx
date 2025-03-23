@@ -29,7 +29,7 @@ export default function ClientLayout({
         const userData = userDoc.data()
         const isRegistrationComplete = userData.profileCompleted && userData.drinkingProfileCompleted && userData.agreement
 
-        if (!isRegistrationComplete && pathname !== "/register/caution" && pathname !== "/register/acceptable_drinking_habit" && pathname !== "/register/way_of_drinking" && pathname !== "/register/favorite_alcohol" && pathname !== "/register/talking_stance" && pathname !== "/register/upload-profile-images" && pathname !== "/register/caution" && pathname !== "/register") {
+        if (!isRegistrationComplete && !pathname.startsWith('/register') && !pathname.startsWith('/login') && !pathname.startsWith('/signup') && pathname !== "/") {
           setIsRegistrationComplete(false)
           router.push("/register/caution")
         } else {
@@ -48,11 +48,11 @@ export default function ClientLayout({
       {isRegistrationComplete ? (
         <div className="w-full h-screen flex flex-col "
           style={
-          {
-            height: "100svh",
-          } 
-        }
-      >
+            {
+              height: "100svh",
+            } 
+          }
+        >
         <div id="content" className="flex-1 flex flex-col overflow-hidden">
           {children}
         </div>
@@ -60,17 +60,11 @@ export default function ClientLayout({
           {!shouldHideNav && <BottomNav />}
         </div>
       </div>
-    ) : (
-      <div>
+      ) : (
         <div>
-          <div>
-            <div>
-              
-            </div>
-          </div>
+
         </div>
-      </div>
-    )}
+      )}
     </>
   )
 }

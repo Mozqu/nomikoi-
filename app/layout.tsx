@@ -17,10 +17,6 @@ export const metadata: Metadata = {
 
 export default function RootLayout({children,}: Readonly<{children: React.ReactNode}>) {
 
-
-  if (auth === null) {
-
-  }
   return (
     <html lang="ja">
       <body className={`${inter.className} default-bg overscroll-none`}>
@@ -31,5 +27,6 @@ export default function RootLayout({children,}: Readonly<{children: React.ReactN
       </body>
     </html>
   )
+  
 }
 
