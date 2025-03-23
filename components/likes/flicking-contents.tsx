@@ -4,10 +4,9 @@ import ProfileCardSmall from "../profile/profile-card-small"
 import { useUser } from "@/hooks/users"
 import { fetchUserImage } from "@/hooks/fetch-image"
 import { db } from "@/app/firebase/config"
-import { collection } from "firebase/firestore"
-import { doc } from "firebase/firestore"
+import { collection, query, where, getDocs } from "firebase/firestore"
+import { doc, serverTimestamp, setDoc } from "firebase/firestore"
 import { Button } from "../ui/button"
-import { serverTimestamp, setDoc } from "firebase/firestore"
 import { useRouter } from "next/navigation"
 import { auth } from "@/app/firebase/config"
 
@@ -91,19 +90,33 @@ export default function FlickingContents({ likes, type }: { likes: any[], type: 
                                 onClick={async (e) => {
                                 e.stopPropagation()
                                 try {
-                                    // メッセージルームの作成
+                                    // 既存のメッセージルームを検索
                                     const roomsRef = collection(db, "message_rooms")
-                                    const newRoomRef = doc(roomsRef)
-                                    
-                                    await setDoc(newRoomRef, {
-                                    user_ids: [auth.currentUser?.uid, like.target_id],
-                                    created_at: serverTimestamp(),
-                                    updated_at: serverTimestamp(),
-                                    visitedUsers: {}
-                                    })
+                                    const userIds = [auth.currentUser?.uid, like.target_id].sort()
+                                    const q = query(roomsRef, 
+                                        where("user_ids", "==", userIds)
+                                    )
+                                    const querySnapshot = await getDocs(q)
 
-                                    // 作成したルームに遷移
-                                    router.push(`/messages/${newRoomRef.id}`)
+                                    let roomId
+
+                                    if (querySnapshot.empty) {
+                                        // 既存のルームがない場合は新規作成
+                                        const newRoomRef = doc(roomsRef)
+                                        await setDoc(newRoomRef, {
+                                            user_ids: userIds,
+                                            created_at: serverTimestamp(),
+                                            updated_at: serverTimestamp(),
+                                            visitedUsers: {}
+                                        })
+                                        roomId = newRoomRef.id
+                                    } else {
+                                        // 既存のルームがある場合はそのIDを使用
+                                        roomId = querySnapshot.docs[0].id
+                                    }
+
+                                    // ルームに遷移
+                                    router.push(`/messages/${roomId}`)
                                 } catch (error) {
                                     console.error("メッセージルームの作成に失敗:", error)
                                 }
