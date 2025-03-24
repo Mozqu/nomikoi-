@@ -1,7 +1,7 @@
 'use client'
 
 import { signInWithCustomToken } from 'firebase/auth'
-import { auth } from '@/app/firebase/client'
+import { auth } from '../../firebase/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -27,7 +27,7 @@ export default function LineAuthButton() {
         redirect_uri: process.env.NEXT_PUBLIC_LINE_CALLBACK_URL || `${window.location.origin}/__/auth/handler`,
         state: 'random_state',
         scope: 'profile openid email',
-      })}`
+      }).toString()}`
 
       // LINEログインページにリダイレクト
       window.location.href = lineLoginUrl
