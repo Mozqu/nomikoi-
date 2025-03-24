@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
-import { auth } from 'firebase-admin'
-import { initializeApp, getApps, cert } from 'firebase-admin/app'
+import { adminAuth } from '@/app/firebase/admin'
 
 // 必要な環境変数のチェック
 const requiredEnvVars = {
   NEXT_PUBLIC_LINE_CHANNEL_ID: process.env.NEXT_PUBLIC_LINE_CHANNEL_ID,
   LINE_CHANNEL_SECRET: process.env.LINE_CHANNEL_SECRET,
-  FIREBASE_ADMIN_PROJECT_ID: process.env.FIREBASE_ADMIN_PROJECT_ID,
-  FIREBASE_ADMIN_CLIENT_EMAIL: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-  FIREBASE_ADMIN_PRIVATE_KEY: process.env.FIREBASE_ADMIN_PRIVATE_KEY,
+  FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
+  FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
+  FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
 }
 
 // 未設定の環境変数をチェック
@@ -18,17 +17,6 @@ const missingEnvVars = Object.entries(requiredEnvVars)
 
 if (missingEnvVars.length > 0) {
   console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`)
-}
-
-// Firebase Adminの初期化
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  })
 }
 
 export async function POST(request: Request) {
@@ -84,7 +72,7 @@ export async function POST(request: Request) {
     const profile = await profileResponse.json()
 
     // Firebaseカスタムトークンを生成
-    const customToken = await auth().createCustomToken(profile.userId, {
+    const customToken = await adminAuth.createCustomToken(profile.userId, {
       line: {
         userId: profile.userId,
         displayName: profile.displayName,
