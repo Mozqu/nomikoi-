@@ -66,6 +66,7 @@ export async function POST(request: Request) {
         const appUrl = `https://nomikoi.vercel.app/settings/line-connect?lineUserId=${lineUserId}`
         console.log('Generated URL:', appUrl) // デバッグ用
 
+        
         await client.pushMessage(lineUserId, {
           type: 'flex',
           altText: 'アカウント連携',
