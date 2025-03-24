@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signInWithCustomToken } from 'firebase/auth'
-import { auth } from '@/app/firebase/client'
+import { auth } from '../../../firebase/client'
 
 export default function LineCallback() {
   const router = useRouter()
@@ -12,21 +12,21 @@ export default function LineCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      const code = searchParams.get('code')
-      const error = searchParams.get('error')
-      const state = searchParams.get('state')
-
-      if (error) {
-        setError('認証がキャンセルされました')
-        return
-      }
-
-      if (!code) {
-        setError('認証コードが見つかりません')
-        return
-      }
-
       try {
+        const code = searchParams.get('code')
+        const error = searchParams.get('error')
+        const state = searchParams.get('state')
+
+        if (error) {
+          setError('認証がキャンセルされました')
+          return
+        }
+
+        if (!code) {
+          setError('認証コードが見つかりません')
+          return
+        }
+
         // バックエンドにコードを送信してカスタムトークンを取得
         const response = await fetch('/api/auth/line', {
           method: 'POST',
@@ -37,7 +37,8 @@ export default function LineCallback() {
         })
 
         if (!response.ok) {
-          throw new Error('認証に失敗しました')
+          const errorData = await response.json()
+          throw new Error(errorData.error || '認証に失敗しました')
         }
 
         const { customToken } = await response.json()
@@ -49,7 +50,7 @@ export default function LineCallback() {
         router.push('/')
       } catch (err) {
         console.error('Callback error:', err)
-        setError('認証処理中にエラーが発生しました')
+        setError(err instanceof Error ? err.message : '認証処理中にエラーが発生しました')
       }
     }
 
