@@ -6,6 +6,7 @@ import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 
 import { auth } from '@/app/firebase/config'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
+import LineAuthButton from '@/app/components/LineAuthButton'
 
 export default function LoginPage() {
   console.log("===============")
@@ -169,6 +170,10 @@ export default function LoginPage() {
               Googleでログイン
             </Button>
 
+        </div>
+
+        <div className="mt-4">
+          <LineAuthButton />
         </div>
 
         <p className="mt-4 text-center text-gray-400">
