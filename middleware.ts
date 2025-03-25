@@ -22,6 +22,15 @@ export async function middleware(request: NextRequest) {
   const session = request.cookies.get('session')?.value
   const pathname = request.nextUrl.pathname
 
+  // LINE認証コールバックとエラーページはスキップ
+  if (
+    request.nextUrl.pathname.startsWith('/api/auth/line/callback') ||
+    request.nextUrl.pathname.startsWith('/auth/error') ||
+    request.nextUrl.pathname.startsWith('/register/caution')
+  ) {
+    return NextResponse.next();
+  }
+
   // 明示的に除外する（保険）
   if (pathname === "/login" || pathname === "/signup") {
     console.log("保険")
