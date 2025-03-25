@@ -1,4 +1,4 @@
-import { getApps, initializeApp, cert, ServiceAccount } from 'firebase-admin/app';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -31,14 +31,14 @@ const validateAndNormalizeEnvVars = () => {
       throw new Error('Missing required environment variables');
     }
 
-    // 値の正規化と検証
+    // 値の正規化と検証ー「￥＾＠ーp０８r５絵４w３questionq Zdxfcghjkl；：」
     const normalized = {
       project_id: String(projectId).trim(),
       client_email: String(clientEmail).trim(),
       private_key: privateKey.includes('\\n') 
         ? privateKey.replace(/\\n/g, '\n') 
         : privateKey
-    } as const;
+    };
 
     console.error('\n=== Normalized Values ===');
     console.error('project_id:', JSON.stringify(normalized.project_id));
@@ -74,11 +74,12 @@ try {
   if (!getApps().length) {
     const credentials = validateAndNormalizeEnvVars();
     
+    // ServiceAccount型を使用せず、直接オブジェクトを定義
     const serviceAccount = {
       project_id: credentials.project_id,
       client_email: credentials.client_email,
       private_key: credentials.private_key,
-    } satisfies ServiceAccount;
+    };
 
     console.error('\n=== Final Service Account Config ===');
     console.error('project_id:', JSON.stringify(serviceAccount.project_id));
@@ -90,7 +91,7 @@ try {
     );
 
     app = initializeApp({
-      credential: cert(serviceAccount),
+      credential: cert(serviceAccount as any),
     });
     
     console.error('Firebase Admin initialized successfully');
