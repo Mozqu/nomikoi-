@@ -3,14 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getAuth, signInWithCustomToken } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
-
-// Firebaseの設定
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-};
+import { auth } from '@/app/firebase/config';
 
 export default function VerifyPage() {
   const router = useRouter();
@@ -26,9 +19,9 @@ export default function VerifyPage() {
           throw new Error('No token provided');
         }
 
-        // Firebaseクライアントの初期化
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+        if (!auth) {
+          throw new Error('Firebase authentication is not initialized');
+        }
 
         // カスタムトークンでサインイン
         await signInWithCustomToken(auth, token);
