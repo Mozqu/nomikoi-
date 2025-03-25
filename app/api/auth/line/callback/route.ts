@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/app/firebase/admin';
+import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
   try {
@@ -58,33 +59,28 @@ export async function GET(request: Request) {
       },
     });
 
-    // Firebaseで既存ユーザーを確認
-    try {
-      await adminAuth.getUserByEmail(profile.email);
-      // 既存ユーザーの場合はホームページへ
-      const redirectUrl = new URL('/home', process.env.NEXT_PUBLIC_APP_URL!);
-      redirectUrl.searchParams.set('token', customToken);
-      return NextResponse.redirect(redirectUrl.toString());
-    } catch (error) {
-      // 新規ユーザーの場合は利用規約確認ページへ
-      const redirectUrl = new URL('/register/caution', process.env.NEXT_PUBLIC_APP_URL!);
-      redirectUrl.searchParams.set('token', customToken);
-      // LINE情報も渡す
-      redirectUrl.searchParams.set('line_profile', JSON.stringify({
-        userId: profile.userId,
-        displayName: profile.displayName,
-        pictureUrl: profile.pictureUrl,
-        email: profile.email
-      }));
-      return NextResponse.redirect(redirectUrl.toString());
-    }
+    // セッションCookieを作成
+    const idToken = await adminAuth.createSessionCookie(customToken, {
+      expirationIn: 60 * 60 * 24 * 1000 // 24 hours
+    });
+
+    const response = NextResponse.redirect(
+      new URL(isNewUser ? '/register/caution' : '/home', process.env.NEXT_PUBLIC_APP_URL!)
+    );
+
+    // セッションCookieを設定
+    response.cookies.set('session', idToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 // 24 hours
+    });
+
+    return response;
   } catch (error) {
     console.error('[ERROR] LINE Callback:', error);
-    
-    // エラー画面にリダイレクト
-    const errorUrl = new URL('/auth/error', process.env.NEXT_PUBLIC_APP_URL!);
-    errorUrl.searchParams.set('error', error instanceof Error ? error.message : 'Authentication failed');
-    
-    return NextResponse.redirect(errorUrl.toString());
+    return NextResponse.redirect(
+      new URL('/auth/error', process.env.NEXT_PUBLIC_APP_URL!)
+    );
   }
 } 

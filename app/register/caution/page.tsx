@@ -5,12 +5,14 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { auth, db } from "@/app/firebase/config";
 import { doc, setDoc } from "firebase/firestore";
+import { useAuth } from '@/app/hooks/useAuth';
 
 export default function Caution() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isValid, setIsValid] = useState(false);
     const [error, setError] = useState("");
+    const { isLoading, isAuthenticated } = useAuth();
 
     useEffect(() => {
         const token = searchParams.get('token');
@@ -23,6 +25,12 @@ export default function Caution() {
             console.log('LINE Profile:', profile);
         }
     }, [searchParams]);
+
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            router.push('/login');
+        }
+    }, [isLoading, isAuthenticated, router]);
 
     const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setIsValid(e.target.checked);
@@ -48,6 +56,10 @@ export default function Caution() {
             console.error("Error updating user agreement:", error);
             setError("エラーが発生しました。もう一度お試しください。");
         }
+    }
+
+    if (isLoading) {
+        return <div>Loading...</div>;
     }
 
     return (
