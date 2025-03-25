@@ -33,31 +33,31 @@ const validateAndNormalizeEnvVars = () => {
 
     // 値の正規化と検証
     const normalized = {
-      projectId: String(projectId).trim(),
-      clientEmail: String(clientEmail).trim(),
-      privateKey: privateKey.includes('\\n') 
+      project_id: String(projectId).trim(),
+      client_email: String(clientEmail).trim(),
+      private_key: privateKey.includes('\\n') 
         ? privateKey.replace(/\\n/g, '\n') 
         : privateKey
     } as const;
 
     console.error('\n=== Normalized Values ===');
-    console.error('projectId:', JSON.stringify(normalized.projectId));
-    console.error('projectId matches expected:', normalized.projectId === EXPECTED_PROJECT_ID);
-    console.error('clientEmail:', JSON.stringify(normalized.clientEmail));
-    console.error('privateKey starts with:', normalized.privateKey.substring(0, 20));
-    console.error('privateKey ends with:', normalized.privateKey.slice(-20));
+    console.error('project_id:', JSON.stringify(normalized.project_id));
+    console.error('project_id matches expected:', normalized.project_id === EXPECTED_PROJECT_ID);
+    console.error('client_email:', JSON.stringify(normalized.client_email));
+    console.error('private_key starts with:', normalized.private_key.substring(0, 20));
+    console.error('private_key ends with:', normalized.private_key.slice(-20));
 
     // 値の検証
-    if (normalized.projectId !== EXPECTED_PROJECT_ID) {
-      throw new Error(`Project ID mismatch. Expected: ${EXPECTED_PROJECT_ID}, Got: ${normalized.projectId}`);
+    if (normalized.project_id !== EXPECTED_PROJECT_ID) {
+      throw new Error(`Project ID mismatch. Expected: ${EXPECTED_PROJECT_ID}, Got: ${normalized.project_id}`);
     }
-    if (!normalized.clientEmail.endsWith(`@${normalized.projectId}.iam.gserviceaccount.com`)) {
+    if (!normalized.client_email.endsWith(`@${normalized.project_id}.iam.gserviceaccount.com`)) {
       throw new Error('Invalid client email format for service account');
     }
-    if (!normalized.privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+    if (!normalized.private_key.includes('-----BEGIN PRIVATE KEY-----')) {
       throw new Error('Invalid private key format: Missing BEGIN marker');
     }
-    if (!normalized.privateKey.includes('-----END PRIVATE KEY-----')) {
+    if (!normalized.private_key.includes('-----END PRIVATE KEY-----')) {
       throw new Error('Invalid private key format: Missing END marker');
     }
 
@@ -75,18 +75,18 @@ try {
     const credentials = validateAndNormalizeEnvVars();
     
     const serviceAccount = {
-      projectId: credentials.projectId,
-      clientEmail: credentials.clientEmail,
-      privateKey: credentials.privateKey,
+      project_id: credentials.project_id,
+      client_email: credentials.client_email,
+      private_key: credentials.private_key,
     } satisfies ServiceAccount;
 
     console.error('\n=== Final Service Account Config ===');
-    console.error('projectId:', JSON.stringify(serviceAccount.projectId));
-    console.error('projectId correct:', serviceAccount.projectId === EXPECTED_PROJECT_ID);
-    console.error('clientEmail:', JSON.stringify(serviceAccount.clientEmail));
-    console.error('privateKey valid:', 
-      serviceAccount.privateKey.includes('-----BEGIN PRIVATE KEY-----') && 
-      serviceAccount.privateKey.includes('-----END PRIVATE KEY-----')
+    console.error('project_id:', JSON.stringify(serviceAccount.project_id));
+    console.error('project_id correct:', serviceAccount.project_id === EXPECTED_PROJECT_ID);
+    console.error('client_email:', JSON.stringify(serviceAccount.client_email));
+    console.error('private_key valid:', 
+      serviceAccount.private_key.includes('-----BEGIN PRIVATE KEY-----') && 
+      serviceAccount.private_key.includes('-----END PRIVATE KEY-----')
     );
 
     app = initializeApp({
