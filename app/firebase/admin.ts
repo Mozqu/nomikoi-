@@ -31,7 +31,7 @@ const validateAndNormalizeEnvVars = () => {
       throw new Error('Missing required environment variables');
     }
 
-    // 値の正規化と検証ー「￥＾＠ーp０８r５絵４w３questionq Zdxfcghjkl；：」
+    // 値の正規化と検証
     const normalized = {
       project_id: String(projectId).trim(),
       client_email: String(clientEmail).trim(),
@@ -73,15 +73,17 @@ let app;
 try {
   if (!getApps().length) {
     const credentials = validateAndNormalizeEnvVars();
-    
-    // ServiceAccount型を使用せず、直接オブジェクトを定義
+
+    // 明示的な型アサーション
     const serviceAccount = {
+      type: 'service_account',
       project_id: credentials.project_id,
       client_email: credentials.client_email,
       private_key: credentials.private_key,
     };
 
     console.error('\n=== Final Service Account Config ===');
+    console.error('type:', serviceAccount.type);
     console.error('project_id:', JSON.stringify(serviceAccount.project_id));
     console.error('project_id correct:', serviceAccount.project_id === EXPECTED_PROJECT_ID);
     console.error('client_email:', JSON.stringify(serviceAccount.client_email));
@@ -91,7 +93,7 @@ try {
     );
 
     app = initializeApp({
-      credential: cert(serviceAccount as any),
+      credential: cert(serviceAccount),
     });
     
     console.error('Firebase Admin initialized successfully');
