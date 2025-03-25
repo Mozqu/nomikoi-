@@ -2,10 +2,11 @@ import { Button } from '@/components/ui/button';
 
 export function LineLoginButton() {
   const handleLogin = () => {
-    // デバッグ用のログ出力を追加
-    console.log('LINE Login Config:', {
+    // デバッグログを追加
+    console.log('[DEBUG] LINE Login Config:', {
       channelId: process.env.NEXT_PUBLIC_LINE_CHANNEL_ID,
-      callbackUrl: process.env.NEXT_PUBLIC_LINE_CALLBACK_URL
+      callbackUrl: process.env.NEXT_PUBLIC_LINE_CALLBACK_URL,
+      currentUrl: window.location.href
     });
 
     const params = new URLSearchParams({
@@ -17,7 +18,7 @@ export function LineLoginButton() {
     });
 
     const url = `https://access.line.me/oauth2/v2.1/authorize?${params.toString()}`;
-    console.log('Generated URL:', url); // デバッグ用
+    console.log('[DEBUG] Generated LINE Auth URL:', url);
     window.location.href = url;
   };
 

@@ -5,14 +5,31 @@ import { cookies } from 'next/headers';
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
+    // デバッグログを追加
+    console.error('[DEBUG] Callback URL:', url.toString());
+    console.error('[DEBUG] Search Params:', Object.fromEntries(url.searchParams));
+    
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
     
-    console.error('[DEBUG] LINE Callback:', { code: !!code, state });
+    // LINE認証のレスポンスをデバッグ
+    console.error('[DEBUG] LINE Auth Response:', {
+      code: code ? 'exists' : 'missing',
+      state,
+      url: url.toString()
+    });
 
     if (!code) {
+      console.error('[ERROR] No code provided in callback');
       throw new Error('Authorization code is missing');
     }
+
+    // LINEトークンリクエストのデバッグ
+    console.error('[DEBUG] LINE Token Request:', {
+      redirect_uri: process.env.NEXT_PUBLIC_LINE_CALLBACK_URL,
+      client_id: process.env.NEXT_PUBLIC_LINE_CHANNEL_ID,
+      client_secret: process.env.LINE_CHANNEL_SECRET ? 'exists' : 'missing'
+    });
 
     // LINEトークンエンドポイントにリクエスト
     const tokenResponse = await fetch('https://api.line.me/oauth2/v2.1/token', {
@@ -78,7 +95,10 @@ export async function GET(request: Request) {
 
     return response;
   } catch (error) {
-    console.error('[ERROR] LINE Callback:', error);
+    console.error('[ERROR] Detailed callback error:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return NextResponse.redirect(
       new URL('/auth/error', process.env.NEXT_PUBLIC_APP_URL!)
     );
