@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/app/firebase/admin';
-import { cookies } from 'next/headers';
+import { adminAuth } from '@/app/firebase/admin';
+import { getAuth, signInWithCustomToken } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+
+// Firebaseクライアント設定
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+};
 
 export async function GET(request: Request) {
   try {
@@ -52,7 +60,7 @@ export async function GET(request: Request) {
       throw new Error('Failed to get LINE token');
     }
 
-    const { id_token, access_token } = await tokenResponse.json();
+    const { access_token } = await tokenResponse.json();
 
     // LINEプロフィールを取得
     const profileResponse = await fetch('https://api.line.me/v2/profile', {
@@ -67,7 +75,7 @@ export async function GET(request: Request) {
 
     const profile = await profileResponse.json();
 
-    // Firebaseカスタムトークンを生成
+    // カスタムトークンの生成
     const customToken = await adminAuth.createCustomToken(profile.userId, {
       line: {
         userId: profile.userId,
@@ -76,22 +84,40 @@ export async function GET(request: Request) {
       },
     });
 
-    // セッションCookieの有効期間を正しく設定
-    const expiresIn = 60 * 60 * 24 * 1000; // 24時間（ミリ秒）
-    const sessionCookie = await adminAuth.createSessionCookie(customToken, {
-      expiresIn: expiresIn // 5分から2週間の間の値である必要があります
+    // Firebaseクライアントの初期化
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // カスタムトークンでサインイン
+    const userCredential = await signInWithCustomToken(auth, customToken);
+    
+    // IDトークンの取得
+    const idToken = await userCredential.user.getIdToken();
+
+    // セッションCookieの作成
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, {
+      expiresIn: 60 * 60 * 24 * 1000 // 24 hours
     });
+
+    // 新規ユーザーかどうかの確認
+    let isNewUser = true;
+    try {
+      await adminAuth.getUserByEmail(profile.email);
+      isNewUser = false;
+    } catch {
+      isNewUser = true;
+    }
 
     const response = NextResponse.redirect(
       new URL(isNewUser ? '/register/caution' : '/home', process.env.NEXT_PUBLIC_APP_URL!)
     );
 
-    // Cookieの設定も同じ有効期間に合わせる
+    // セッションCookieの設定
     response.cookies.set('session', sessionCookie, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
-      maxAge: expiresIn / 1000 // 秒単位に変換
+      maxAge: 60 * 60 * 24 // 24 hours in seconds
     });
 
     return response;
