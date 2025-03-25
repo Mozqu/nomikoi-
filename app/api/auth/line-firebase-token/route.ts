@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server'
 import { auth } from 'firebase-admin'
 import { initializeApp, getApps, cert } from 'firebase-admin/app'
+import liff from '@line/liff'
+
+console.log('[DEBUG] Firebase Admin Env Check:', {
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  privateKeyFirstLine: process.env.FIREBASE_PRIVATE_KEY?.split('\\n')[0]
+});
+
 
 // Firebase Adminの初期化
 if (!getApps().length) {
