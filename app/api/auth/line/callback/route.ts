@@ -76,21 +76,22 @@ export async function GET(request: Request) {
       },
     });
 
-    // セッションCookieを作成
-    const idToken = await adminAuth.createSessionCookie(customToken, {
-      expirationIn: 60 * 60 * 24 * 1000 // 24 hours
+    // セッションCookieの有効期間を正しく設定
+    const expiresIn = 60 * 60 * 24 * 1000; // 24時間（ミリ秒）
+    const sessionCookie = await adminAuth.createSessionCookie(customToken, {
+      expiresIn: expiresIn // 5分から2週間の間の値である必要があります
     });
 
     const response = NextResponse.redirect(
       new URL(isNewUser ? '/register/caution' : '/home', process.env.NEXT_PUBLIC_APP_URL!)
     );
 
-    // セッションCookieを設定
-    response.cookies.set('session', idToken, {
+    // Cookieの設定も同じ有効期間に合わせる
+    response.cookies.set('session', sessionCookie, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 // 24 hours
+      maxAge: expiresIn / 1000 // 秒単位に変換
     });
 
     return response;
@@ -99,8 +100,10 @@ export async function GET(request: Request) {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
     });
-    return NextResponse.redirect(
-      new URL('/auth/error', process.env.NEXT_PUBLIC_APP_URL!)
-    );
+
+    // エラーページへリダイレクト
+    const errorUrl = new URL('/auth/error', process.env.NEXT_PUBLIC_APP_URL!);
+    errorUrl.searchParams.set('error', 'Authentication failed');
+    return NextResponse.redirect(errorUrl.toString());
   }
 } 
