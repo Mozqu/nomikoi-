@@ -1,47 +1,33 @@
 import { NextResponse } from 'next/server'
-import { auth } from 'firebase-admin'
-import { initializeApp, getApps, cert } from 'firebase-admin/app'
-import liff from '@line/liff'
+import { adminAuth } from '@/app/firebase/admin'
 
-console.log('[DEBUG] Firebase Admin Env Check:', {
+// デバッグ用のログ
+console.error('[DEBUG] Firebase Admin Env Check:', {
   projectId: process.env.FIREBASE_PROJECT_ID,
   clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  privateKeyFirstLine: process.env.FIREBASE_PRIVATE_KEY?.split('\\n')[0]
+  privateKeyFirstLine: process.env.FIREBASE_PRIVATE_KEY?.split('\n')[0]
 });
 
-
-// Firebase Adminの初期化
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  })
-}
-
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    // LIFFからのIDトークンを検証
-    const idToken = await liff.getIDToken()
+    const { idToken } = await request.json();
+
     if (!idToken) {
-      return NextResponse.json({ error: 'No ID token' }, { status: 401 })
+      return NextResponse.json({ error: 'ID token is required' }, { status: 400 });
     }
 
-    // LINE UserIDを取得
-    const decodedToken = await auth().verifyIdToken(idToken)
-    const uid = decodedToken.uid
+    // IDトークンを検証
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
 
-    // Firebaseカスタムトークンを生成
-    const customToken = await auth().createCustomToken(uid)
+    // カスタムトークンを生成
+    const customToken = await adminAuth.createCustomToken(decodedToken.uid);
 
-    return NextResponse.json({ customToken })
+    return NextResponse.json({ customToken });
   } catch (error) {
-    console.error('Error creating custom token:', error)
+    console.error('Firebase token error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error instanceof Error ? error.message : 'Token generation failed' },
       { status: 500 }
-    )
+    );
   }
 } 
