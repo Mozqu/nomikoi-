@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getAuth, signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/app/firebase/config';
@@ -8,6 +8,7 @@ import { auth } from '@/app/firebase/config';
 export default function VerifyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const verifyToken = async () => {
@@ -49,9 +50,16 @@ export default function VerifyPage() {
         // 適切なページにリダイレクト
         router.push(isNewUser ? '/register/caution' : '/home');
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('Verification error:', error);
-        router.push('/auth/error?error=verification_failed');
+        // ネットワークエラーの検出
+        if (error.message?.includes('ERR_BLOCKED_BY_CLIENT') || 
+            error.code === 'messaging/failed-service-worker-registration' ||
+            error.message?.includes('Failed to register a ServiceWorker')) {
+          setError('広告ブロッカーが有効になっているため、認証に失敗しました。このサイトの広告ブロッカーを無効にしてから、再度お試しください。');
+        } else {
+          router.push('/auth/error?error=verification_failed');
+        }
       }
     };
 
@@ -61,8 +69,23 @@ export default function VerifyPage() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <h1 className="text-2xl font-bold mb-4">認証中...</h1>
-        <p>しばらくお待ちください</p>
+        {error ? (
+          <>
+            <h1 className="text-2xl font-bold mb-4 text-red-600">エラーが発生しました</h1>
+            <p className="mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              再試行
+            </button>
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold mb-4">認証中...</h1>
+            <p>しばらくお待ちください</p>
+          </>
+        )}
       </div>
     </div>
   );
