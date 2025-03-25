@@ -2,33 +2,27 @@ import { NextResponse } from 'next/server'
 import { adminAuth } from '@/app/firebase/admin'
 
 // 必要な環境変数のチェック
-const requiredEnvVars = {
-  NEXT_PUBLIC_LINE_CHANNEL_ID: process.env.NEXT_PUBLIC_LINE_CHANNEL_ID,
-  LINE_CHANNEL_SECRET: process.env.LINE_CHANNEL_SECRET,
-  FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
-  FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
-  FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
-}
+const checkRequiredEnvVars = () => {
+  const required = {
+    channelId: process.env.NEXT_PUBLIC_LINE_CHANNEL_ID,
+    channelSecret: process.env.LINE_CHANNEL_SECRET,
+    callbackUrl: process.env.NEXT_PUBLIC_LINE_CALLBACK_URL,
+  }
 
-// 未設定の環境変数をチェック
-const missingEnvVars = Object.entries(requiredEnvVars)
-  .filter(([_, value]) => !value)
-  .map(([key]) => key)
+  const missing = Object.entries(required)
+    .filter(([_, value]) => !value)
+    .map(([key]) => key)
 
-if (missingEnvVars.length > 0) {
-  console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`)
+  if (missing.length > 0) {
+    throw new Error(`Missing required LINE environment variables: ${missing.join(', ')}`)
+  }
+
+  return required
 }
 
 export async function POST(request: Request) {
   try {
-    // 環境変数が設定されているか確認
-    if (missingEnvVars.length > 0) {
-      return NextResponse.json(
-        { error: '必要な環境変数が設定されていません' },
-        { status: 500 }
-      )
-    }
-
+    const { channelId, channelSecret, callbackUrl } = checkRequiredEnvVars()
     const { code } = await request.json()
 
     if (!code) {
@@ -44,9 +38,9 @@ export async function POST(request: Request) {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: process.env.NEXT_PUBLIC_LINE_CALLBACK_URL || `${process.env.NEXT_PUBLIC_APP_URL}/__/auth/handler`,
-        client_id: process.env.NEXT_PUBLIC_LINE_CHANNEL_ID!,
-        client_secret: process.env.LINE_CHANNEL_SECRET!,
+        redirect_uri: callbackUrl,
+        client_id: channelId,
+        client_secret: channelSecret,
       }),
     })
 
@@ -84,7 +78,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('LINE authentication error:', error)
     return NextResponse.json(
-      { error: 'Authentication failed' },
+      { error: error instanceof Error ? error.message : 'Authentication failed' },
       { status: 500 }
     )
   }

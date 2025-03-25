@@ -1,7 +1,6 @@
 // app/api/login/route.ts
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getFirebaseAuth } from '@/app/firebase/admin'
+import { adminAuth } from '@/app/firebase/admin'
 
 // デバッグ用のログ
 console.log('API Route: Loading...')
@@ -19,48 +18,33 @@ export async function POST(request: Request) {
   console.log('\n=== Login API Start ===')
   try {
     const { idToken } = await request.json()
-    console.log('ID Token received, length:', idToken.length)
+    
+    if (!idToken) {
+      return NextResponse.json({ error: 'ID token is required' }, { status: 400 })
+    }
 
-    const auth = getFirebaseAuth()
-    const decodedToken = await auth.verifyIdToken(idToken)
-    console.log('Token verified for user:', decodedToken.uid)
+    // IDトークンを検証
+    const decodedToken = await adminAuth.verifyIdToken(idToken)
 
-    // セッションクッキーを作成（5日間）
-    const expiresIn = 60 * 60 * 24 * 5 * 1000
-    console.log('Creating session cookie...')
-    const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn })
-
-    // クッキーを設定
-    console.log('Setting session cookie...')
-    const cookieStore = await cookies()
-    cookieStore.set('session', sessionCookie, {
-      maxAge: expiresIn / 1000,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      path: "/",
-      sameSite: 'lax'  // CSRF対策として追加
+    // セッションCookieを作成（有効期限24時間）
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, {
+      expirationIn: 60 * 60 * 24 * 1000 // 24 hours
     })
 
-    console.log('Session cookie set successfully')
-    return new NextResponse(
-      JSON.stringify({ 
-        status: "success",
-        redirect: '/home'  // リダイレクト先を指定
-      }),
+    return NextResponse.json(
+      { status: 'success' },
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Set-Cookie': `session=${sessionCookie}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${60 * 60 * 24}`
+        }
       }
     )
-
   } catch (error) {
-    console.error("Session creation error:", error)
-    return new NextResponse(
-      JSON.stringify({ error: "Internal server error" }), 
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
+    console.error('Session creation error:', error)
+    return NextResponse.json(
+      { error: 'Failed to create session' },
+      { status: 401 }
     )
   }
 }
