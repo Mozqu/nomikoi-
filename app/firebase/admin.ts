@@ -5,71 +5,95 @@ import { getFirestore } from 'firebase-admin/firestore';
 // 即時実行される環境変数チェック
 (() => {
   console.error('\n=== Firebase Admin Environment Variables ===');
-  console.error('FIREBASE_PROJECT_ID:', JSON.stringify(process.env.FIREBASE_PROJECT_ID));
-  console.error('FIREBASE_CLIENT_EMAIL:', JSON.stringify(process.env.FIREBASE_CLIENT_EMAIL));
-  console.error('FIREBASE_PRIVATE_KEY exists:', !!process.env.FIREBASE_PRIVATE_KEY);
+  console.error('FIREBASE_PROJECT_ID:', typeof process.env.FIREBASE_PROJECT_ID, JSON.stringify(process.env.FIREBASE_PROJECT_ID));
+  console.error('FIREBASE_CLIENT_EMAIL:', typeof process.env.FIREBASE_CLIENT_EMAIL, JSON.stringify(process.env.FIREBASE_CLIENT_EMAIL));
+  console.error('FIREBASE_PRIVATE_KEY:', typeof process.env.FIREBASE_PRIVATE_KEY, process.env.FIREBASE_PRIVATE_KEY ? 'exists' : 'undefined');
+  console.error('Environment:', process.env.NODE_ENV);
 })();
 
-// サービスアカウントの設定を確認
-const checkRequiredEnvVars = () => {
-  const required = {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY,
-  };
+// 環境変数の検証と正規化
+const validateAndNormalizeEnvVars = () => {
+  try {
+    // 環境変数の存在チェック
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-  console.error('\nRequired variables values:');
-  console.error('projectId:', JSON.stringify(required.projectId));
-  console.error('clientEmail:', JSON.stringify(required.clientEmail));
-  console.error('privateKey exists:', !!required.privateKey);
+    console.error('\n=== Raw Environment Variables ===');
+    console.error('FIREBASE_PROJECT_ID:', JSON.stringify(projectId));
+    console.error('FIREBASE_CLIENT_EMAIL:', JSON.stringify(clientEmail));
+    console.error('FIREBASE_PRIVATE_KEY exists:', !!privateKey);
 
-  const missing = Object.entries(required)
-    .filter(([_, value]) => !value)
-    .map(([key]) => key);
+    if (!projectId || !clientEmail || !privateKey) {
+      throw new Error('Missing required environment variables');
+    }
 
-  if (missing.length > 0) {
-    const errorMsg = `Missing required Firebase Admin environment variables: ${missing.join(', ')}`;
-    console.error('\nError:', errorMsg);
-    throw new Error(errorMsg);
+    // 値の正規化と検証
+    const normalized = {
+      projectId: String(projectId).trim(),
+      clientEmail: String(clientEmail).trim(),
+      privateKey: privateKey.includes('\\n') 
+        ? privateKey.replace(/\\n/g, '\n') 
+        : privateKey
+    };
+
+    console.error('\n=== Normalized Values ===');
+    console.error('projectId:', JSON.stringify(normalized.projectId));
+    console.error('clientEmail:', JSON.stringify(normalized.clientEmail));
+    console.error('privateKey format valid:', normalized.privateKey.includes('-----BEGIN PRIVATE KEY-----'));
+
+    // 値の検証
+    if (normalized.projectId.length === 0) {
+      throw new Error('Project ID cannot be empty');
+    }
+    if (!normalized.clientEmail.includes('@')) {
+      throw new Error('Invalid client email format');
+    }
+    if (!normalized.privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+      throw new Error('Invalid private key format');
+    }
+
+    return normalized;
+  } catch (error) {
+    console.error('\nValidation Error:', error);
+    throw error;
   }
-
-  return required;
 };
 
 // Firebase Adminの初期化
-if (!getApps().length) {
-  try {
-    const { projectId, clientEmail, privateKey } = checkRequiredEnvVars();
-
-    if (!projectId || !clientEmail || !privateKey) {
-      throw new Error('Required environment variables are undefined');
-    }
-
+let app;
+try {
+  if (!getApps().length) {
+    const credentials = validateAndNormalizeEnvVars();
+    
     const serviceAccount: ServiceAccount = {
-      projectId: String(projectId),
-      clientEmail: String(clientEmail),
-      privateKey: String(privateKey).replace(/\\n/g, '\n'),
+      projectId: credentials.projectId,
+      clientEmail: credentials.clientEmail,
+      privateKey: credentials.privateKey,
     };
 
-    console.error('\nService Account Config:');
+    console.error('\n=== Final Service Account Config ===');
     console.error('projectId:', JSON.stringify(serviceAccount.projectId));
     console.error('clientEmail:', JSON.stringify(serviceAccount.clientEmail));
-    console.error('privateKey length:', serviceAccount.privateKey.length);
+    console.error('privateKey valid:', serviceAccount.privateKey.includes('-----BEGIN PRIVATE KEY-----'));
 
-    initializeApp({
+    app = initializeApp({
       credential: cert(serviceAccount),
     });
     
     console.error('Firebase Admin initialized successfully');
-  } catch (error) {
-    console.error('\nFirebase Admin initialization error:', error);
-    throw error;
+  } else {
+    app = getApps()[0];
+    console.error('Using existing Firebase Admin instance');
   }
+} catch (error) {
+  console.error('\nFirebase Admin initialization error:', error);
+  throw error;
 }
 
-export const adminAuth = getAuth();
-export const adminDb = getFirestore();
+export const adminAuth = getAuth(app);
+export const adminDb = getFirestore(app);
 
 // エクスポート関数の名前を修正
-export const getFirebaseAdminAuth = () => getAuth();
-export const getFirebaseAdminDb = () => getFirestore(); 
+export const getFirebaseAdminAuth = () => getAuth(app);
+export const getFirebaseAdminDb = () => getFirestore(app); 
