@@ -2,11 +2,13 @@ import { getApps, initializeApp, cert, ServiceAccount } from 'firebase-admin/app
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// ビルド時のデバッグログ
-process.stdout.write('\n=== Firebase Admin Debug Info ===\n');
-process.stdout.write(`FIREBASE_PROJECT_ID: ${process.env.FIREBASE_PROJECT_ID}\n`);
-process.stdout.write(`FIREBASE_CLIENT_EMAIL: ${process.env.FIREBASE_CLIENT_EMAIL}\n`);
-process.stdout.write(`FIREBASE_PRIVATE_KEY exists: ${!!process.env.FIREBASE_PRIVATE_KEY}\n`);
+// 即時実行される環境変数チェック
+(() => {
+  console.error('\n=== Firebase Admin Environment Variables ===');
+  console.error('FIREBASE_PROJECT_ID:', JSON.stringify(process.env.FIREBASE_PROJECT_ID));
+  console.error('FIREBASE_CLIENT_EMAIL:', JSON.stringify(process.env.FIREBASE_CLIENT_EMAIL));
+  console.error('FIREBASE_PRIVATE_KEY exists:', !!process.env.FIREBASE_PRIVATE_KEY);
+})();
 
 // サービスアカウントの設定を確認
 const checkRequiredEnvVars = () => {
@@ -16,10 +18,10 @@ const checkRequiredEnvVars = () => {
     privateKey: process.env.FIREBASE_PRIVATE_KEY,
   };
 
-  process.stdout.write('\nChecking required variables:\n');
-  process.stdout.write(`projectId exists: ${!!required.projectId}\n`);
-  process.stdout.write(`clientEmail exists: ${!!required.clientEmail}\n`);
-  process.stdout.write(`privateKey exists: ${!!required.privateKey}\n`);
+  console.error('\nRequired variables values:');
+  console.error('projectId:', JSON.stringify(required.projectId));
+  console.error('clientEmail:', JSON.stringify(required.clientEmail));
+  console.error('privateKey exists:', !!required.privateKey);
 
   const missing = Object.entries(required)
     .filter(([_, value]) => !value)
@@ -27,7 +29,7 @@ const checkRequiredEnvVars = () => {
 
   if (missing.length > 0) {
     const errorMsg = `Missing required Firebase Admin environment variables: ${missing.join(', ')}`;
-    process.stdout.write(`\nError: ${errorMsg}\n`);
+    console.error('\nError:', errorMsg);
     throw new Error(errorMsg);
   }
 
@@ -44,23 +46,23 @@ if (!getApps().length) {
     }
 
     const serviceAccount: ServiceAccount = {
-      projectId,
-      clientEmail,
-      privateKey: privateKey.replace(/\\n/g, '\n'),
+      projectId: String(projectId),
+      clientEmail: String(clientEmail),
+      privateKey: String(privateKey).replace(/\\n/g, '\n'),
     };
 
-    process.stdout.write('\nService Account Config:\n');
-    process.stdout.write(`projectId: ${serviceAccount.projectId}\n`);
-    process.stdout.write(`clientEmail: ${serviceAccount.clientEmail}\n`);
-    process.stdout.write(`privateKey length: ${serviceAccount.privateKey.length}\n`);
+    console.error('\nService Account Config:');
+    console.error('projectId:', JSON.stringify(serviceAccount.projectId));
+    console.error('clientEmail:', JSON.stringify(serviceAccount.clientEmail));
+    console.error('privateKey length:', serviceAccount.privateKey.length);
 
     initializeApp({
       credential: cert(serviceAccount),
     });
     
-    process.stdout.write('Firebase Admin initialized successfully\n');
+    console.error('Firebase Admin initialized successfully');
   } catch (error) {
-    process.stdout.write(`\nFirebase Admin initialization error: ${error}\n`);
+    console.error('\nFirebase Admin initialization error:', error);
     throw error;
   }
 }
