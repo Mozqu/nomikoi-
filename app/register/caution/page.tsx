@@ -1,15 +1,28 @@
 'use client'
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { auth, db } from "@/app/firebase/config";
 import { doc, setDoc } from "firebase/firestore";
 
 export default function Caution() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [isValid, setIsValid] = useState(false);
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        const token = searchParams.get('token');
+        const lineProfile = searchParams.get('line_profile');
+        
+        if (token && lineProfile) {
+            // LINE情報を保存
+            const profile = JSON.parse(lineProfile);
+            // ここでプロフィール情報を保存または表示
+            console.log('LINE Profile:', profile);
+        }
+    }, [searchParams]);
 
     const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setIsValid(e.target.checked);
