@@ -44,7 +44,7 @@ async function getProfileStatus() {
 
     console.log('profileCompleted', profileCompleted)
     console.log('wayOfDrinking', wayOfDrinking)
-    console.log('favoriteAlcohol', favoriteAlcohol) 
+    console.log('favoriteAlcohol', favoriteAlcohol)
 
     if (!profileCompleted) {
       return 'caution'
@@ -90,19 +90,18 @@ async function redirectBasedOnProfile() {
   }
 }
 
-
-export default function RootLayout({children,}: Readonly<{children: React.ReactNode}>) {
+export default async function RootLayout({children,}: Readonly<{children: React.ReactNode}>) {
+  // ここでプロフィール状態をチェックし、必要に応じてリダイレクト
+  await redirectBasedOnProfile();
 
   return (
     <html lang="ja">
       <body className={`${inter.className} default-bg overscroll-none`}>
         <AuthCheck>
-          
           <ClientLayout>{children}</ClientLayout>
         </AuthCheck>
       </body>
     </html>
   )
-  
 }
 
