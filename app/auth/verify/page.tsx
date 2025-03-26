@@ -24,7 +24,12 @@ export default function VerifyAuth() {
     const verifyAuth = async () => {
       try {
         const token = searchParams.get('token');
-        console.log('認証プロセス開始...', { hasToken: !!token });
+        const isNewUser = searchParams.get('isNewUser');
+        console.log('認証プロセス開始...', { 
+          hasToken: !!token, 
+          isNewUser: isNewUser,
+          currentUrl: window.location.href 
+        });
 
         if (!auth) {
           console.error('Firebase認証が初期化されていません');
@@ -47,7 +52,10 @@ export default function VerifyAuth() {
               try {
                 console.log('既存のユーザーセッションを検出:', {
                   uid: user.uid,
-                  email: user.email
+                  email: user.email,
+                  emailVerified: user.emailVerified,
+                  isAnonymous: user.isAnonymous,
+                  providerData: user.providerData
                 });
 
                 const idToken = await user.getIdToken(true);
@@ -62,21 +70,42 @@ export default function VerifyAuth() {
         }
 
         // カスタムトークンでのサインインフロー
-        console.log('カスタムトークンでのサインイン開始...');
+        console.log('カスタムトークンでのサインイン開始...', {
+          tokenLength: token.length,
+          tokenStart: token.substring(0, 10) + '...'
+        });
+
         try {
           const userCredential = await signInWithCustomToken(auth as Auth, token);
           console.log('Firebaseサインイン成功:', {
             uid: userCredential.user.uid,
-            email: userCredential.user.email
+            email: userCredential.user.email,
+            emailVerified: userCredential.user.emailVerified,
+            isAnonymous: userCredential.user.isAnonymous,
+            providerData: userCredential.user.providerData,
+            metadata: {
+              creationTime: userCredential.user.metadata.creationTime,
+              lastSignInTime: userCredential.user.metadata.lastSignInTime
+            }
           });
 
           const idToken = await userCredential.user.getIdToken(true);
+          console.log('IDトークン取得成功:', { 
+            tokenLength: idToken.length,
+            tokenStart: idToken.substring(0, 10) + '...'
+          });
+
           const sessionData = await createSession(idToken);
 
           // 新規ユーザーの判定を改善
-          const isNewUser = sessionData?.user?.isNewUser || searchParams.get('isNewUser') === 'true';
+          const isNewUserFlag = sessionData?.user?.isNewUser || isNewUser === 'true';
+          console.log('ユーザー状態判定:', {
+            isNewUserFromSession: sessionData?.user?.isNewUser,
+            isNewUserFromParams: isNewUser === 'true',
+            finalIsNewUser: isNewUserFlag
+          });
           
-          if (isNewUser) {
+          if (isNewUserFlag) {
             console.log('新規ユーザー: プロフィール設定ページへリダイレクト');
             router.push('/profile/setup');
           } else {
@@ -84,18 +113,29 @@ export default function VerifyAuth() {
             router.push('/');
           }
         } catch (signInError: any) {
-          console.error('Firebaseサインインエラー:', signInError);
+          console.error('Firebaseサインインエラー:', {
+            code: signInError.code,
+            message: signInError.message,
+            stack: signInError.stack
+          });
           handleAuthError(signInError);
         }
       } catch (err) {
-        console.error('認証エラー:', err);
+        console.error('認証エラー:', {
+          error: err,
+          message: err instanceof Error ? err.message : '不明なエラー',
+          stack: err instanceof Error ? err.stack : undefined
+        });
         handleError(err);
       }
     };
 
     // セッション作成を共通化
     const createSession = async (idToken: string): Promise<SessionResponse | null> => {
-      console.log('セッションを作成中...');
+      console.log('セッションを作成中...', {
+        tokenLength: idToken.length,
+        tokenStart: idToken.substring(0, 10) + '...'
+      });
       try {
         const sessionResponse = await fetch('/api/auth/session', {
           method: 'POST',
@@ -107,14 +147,27 @@ export default function VerifyAuth() {
 
         if (!sessionResponse.ok) {
           const errorData = await sessionResponse.json();
-          console.error('セッション作成エラー:', errorData);
+          console.error('セッション作成エラー:', {
+            status: sessionResponse.status,
+            statusText: sessionResponse.statusText,
+            error: errorData
+          });
           throw new Error(errorData.error || 'セッションの作成に失敗しました');
         }
 
         const data: SessionResponse = await sessionResponse.json();
-        console.log('セッション作成成功:', data);
+        console.log('セッション作成成功:', {
+          status: data.status,
+          uid: data.user.uid,
+          isNewUser: data.user.isNewUser
+        });
         return data;
       } catch (error) {
+        console.error('セッション作成エラー:', {
+          error,
+          message: error instanceof Error ? error.message : '不明なエラー',
+          stack: error instanceof Error ? error.stack : undefined
+        });
         handleSessionError(error);
         return null;
       }
