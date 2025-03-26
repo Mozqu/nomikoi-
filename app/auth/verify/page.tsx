@@ -133,6 +133,23 @@ export default function VerifyAuth() {
                   
                   if (sessionData) {
                     console.log('セッションデータ:', sessionData)
+                    // この時点で古いセッションは既に無効になっているはず
+                    if (auth.currentUser) {
+                      console.log('既存のユーザーをサインアウト', {
+                        uid: auth.currentUser.uid,
+                        email: auth.currentUser.email,
+                        timestamp: new Date().toISOString()
+                      });
+                      await auth.signOut();
+                      console.log('サインアウト完了');
+                    }
+                    const isNewUserFlag = sessionData.user.isNewUser || isNewUser === 'true';
+                    console.log('isNewUserFlag', isNewUserFlag)
+                    if (isNewUserFlag) {
+                      router.push('/register/caution');
+                    } else {
+                      router.push('/home');
+                    }
                   } else {
                     router.push('/login');
                   }
@@ -196,6 +213,7 @@ export default function VerifyAuth() {
         }
 
         const data = await response.json();
+        console.log('セッションデータ:', data)
         console.log('セッション作成成功:', {
           status: data.status,
           uid: data.user.uid,
