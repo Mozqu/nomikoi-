@@ -14,7 +14,7 @@ export default function VerifyAuth() {
     const verifyAuth = async () => {
       try {
         const token = searchParams.get('token');
-        console.log('トークンの確認中...');
+        console.log('認証プロセス開始...');
 
         if (!token) {
           console.error('認証トークンが見つかりません');
@@ -26,57 +26,71 @@ export default function VerifyAuth() {
           throw new Error('Firebase認証が初期化されていません');
         }
 
-        console.log('Firebaseサインイン開始...');
-        const userCredential = await signInWithCustomToken(auth, token);
-        console.log('Firebaseサインイン成功');
-
-        // IDトークンを取得
-        console.log('IDトークンを取得中...');
-        const idToken = await userCredential.user.getIdToken();
-        
-        // セッションの作成
-        console.log('セッションを作成中...');
-        const sessionResponse = await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ idToken }),
-        });
-
-        if (!sessionResponse.ok) {
-          const errorData = await sessionResponse.json();
-          console.error('セッション作成エラー:', errorData);
-          throw new Error(errorData.error || 'セッションの作成に失敗しました');
+        // Firebaseサインイン前の状態をクリア
+        if (auth.currentUser) {
+          console.log('既存のセッションをクリア中...');
+          await auth.signOut();
         }
 
-        console.log('セッション作成成功');
+        console.log('Firebaseサインイン開始...');
+        try {
+          const userCredential = await signInWithCustomToken(auth, token);
+          console.log('Firebaseサインイン成功:', {
+            uid: userCredential.user.uid,
+            email: userCredential.user.email
+          });
 
-        // 新規ユーザーかどうかを確認
-        const isNewUser = searchParams.get('isNewUser') === 'true';
-        
-        // 新規ユーザーの場合はプロフィール設定ページへ
-        if (isNewUser) {
-          console.log('新規ユーザー: プロフィール設定ページへリダイレクト');
-          router.push('/profile/setup');
-        } else {
-          console.log('既存ユーザー: ホームページへリダイレクト');
-          router.push('/');
+          // IDトークンを取得
+          console.log('IDトークンを取得中...');
+          const idToken = await userCredential.user.getIdToken(true);
+          
+          // セッションの作成
+          console.log('セッションを作成中...');
+          const sessionResponse = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken }),
+          });
+
+          if (!sessionResponse.ok) {
+            const errorData = await sessionResponse.json();
+            console.error('セッション作成エラー:', errorData);
+            throw new Error(errorData.error || 'セッションの作成に失敗しました');
+          }
+
+          console.log('セッション作成成功');
+
+          // 新規ユーザーかどうかを確認
+          const isNewUser = searchParams.get('isNewUser') === 'true';
+          
+          // 新規ユーザーの場合はプロフィール設定ページへ
+          if (isNewUser) {
+            console.log('新規ユーザー: プロフィール設定ページへリダイレクト');
+            router.push('/profile/setup');
+          } else {
+            console.log('既存ユーザー: ホームページへリダイレクト');
+            router.push('/');
+          }
+        } catch (signInError: any) {
+          console.error('Firebaseサインインエラー:', signInError);
+          if (signInError.code === 'auth/invalid-custom-token') {
+            throw new Error('無効な認証トークンです');
+          } else if (signInError.code === 'auth/custom-token-mismatch') {
+            throw new Error('トークンが一致しません');
+          } else if (signInError.code === 'auth/invalid-credential') {
+            throw new Error('認証情報が無効です。再度ログインしてください');
+          } else {
+            throw new Error('認証に失敗しました。再度お試しください');
+          }
         }
       } catch (err) {
         console.error('認証エラー:', err);
         let errorMessage = '認証処理中にエラーが発生しました';
         
         if (err instanceof Error) {
-          if (err.message.includes('auth/invalid-custom-token')) {
-            errorMessage = '無効な認証トークンです';
-          } else if (err.message.includes('auth/custom-token-mismatch')) {
-            errorMessage = 'トークンが一致しません';
-          } else if (err.message.includes('セッションの作成に失敗')) {
-            errorMessage = 'セッションの作成に失敗しました';
-          } else {
-            errorMessage = err.message;
-          }
+          errorMessage = err.message;
         }
         
         setError(errorMessage);
@@ -89,14 +103,16 @@ export default function VerifyAuth() {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-600">{error}</p>
-          <button
-            onClick={() => router.push('/login')}
-            className="mt-4 text-sm text-red-600 hover:text-red-700"
-          >
-            ログインページに戻る
-          </button>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
+          <p className="text-red-600 text-center mb-4">{error}</p>
+          <div className="flex justify-center">
+            <button
+              onClick={() => router.push('/login')}
+              className="px-4 py-2 text-sm text-white bg-red-600 rounded hover:bg-red-700 transition-colors"
+            >
+              ログインページに戻る
+            </button>
+          </div>
         </div>
       </div>
     );
