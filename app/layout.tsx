@@ -5,6 +5,7 @@ import ClientLayout from './client-layout'
 import AuthCheck from "@/app/components/auth-check"
 import { db } from './firebase/config'
 import { auth } from './firebase/config'
+import { headers } from 'next/headers'
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
@@ -31,6 +32,10 @@ async function getProfileStatus() {
 
   try {
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie.value)
+    if (!db) {
+      console.error('Firestoreが初期化されていません');
+      return null;
+    }
     const userDoc = await getDoc(doc(db, 'users', decodedToken.uid))
     
     if (!userDoc.exists()) {
@@ -63,36 +68,40 @@ async function getProfileStatus() {
   }
 }
 
-async function redirectBasedOnProfile() {
+async function redirectBasedOnProfile(pathname: string) {
   const status = await getProfileStatus()
-  const currentPath = window.location.pathname
 
   switch (status) {
     case 'unregistered':
-      if (currentPath !== '/signup') redirect('/signup')
+      if (pathname !== '/signup') redirect('/signup')
       break
     case 'caution':
-      if (currentPath !== '/caution') redirect('/caution')
+      if (pathname !== '/caution') redirect('/caution')
       break
     case 'way_of_drinking':
-      if (currentPath !== '/way_of_drinking') redirect('/way_of_drinking')
+      if (pathname !== '/way_of_drinking') redirect('/way_of_drinking')
       break
     case 'favorite_drinking':
-      if (currentPath !== '/favorite_drinking') redirect('/favorite_drinking')
+      if (pathname !== '/favorite_drinking') redirect('/favorite_drinking')
       break
     case 'home':
-      if (currentPath === '/caution' || 
-          currentPath === '/way_of_drinking' || 
-          currentPath === '/favorite_drinking') {
+      if (pathname === '/caution' || 
+          pathname === '/way_of_drinking' || 
+          pathname === '/favorite_drinking') {
         redirect('/home')
       }
       break
   }
 }
 
-export default async function RootLayout({children,}: Readonly<{children: React.ReactNode}>) {
-  // ここでプロフィール状態をチェックし、必要に応じてリダイレクト
-  await redirectBasedOnProfile();
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
+  const pathname = headers().get('x-invoke-path') || '/'
+  
+  await redirectBasedOnProfile(pathname)
 
   return (
     <html lang="ja">
