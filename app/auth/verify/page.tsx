@@ -102,7 +102,15 @@ export default function VerifyAuth() {
 
             // リダイレクト
             
-
+            const isNewUserFlag = sessionData.user.isNewUser || isNewUser === 'true';
+            console.log('isNewUserFlag', isNewUserFlag)
+            // 以下のrouter.pushによる遷移処理を削除
+            // if (isNewUserFlag) {
+            //   router.push('/register/caution');
+            // } else {
+            //   rouer.push('/home');
+            // }
+            router.push('/home');
           } catch (error) {
             console.error('認証エラー:', error);
             handleAuthError(error);
@@ -130,6 +138,7 @@ export default function VerifyAuth() {
                     // router.pushを削除
                     // layout.tsxのgetProfileStatus()とredirectBasedOnProfile()に任せる
                   } else {
+                    console.log('セッションデータがない redirect to login')
                     router.push('/login');
                   }
                 } catch (error) {
@@ -137,7 +146,7 @@ export default function VerifyAuth() {
                   handleSessionError(error);
                 }
               } else {
-                console.log('認証されていないユーザー');
+                console.log('認証されていないユーザー リダイレクト to login');
                 router.push('/login');
               }
               resolve();
