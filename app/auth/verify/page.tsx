@@ -102,13 +102,7 @@ export default function VerifyAuth() {
 
             // リダイレクト
             
-            const isNewUserFlag = sessionData.user.isNewUser || isNewUser === 'true';
-            console.log('isNewUserFlag', isNewUserFlag)
-            if (isNewUserFlag) {
-              router.push('/register/caution');
-            } else {
-              router.push('/home');
-            }
+
           } catch (error) {
             console.error('認証エラー:', error);
             handleAuthError(error);
