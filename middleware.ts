@@ -18,6 +18,24 @@ const registrationPaths = {
   '/register/favorite_alcohol': { field: 'favoriteAlcoholCompleted', value: false },
 }
 
+// 認証が必要なパス
+const authRequiredPaths = [
+  '/profile',
+  '/settings',
+  '/chat',
+]
+
+// 認証済みユーザーがアクセスできないパス
+const publicOnlyPaths = [
+  '/login',
+  '/signup',
+]
+
+// 認証処理中のパス（特別な処理が必要）
+const authProcessingPaths = [
+  '/auth/verify',
+]
+
 export async function middleware(request: NextRequest) {
   const session = request.cookies.get('session')?.value
   const pathname = request.nextUrl.pathname
@@ -62,6 +80,20 @@ export async function middleware(request: NextRequest) {
     const url = new URL('/login', request.url)
     url.searchParams.set('callbackUrl', pathname)
     return NextResponse.redirect(url)
+  }
+
+  // 認証処理中のパスは常に許可
+  if (authProcessingPaths.some(path => pathname.startsWith(path))) {
+    console.log('Auth processing path accessed:', pathname);
+    return NextResponse.next()
+  }
+
+  // 認証が必要なパスへのアクセスチェック
+  if (authRequiredPaths.some(path => pathname.startsWith(path))) {
+    if (!session) {
+      console.log('No session found, redirecting to login')
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
   }
 
   return NextResponse.next()
