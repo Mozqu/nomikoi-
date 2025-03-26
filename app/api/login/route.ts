@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
     // セッションCookieを作成（有効期限24時間）
     const sessionCookie = await adminAuth.createSessionCookie(idToken, {
-      expirationIn: 60 * 60 * 24 * 1000 // 24 hours
+      expiresIn: 60 * 60 * 24 * 1000 // 24 hours
     })
 
     return NextResponse.json(
