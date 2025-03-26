@@ -38,9 +38,9 @@ export async function POST(request: Request) {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: callbackUrl,
-        client_id: channelId,
-        client_secret: channelSecret,
+        redirect_uri: callbackUrl as string,
+        client_id: channelId as string,
+        client_secret: channelSecret as string,
       }),
     })
 
