@@ -1,4 +1,5 @@
 // middleware.ts
+import { getSession } from 'next-auth/react'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -36,9 +37,17 @@ const authProcessingPaths = [
   '/auth/verify',
 ]
 
+// 認証をスキップするパス
+const skipAuthPaths = [
+  '/auth/verify',  // 認証処理中
+  '/login',        // ログインページ
+  '/signup',       // サインアップ
+  '/',            // トップページ
+  '/api/auth',    // 認証関連API
+]
+
 export async function middleware(request: NextRequest) {
-  const session = request.cookies.get('session')?.value
-  const pathname = request.nextUrl.pathname
+  const { pathname } = request.nextUrl
 
   // LINE認証コールバックとエラーページはスキップ
   if (
@@ -66,9 +75,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // セッションがない場合はログインページにリダイレクト
+  // 認証スキップのチェック
+  if (skipAuthPaths.some(path => pathname.startsWith(path))) {
+    console.log('Skipping auth check for:', pathname);
+    return NextResponse.next()
+  }
+
+  // セッションの存在確認
+  const session = await getSession(request)
+  
   if (!session) {
-    console.log('No session found, redirecting to login')
+    console.log('No session found, redirecting to login', {
+      path: pathname,
+      isAuthPath: pathname.startsWith('/auth'),
+      timestamp: new Date().toISOString()
+    })
     const url = new URL('/login', request.url)
     url.searchParams.set('callbackUrl', pathname)
     return NextResponse.redirect(url)
