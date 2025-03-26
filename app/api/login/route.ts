@@ -13,6 +13,7 @@ console.log('Environment variables exist:', {
 export const runtime = 'nodejs'; // Edge Runtimeを使用しないことを明示
 
 const COOKIE_NAME = "session"
+const SESSION_EXPIRES_IN = 60 * 60 * 24 * 1000; // 24 hours in milliseconds
 
 export async function POST(request: Request) {
   console.log('\n=== Login API Start ===')
@@ -20,30 +21,68 @@ export async function POST(request: Request) {
     const { idToken } = await request.json()
     
     if (!idToken) {
+      console.error('No ID token provided');
       return NextResponse.json({ error: 'ID token is required' }, { status: 400 })
     }
 
+    console.log('Verifying ID token...');
     // IDトークンを検証
     const decodedToken = await adminAuth.verifyIdToken(idToken)
+    console.log('ID token verified successfully for user:', decodedToken.uid);
 
+    console.log('Creating session cookie...');
     // セッションCookieを作成（有効期限24時間）
     const sessionCookie = await adminAuth.createSessionCookie(idToken, {
-      expiresIn: 60 * 60 * 24 * 1000 // 24 hours
+      expiresIn: SESSION_EXPIRES_IN
     })
 
+    if (!sessionCookie) {
+      console.error('Failed to create session cookie');
+      throw new Error('Session cookie creation failed');
+    }
+
+    console.log('Session cookie created successfully');
+
+    const cookieOptions = [
+      `${COOKIE_NAME}=${sessionCookie}`,
+      'Path=/',
+      'HttpOnly',
+      'Secure',
+      'SameSite=Strict',
+      `Max-Age=${SESSION_EXPIRES_IN / 1000}` // Convert to seconds
+    ].join('; ');
+
+    console.log('Setting cookie with options:', cookieOptions.replace(sessionCookie, '[REDACTED]'));
+
     return NextResponse.json(
-      { status: 'success' },
+      { 
+        status: 'success',
+        uid: decodedToken.uid 
+      },
       {
         status: 200,
         headers: {
-          'Set-Cookie': `session=${sessionCookie}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${60 * 60 * 24}`
+          'Set-Cookie': cookieOptions
         }
       }
     )
-  } catch (error) {
-    console.error('Session creation error:', error)
+  } catch (error: any) {
+    console.error('Session creation error:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+
+    // より詳細なエラーメッセージを返す
+    const errorMessage = error.code === 'auth/invalid-id-token' 
+      ? 'Invalid or expired ID token'
+      : 'Failed to create session';
+
     return NextResponse.json(
-      { error: 'Failed to create session' },
+      { 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
       { status: 401 }
     )
   }
