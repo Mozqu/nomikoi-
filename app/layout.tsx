@@ -15,6 +15,77 @@ export const metadata: Metadata = {
   },
 }
 
+import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
+import { adminAuth } from './firebase/admin'
+import { getDoc, doc } from 'firebase/firestore'
+
+async function getProfileStatus() {
+  const cookieStore = cookies()
+  const sessionCookie = cookieStore.get('session')
+
+  if (!sessionCookie) {
+    return null
+  }
+
+  try {
+    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie.value)
+    const userDoc = await getDoc(doc(db, 'users', decodedToken.uid))
+    
+    if (!userDoc.exists()) {
+      return 'unregistered'
+    }
+
+    const userData = userDoc.data()
+    const profileCompleted = userData.profileCompleted
+    const wayOfDrinking = userData.answers?.way_of_drinking || []
+    const favoriteAlcohol = userData.answers?.favorite_alcohol || []
+
+    if (!profileCompleted) {
+      return 'caution'
+    }
+    if (wayOfDrinking.length === 0) {
+      return 'way_of_drinking'
+    }
+    if (favoriteAlcohol.length === 0) {
+      return 'favorite_drinking'
+    }
+    return 'home'
+
+  } catch (error) {
+    console.error('プロフィール状態の取得に失敗:', error)
+    return null
+  }
+}
+
+async function redirectBasedOnProfile() {
+  const status = await getProfileStatus()
+  const currentPath = window.location.pathname
+
+  switch (status) {
+    case 'unregistered':
+      if (currentPath !== '/signup') redirect('/signup')
+      break
+    case 'caution':
+      if (currentPath !== '/caution') redirect('/caution')
+      break
+    case 'way_of_drinking':
+      if (currentPath !== '/way_of_drinking') redirect('/way_of_drinking')
+      break
+    case 'favorite_drinking':
+      if (currentPath !== '/favorite_drinking') redirect('/favorite_drinking')
+      break
+    case 'home':
+      if (currentPath === '/caution' || 
+          currentPath === '/way_of_drinking' || 
+          currentPath === '/favorite_drinking') {
+        redirect('/home')
+      }
+      break
+  }
+}
+
+
 export default function RootLayout({children,}: Readonly<{children: React.ReactNode}>) {
 
   return (
