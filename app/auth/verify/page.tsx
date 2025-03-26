@@ -19,14 +19,20 @@ export default function VerifyAuth() {
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [showAdBlockerWarning, setShowAdBlockerWarning] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const verifyAuth = async () => {
+      if (isProcessing) return; // 処理の重複を防ぐ
+      setIsProcessing(true);
+
       try {
         const token = searchParams.get('token');
         const isNewUser = searchParams.get('isNewUser');
+        
         console.log('認証プロセス開始...', { 
           hasToken: !!token, 
+          tokenLength: token?.length,
           isNewUser: isNewUser,
           currentUrl: window.location.href,
           timestamp: new Date().toISOString()
@@ -41,168 +47,139 @@ export default function VerifyAuth() {
         }
 
         if (!auth) {
-          console.error('Firebase認証の初期化に失敗しました');
           throw new Error('Firebase認証の初期化に失敗しました');
         }
 
-        // トークンがない場合は、既存のFirebase認証状態を確認
-        if (!token) {
-          console.log('トークンなし - Firebase認証状態を確認中...');
+        // カスタムトークンが存在する場合の処理
+        if (token) {
+          console.log('カスタムトークンでのサインイン開始');
+          
+          try {
+            // 既存のユーザーをサインアウト
+            if (auth.currentUser) {
+              console.log('既存のユーザーをサインアウト');
+              await auth.signOut();
+            }
+
+            // カスタムトークンでサインイン
+            const userCredential = await signInWithCustomToken(auth, token);
+            console.log('カスタムトークンサインイン成功:', {
+              uid: userCredential.user.uid,
+              email: userCredential.user.email
+            });
+
+            // IDトークンを取得
+            const idToken = await userCredential.user.getIdToken(true);
+            console.log('IDトークン取得成功');
+
+            // セッションを作成
+            const sessionData = await createSession(idToken);
+            if (!sessionData) {
+              throw new Error('セッションの作成に失敗しました');
+            }
+
+            // リダイレクト
+            const isNewUserFlag = sessionData.user.isNewUser || isNewUser === 'true';
+            if (isNewUserFlag) {
+              router.push('/profile/setup');
+            } else {
+              router.push('/');
+            }
+          } catch (error) {
+            console.error('認証エラー:', error);
+            handleAuthError(error);
+          }
+        } else {
+          // トークンがない場合は既存のセッションを確認
+          console.log('トークンなし - 既存のセッションを確認');
+          
           return new Promise<void>((resolve) => {
-            const unsubscribe = onAuthStateChanged(auth as Auth, async (user) => {
+            const unsubscribe = onAuthStateChanged(auth, async (user) => {
               unsubscribe();
-
-              if (!user) {
-                console.log('認証されていないユーザー - ログインページにリダイレクト');
+              
+              if (user) {
+                try {
+                  console.log('既存のユーザーセッションを検出:', {
+                    uid: user.uid,
+                    email: user.email
+                  });
+                  
+                  const idToken = await user.getIdToken(true);
+                  const sessionData = await createSession(idToken);
+                  
+                  if (sessionData) {
+                    router.push('/');
+                  } else {
+                    router.push('/login');
+                  }
+                } catch (error) {
+                  console.error('セッション更新エラー:', error);
+                  handleSessionError(error);
+                }
+              } else {
+                console.log('認証されていないユーザー');
                 router.push('/login');
-                return resolve();
-              }
-
-              try {
-                console.log('既存のユーザーセッションを検出:', {
-                  uid: user.uid,
-                  email: user.email,
-                  emailVerified: user.emailVerified,
-                  isAnonymous: user.isAnonymous,
-                  providerData: user.providerData,
-                  timestamp: new Date().toISOString()
-                });
-
-                const idToken = await user.getIdToken(true);
-                await createSession(idToken);
-                router.push('/');
-              } catch (error) {
-                handleSessionError(error);
               }
               resolve();
             });
           });
         }
-
-        // カスタムトークンでのサインインフロー
-        console.log('カスタムトークンでのサインイン開始...', {
-          tokenLength: token.length,
-          tokenStart: token.substring(0, 10) + '...',
-          timestamp: new Date().toISOString()
-        });
-
-        try {
-          // 既存のユーザーをサインアウト
-          if (auth.currentUser) {
-            console.log('既存のユーザーをサインアウト');
-            await auth.signOut();
-          }
-
-          const userCredential = await signInWithCustomToken(auth as Auth, token);
-          console.log('Firebaseサインイン成功:', {
-            uid: userCredential.user.uid,
-            email: userCredential.user.email,
-            emailVerified: userCredential.user.emailVerified,
-            isAnonymous: userCredential.user.isAnonymous,
-            providerData: userCredential.user.providerData,
-            metadata: {
-              creationTime: userCredential.user.metadata.creationTime,
-              lastSignInTime: userCredential.user.metadata.lastSignInTime
-            },
-            timestamp: new Date().toISOString()
-          });
-
-          const idToken = await userCredential.user.getIdToken(true);
-          console.log('IDトークン取得成功:', { 
-            tokenLength: idToken.length,
-            tokenStart: idToken.substring(0, 10) + '...',
-            timestamp: new Date().toISOString()
-          });
-
-          const sessionData = await createSession(idToken);
-
-          // 新規ユーザーの判定を改善
-          const isNewUserFlag = sessionData?.user?.isNewUser || isNewUser === 'true';
-          console.log('ユーザー状態判定:', {
-            isNewUserFromSession: sessionData?.user?.isNewUser,
-            isNewUserFromParams: isNewUser === 'true',
-            finalIsNewUser: isNewUserFlag,
-            timestamp: new Date().toISOString()
-          });
-          
-          if (isNewUserFlag) {
-            console.log('新規ユーザー: プロフィール設定ページへリダイレクト');
-            router.push('/profile/setup');
-          } else {
-            console.log('既存ユーザー: ホームページへリダイレクト');
-            router.push('/');
-          }
-        } catch (signInError: any) {
-          console.error('Firebaseサインインエラー:', {
-            code: signInError.code,
-            message: signInError.message,
-            stack: signInError.stack,
-            timestamp: new Date().toISOString()
-          });
-          handleAuthError(signInError);
-        }
-      } catch (err) {
-        console.error('認証エラー:', {
-          error: err,
-          message: err instanceof Error ? err.message : '不明なエラー',
-          stack: err instanceof Error ? err.stack : undefined,
-          timestamp: new Date().toISOString()
-        });
-        handleError(err);
+      } catch (error) {
+        console.error('認証プロセスエラー:', error);
+        handleError(error);
+      } finally {
+        setIsProcessing(false);
       }
     };
 
-    // セッション作成を共通化
     const createSession = async (idToken: string): Promise<SessionResponse | null> => {
-      console.log('セッションを作成中...', {
-        tokenLength: idToken.length,
-        tokenStart: idToken.substring(0, 10) + '...',
-        timestamp: new Date().toISOString()
-      });
       try {
-        const sessionResponse = await fetch('/api/auth/session', {
+        console.log('セッション作成開始');
+        
+        const response = await fetch('/api/auth/session', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ idToken }),
-          credentials: 'include' // Cookieを含める
+          credentials: 'include'
         });
 
-        if (!sessionResponse.ok) {
-          const errorData = await sessionResponse.json();
-          console.error('セッション作成エラー:', {
-            status: sessionResponse.status,
-            statusText: sessionResponse.statusText,
-            error: errorData,
-            timestamp: new Date().toISOString()
-          });
-          throw new Error(errorData.error || 'セッションの作成に失敗しました');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'セッション作成に失敗しました');
         }
 
-        const data: SessionResponse = await sessionResponse.json();
+        const data = await response.json();
         console.log('セッション作成成功:', {
           status: data.status,
-          uid: data.user.uid,
-          isNewUser: data.user.isNewUser,
-          timestamp: new Date().toISOString()
+          uid: data.user.uid
         });
+        
         return data;
       } catch (error) {
-        console.error('セッション作成エラー:', {
-          error,
-          message: error instanceof Error ? error.message : '不明なエラー',
-          stack: error instanceof Error ? error.stack : undefined,
-          timestamp: new Date().toISOString()
-        });
+        console.error('セッション作成エラー:', error);
         handleSessionError(error);
         return null;
       }
     };
 
-    // セッションエラーハンドリング
+    const handleAuthError = (error: any) => {
+      console.error('認証エラーハンドリング:', error);
+      if (error.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
+        setShowAdBlockerWarning(true);
+        setError('広告ブロッカーが有効になっているため、認証に失敗しました');
+      } else if (error.code === 'auth/invalid-custom-token') {
+        setError('無効な認証トークンです');
+      } else if (error.code === 'auth/custom-token-mismatch') {
+        setError('トークンが一致しません');
+      } else {
+        setError('認証に失敗しました。再度お試しください');
+      }
+    };
+
     const handleSessionError = (error: any) => {
-      console.error('セッションエラー:', error);
+      console.error('セッションエラーハンドリング:', error);
       if (error.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
         setShowAdBlockerWarning(true);
         setError('広告ブロッカーが有効になっているため、認証に失敗しました');
@@ -211,33 +188,13 @@ export default function VerifyAuth() {
       }
     };
 
-    // 認証エラーハンドリング
-    const handleAuthError = (error: any) => {
-      if (error.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
-        setShowAdBlockerWarning(true);
-        setError('広告ブロッカーが有効になっているため、認証に失敗しました');
-      } else if (error.code === 'auth/invalid-custom-token') {
-        setError('無効な認証トークンです');
-      } else if (error.code === 'auth/custom-token-mismatch') {
-        setError('トークンが一致しません');
-      } else if (error.code === 'auth/invalid-credential') {
-        setError('認証情報が無効です。再度ログインしてください');
-      } else {
-        setError('認証に失敗しました。再度お試しください');
-      }
-    };
-
-    // 一般エラーハンドリング
     const handleError = (error: any) => {
-      let errorMessage = '認証処理中にエラーが発生しました';
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      setError(errorMessage);
+      console.error('一般エラーハンドリング:', error);
+      setError(error instanceof Error ? error.message : '認証処理中にエラーが発生しました');
     };
 
     verifyAuth();
-  }, [searchParams, router]);
+  }, [searchParams, router, isProcessing]);
 
   if (error) {
     return (
@@ -254,7 +211,12 @@ export default function VerifyAuth() {
           )}
           <div className="flex justify-center space-x-4">
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                setError(null);
+                setShowAdBlockerWarning(false);
+                setIsProcessing(false);
+                window.location.reload();
+              }}
               className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
             >
               再試行
