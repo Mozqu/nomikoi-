@@ -103,7 +103,7 @@ export default function VerifyAuth() {
             // リダイレクト
             const isNewUserFlag = sessionData.user.isNewUser || isNewUser === 'true';
             if (isNewUserFlag) {
-              router.push('/profile/setup');
+              router.push('/register/caution');
             } else {
               router.push('/');
             }
