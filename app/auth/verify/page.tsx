@@ -27,22 +27,59 @@ export default function VerifyAuth() {
         }
 
         console.log('Firebaseサインイン開始...');
-        await signInWithCustomToken(auth, token);
+        const userCredential = await signInWithCustomToken(auth, token);
         console.log('Firebaseサインイン成功');
+
+        // IDトークンを取得
+        console.log('IDトークンを取得中...');
+        const idToken = await userCredential.user.getIdToken();
+        
+        // セッションの作成
+        console.log('セッションを作成中...');
+        const sessionResponse = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ idToken }),
+        });
+
+        if (!sessionResponse.ok) {
+          const errorData = await sessionResponse.json();
+          console.error('セッション作成エラー:', errorData);
+          throw new Error(errorData.error || 'セッションの作成に失敗しました');
+        }
+
+        console.log('セッション作成成功');
 
         // 新規ユーザーかどうかを確認
         const isNewUser = searchParams.get('isNewUser') === 'true';
         
         // 新規ユーザーの場合はプロフィール設定ページへ
         if (isNewUser) {
+          console.log('新規ユーザー: プロフィール設定ページへリダイレクト');
           router.push('/profile/setup');
         } else {
-          // 既存ユーザーはホームページへ
+          console.log('既存ユーザー: ホームページへリダイレクト');
           router.push('/');
         }
       } catch (err) {
         console.error('認証エラー:', err);
-        setError(err instanceof Error ? err.message : '認証処理中にエラーが発生しました');
+        let errorMessage = '認証処理中にエラーが発生しました';
+        
+        if (err instanceof Error) {
+          if (err.message.includes('auth/invalid-custom-token')) {
+            errorMessage = '無効な認証トークンです';
+          } else if (err.message.includes('auth/custom-token-mismatch')) {
+            errorMessage = 'トークンが一致しません';
+          } else if (err.message.includes('セッションの作成に失敗')) {
+            errorMessage = 'セッションの作成に失敗しました';
+          } else {
+            errorMessage = err.message;
+          }
+        }
+        
+        setError(errorMessage);
       }
     };
 
