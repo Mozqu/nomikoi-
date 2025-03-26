@@ -101,7 +101,9 @@ export default function VerifyAuth() {
             }
 
             // リダイレクト
+            
             const isNewUserFlag = sessionData.user.isNewUser || isNewUser === 'true';
+            console.log('isNewUserFlag', isNewUserFlag)
             if (isNewUserFlag) {
               router.push('/register/caution');
             } else {
@@ -130,7 +132,7 @@ export default function VerifyAuth() {
                   const sessionData = await createSession(idToken);
                   
                   if (sessionData) {
-                    router.push('/');
+                    console.log('セッションデータ:', sessionData)
                   } else {
                     router.push('/login');
                   }
