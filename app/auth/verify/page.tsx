@@ -9,6 +9,7 @@ export default function VerifyAuth() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  const [showAdBlockerWarning, setShowAdBlockerWarning] = useState(false);
 
   useEffect(() => {
     const verifyAuth = async () => {
@@ -57,8 +58,12 @@ export default function VerifyAuth() {
 
                   console.log('セッション作成成功');
                   router.push('/');
-                } catch (sessionError) {
+                } catch (sessionError: any) {
                   console.error('セッション作成エラー:', sessionError);
+                  if (sessionError.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
+                    setShowAdBlockerWarning(true);
+                    throw new Error('広告ブロッカーが有効になっているため、認証に失敗しました');
+                  }
                   throw new Error('セッションの作成に失敗しました');
                 }
               } else {
@@ -114,6 +119,10 @@ export default function VerifyAuth() {
           }
         } catch (signInError: any) {
           console.error('Firebaseサインインエラー:', signInError);
+          if (signInError.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
+            setShowAdBlockerWarning(true);
+            throw new Error('広告ブロッカーが有効になっているため、認証に失敗しました');
+          }
           if (signInError.code === 'auth/invalid-custom-token') {
             throw new Error('無効な認証トークンです');
           } else if (signInError.code === 'auth/custom-token-mismatch') {
@@ -144,7 +153,21 @@ export default function VerifyAuth() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
           <p className="text-red-600 text-center mb-4">{error}</p>
-          <div className="flex justify-center">
+          {showAdBlockerWarning && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-yellow-800 text-sm">
+                このサイトの広告ブロッカーを無効にしてから、再度お試しください。
+                広告ブロッカーがFirebaseの通信をブロックしている可能性があります。
+              </p>
+            </div>
+          )}
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+            >
+              再試行
+            </button>
             <button
               onClick={() => router.push('/login')}
               className="px-4 py-2 text-sm text-white bg-red-600 rounded hover:bg-red-700 transition-colors"
