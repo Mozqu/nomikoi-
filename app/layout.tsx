@@ -21,6 +21,7 @@ import { adminAuth } from './firebase/admin'
 import { getDoc, doc } from 'firebase/firestore'
 
 async function getProfileStatus() {
+  console.log('=== layout プロフィール状態の取得 ===')
   const cookieStore = cookies()
   const sessionCookie = cookieStore.get('session')
 
@@ -40,6 +41,10 @@ async function getProfileStatus() {
     const profileCompleted = userData.profileCompleted
     const wayOfDrinking = userData.answers?.way_of_drinking || []
     const favoriteAlcohol = userData.answers?.favorite_alcohol || []
+
+    console.log('profileCompleted', profileCompleted)
+    console.log('wayOfDrinking', wayOfDrinking)
+    console.log('favoriteAlcohol', favoriteAlcohol) 
 
     if (!profileCompleted) {
       return 'caution'
