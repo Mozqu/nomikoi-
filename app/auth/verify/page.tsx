@@ -35,7 +35,14 @@ export default function VerifyAuth() {
           tokenLength: token?.length,
           isNewUser: isNewUser,
           currentUrl: window.location.href,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          authState: {
+            isInitialized: !!auth,
+            hasCurrentUser: !!auth?.currentUser,
+            currentUserUid: auth?.currentUser?.uid,
+            authObject: auth ? 'exists' : 'null',
+            firebaseApps: window.firebase?.apps?.length || 0
+          }
         });
 
         // Firebaseの初期化を待機
@@ -52,13 +59,28 @@ export default function VerifyAuth() {
 
         // カスタムトークンが存在する場合の処理
         if (token) {
-          console.log('カスタムトークンでのサインイン開始');
+          console.log('カスタムトークンでのサインイン開始', {
+            tokenInfo: {
+              length: token.length,
+              prefix: token.substring(0, 10) + '...',
+              isValid: token.length > 100 // カスタムトークンは通常100文字以上
+            },
+            authState: {
+              isInitialized: !!auth,
+              currentUser: auth?.currentUser ? 'exists' : 'null'
+            }
+          });
           
           try {
             // 既存のユーザーをサインアウト
             if (auth.currentUser) {
-              console.log('既存のユーザーをサインアウト');
+              console.log('既存のユーザーをサインアウト', {
+                uid: auth.currentUser.uid,
+                email: auth.currentUser.email,
+                timestamp: new Date().toISOString()
+              });
               await auth.signOut();
+              console.log('サインアウト完了');
             }
 
             // カスタムトークンでサインイン
@@ -134,7 +156,18 @@ export default function VerifyAuth() {
 
     const createSession = async (idToken: string): Promise<SessionResponse | null> => {
       try {
-        console.log('セッション作成開始');
+        console.log('セッション作成開始', {
+          tokenLength: idToken.length,
+          timestamp: new Date().toISOString(),
+          url: '/api/auth/session',
+          requestInfo: {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        });
         
         const response = await fetch('/api/auth/session', {
           method: 'POST',
@@ -145,6 +178,16 @@ export default function VerifyAuth() {
           credentials: 'include'
         });
 
+        console.log('セッションレスポンス受信:', {
+          status: response.status,
+          ok: response.ok,
+          headers: {
+            contentType: response.headers.get('content-type'),
+            setCookie: response.headers.get('set-cookie')
+          },
+          timestamp: new Date().toISOString()
+        });
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'セッション作成に失敗しました');
@@ -153,7 +196,14 @@ export default function VerifyAuth() {
         const data = await response.json();
         console.log('セッション作成成功:', {
           status: data.status,
-          uid: data.user.uid
+          uid: data.user.uid,
+          isNewUser: data.user.isNewUser,
+          timestamp: new Date().toISOString(),
+          cookies: {
+            all: document.cookie.split(';').map(c => c.trim()),
+            hasSessionCookie: document.cookie.includes('session='),
+            cookieCount: document.cookie.split(';').length
+          }
         });
         
         return data;
@@ -165,7 +215,17 @@ export default function VerifyAuth() {
     };
 
     const handleAuthError = (error: any) => {
-      console.error('認証エラーハンドリング:', error);
+      console.error('認証エラーハンドリング:', {
+        code: error.code,
+        message: error.message,
+        timestamp: new Date().toISOString(),
+        errorType: error.name,
+        stack: error.stack,
+        authState: {
+          isInitialized: !!auth,
+          hasCurrentUser: !!auth?.currentUser
+        }
+      });
       if (error.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
         setShowAdBlockerWarning(true);
         setError('広告ブロッカーが有効になっているため、認証に失敗しました');
@@ -179,7 +239,18 @@ export default function VerifyAuth() {
     };
 
     const handleSessionError = (error: any) => {
-      console.error('セッションエラーハンドリング:', error);
+      console.error('セッションエラーハンドリング:', {
+        error: {
+          message: error.message,
+          type: error.name,
+          stack: error.stack
+        },
+        timestamp: new Date().toISOString(),
+        cookies: {
+          exists: document.cookie.length > 0,
+          count: document.cookie.split(';').length
+        }
+      });
       if (error.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
         setShowAdBlockerWarning(true);
         setError('広告ブロッカーが有効になっているため、認証に失敗しました');
