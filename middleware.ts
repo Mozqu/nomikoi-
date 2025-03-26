@@ -1,5 +1,4 @@
 // middleware.ts
-import { getSession } from 'next-auth/react'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -46,7 +45,7 @@ const skipAuthPaths = [
   '/api/auth',    // 認証関連API
 ]
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // LINE認証コールバックとエラーページはスキップ
@@ -81,13 +80,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // セッションの存在確認
-  const session = await getSession(request)
-  
-  if (!session) {
+  // セッションCookieの確認
+  const hasSession = request.cookies.has('session')
+
+  console.log('Middleware check:', {
+    path: pathname,
+    hasSession,
+    timestamp: new Date().toISOString()
+  })
+
+  if (!hasSession) {
     console.log('No session found, redirecting to login', {
       path: pathname,
-      isAuthPath: pathname.startsWith('/auth'),
       timestamp: new Date().toISOString()
     })
     const url = new URL('/login', request.url)
@@ -96,7 +100,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // セッションの基本的な形式チェックのみを行う
-  if (!session.includes('.')) {
+  if (!request.cookies.get('session')?.value.includes('.')) {
     console.log('Invalid session format, redirecting to login')
     const url = new URL('/login', request.url)
     url.searchParams.set('callbackUrl', pathname)
@@ -111,7 +115,7 @@ export async function middleware(request: NextRequest) {
 
   // 認証が必要なパスへのアクセスチェック
   if (authRequiredPaths.some(path => pathname.startsWith(path))) {
-    if (!session) {
+    if (!hasSession) {
       console.log('No session found, redirecting to login')
       return NextResponse.redirect(new URL('/login', request.url))
     }
@@ -123,14 +127,6 @@ export async function middleware(request: NextRequest) {
 // ミドルウェアを適用するパスを設定
 export const config = {
   matcher: [
-    /*
-     * 以下のパス以外の全てのパスにマッチする場合にミドルウェアを実行:
-     * - / (ルート)
-     * - /login
-     * - /signup
-     * - /api/login
-     * - /api/logout
-     */
-    '/((?!api/login|api/logout|login|signup|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
