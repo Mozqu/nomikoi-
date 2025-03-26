@@ -6,11 +6,6 @@ const publicPaths = [
   '/',                    // トップページ
   '/login',              // ログインページ
   '/signup',             // サインアップ
-  '/about',              // サービス説明
-  '/terms',              // 利用規約
-  '/privacy',            // プライバシーポリシー
-  '/profile',            // 公開プロフィール
-  '/api/health',         // ヘルスチェック
 ]
 
 // 認証処理中のパス
@@ -20,12 +15,8 @@ const authProcessingPaths = [
 ]
 
 export function middleware(request: NextRequest) {
+  console.log('=== middleware ===')
   const { pathname } = request.nextUrl
-
-  // 公開プロフィールページのチェック (/profile/123 など)
-  if (pathname.match(/^\/profile\/[^\/]+$/)) {
-    return NextResponse.next()
-  }
 
   // 認証処理中のパスはスキップ
   if (authProcessingPaths.some(path => pathname.startsWith(path))) {
