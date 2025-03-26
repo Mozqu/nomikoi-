@@ -107,7 +107,7 @@ export default function VerifyAuth() {
             if (isNewUserFlag) {
               router.push('/register/caution');
             } else {
-              router.push('/');
+              router.push('/home');
             }
           } catch (error) {
             console.error('認証エラー:', error);
