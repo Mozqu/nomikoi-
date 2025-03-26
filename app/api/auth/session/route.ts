@@ -20,12 +20,22 @@ export async function POST(request: Request) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     console.log('IDトークン検証成功:', { uid: decodedToken.uid });
 
-    // セッションCookieを作成（有効期限: 2週間）
-    const expiresIn = 60 * 60 * 24 * 14 * 1000; // 2週間（ミリ秒）
+    // セッションCookieを作成（有効期限: 24時間）
+    const expiresIn = 60 * 60 * 24 * 1000; // 24時間（ミリ秒）
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
     // レスポンスを作成
-    const response = NextResponse.json({ status: 'success' });
+    const response = NextResponse.json(
+      { 
+        status: 'success',
+        user: {
+          uid: decodedToken.uid,
+          email: decodedToken.email,
+          isNewUser: decodedToken.firebase?.sign_in_provider === 'custom'
+        }
+      },
+      { status: 200 }
+    );
 
     // Cookieを設定
     console.log('セッションCookieを設定中...');
@@ -36,7 +46,7 @@ export async function POST(request: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      sameSite: 'lax',
+      sameSite: 'strict',
     });
 
     console.log('セッション作成成功');

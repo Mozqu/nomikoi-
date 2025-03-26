@@ -5,6 +5,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithCustomToken, getAuth, onAuthStateChanged, Auth } from 'firebase/auth';
 import { auth } from '@/app/firebase/config';
 
+interface SessionResponse {
+  status: string;
+  user: {
+    uid: string;
+    email: string | null;
+    isNewUser: boolean;
+  };
+}
+
 export default function VerifyAuth() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -15,7 +24,7 @@ export default function VerifyAuth() {
     const verifyAuth = async () => {
       try {
         const token = searchParams.get('token');
-        console.log('認証プロセス開始...');
+        console.log('認証プロセス開始...', { hasToken: !!token });
 
         if (!auth) {
           console.error('Firebase認証が初期化されていません');
@@ -27,48 +36,25 @@ export default function VerifyAuth() {
           console.log('トークンなし - Firebase認証状態を確認中...');
           return new Promise<void>((resolve) => {
             const unsubscribe = onAuthStateChanged(auth as Auth, async (user) => {
-              unsubscribe(); // リスナーを解除
+              unsubscribe();
 
-              if (user) {
+              if (!user) {
+                console.log('認証されていないユーザー - ログインページにリダイレクト');
+                router.push('/login');
+                return resolve();
+              }
+
+              try {
                 console.log('既存のユーザーセッションを検出:', {
                   uid: user.uid,
                   email: user.email
                 });
 
-                try {
-                  // IDトークンを取得
-                  console.log('IDトークンを取得中...');
-                  const idToken = await user.getIdToken(true);
-                  
-                  // セッションの作成
-                  console.log('セッションを作成中...');
-                  const sessionResponse = await fetch('/api/auth/session', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ idToken }),
-                  });
-
-                  if (!sessionResponse.ok) {
-                    const errorData = await sessionResponse.json();
-                    console.error('セッション作成エラー:', errorData);
-                    throw new Error(errorData.error || 'セッションの作成に失敗しました');
-                  }
-
-                  console.log('セッション作成成功');
-                  router.push('/');
-                } catch (sessionError: any) {
-                  console.error('セッション作成エラー:', sessionError);
-                  if (sessionError.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
-                    setShowAdBlockerWarning(true);
-                    throw new Error('広告ブロッカーが有効になっているため、認証に失敗しました');
-                  }
-                  throw new Error('セッションの作成に失敗しました');
-                }
-              } else {
-                console.log('認証されていないユーザー');
-                router.push('/login');
+                const idToken = await user.getIdToken(true);
+                await createSession(idToken);
+                router.push('/');
+              } catch (error) {
+                handleSessionError(error);
               }
               resolve();
             });
@@ -84,32 +70,12 @@ export default function VerifyAuth() {
             email: userCredential.user.email
           });
 
-          // IDトークンを取得
-          console.log('IDトークンを取得中...');
           const idToken = await userCredential.user.getIdToken(true);
+          const sessionData = await createSession(idToken);
+
+          // 新規ユーザーの判定を改善
+          const isNewUser = sessionData?.user?.isNewUser || searchParams.get('isNewUser') === 'true';
           
-          // セッションの作成
-          console.log('セッションを作成中...');
-          const sessionResponse = await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ idToken }),
-          });
-
-          if (!sessionResponse.ok) {
-            const errorData = await sessionResponse.json();
-            console.error('セッション作成エラー:', errorData);
-            throw new Error(errorData.error || 'セッションの作成に失敗しました');
-          }
-
-          console.log('セッション作成成功');
-
-          // 新規ユーザーかどうかを確認
-          const isNewUser = searchParams.get('isNewUser') === 'true';
-          
-          // 新規ユーザーの場合はプロフィール設定ページへ
           if (isNewUser) {
             console.log('新規ユーザー: プロフィール設定ページへリダイレクト');
             router.push('/profile/setup');
@@ -119,30 +85,75 @@ export default function VerifyAuth() {
           }
         } catch (signInError: any) {
           console.error('Firebaseサインインエラー:', signInError);
-          if (signInError.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
-            setShowAdBlockerWarning(true);
-            throw new Error('広告ブロッカーが有効になっているため、認証に失敗しました');
-          }
-          if (signInError.code === 'auth/invalid-custom-token') {
-            throw new Error('無効な認証トークンです');
-          } else if (signInError.code === 'auth/custom-token-mismatch') {
-            throw new Error('トークンが一致しません');
-          } else if (signInError.code === 'auth/invalid-credential') {
-            throw new Error('認証情報が無効です。再度ログインしてください');
-          } else {
-            throw new Error('認証に失敗しました。再度お試しください');
-          }
+          handleAuthError(signInError);
         }
       } catch (err) {
         console.error('認証エラー:', err);
-        let errorMessage = '認証処理中にエラーが発生しました';
-        
-        if (err instanceof Error) {
-          errorMessage = err.message;
-        }
-        
-        setError(errorMessage);
+        handleError(err);
       }
+    };
+
+    // セッション作成を共通化
+    const createSession = async (idToken: string): Promise<SessionResponse | null> => {
+      console.log('セッションを作成中...');
+      try {
+        const sessionResponse = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ idToken }),
+        });
+
+        if (!sessionResponse.ok) {
+          const errorData = await sessionResponse.json();
+          console.error('セッション作成エラー:', errorData);
+          throw new Error(errorData.error || 'セッションの作成に失敗しました');
+        }
+
+        const data: SessionResponse = await sessionResponse.json();
+        console.log('セッション作成成功:', data);
+        return data;
+      } catch (error) {
+        handleSessionError(error);
+        return null;
+      }
+    };
+
+    // セッションエラーハンドリング
+    const handleSessionError = (error: any) => {
+      console.error('セッションエラー:', error);
+      if (error.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
+        setShowAdBlockerWarning(true);
+        setError('広告ブロッカーが有効になっているため、認証に失敗しました');
+      } else {
+        setError('セッションの作成に失敗しました。再度お試しください');
+      }
+    };
+
+    // 認証エラーハンドリング
+    const handleAuthError = (error: any) => {
+      if (error.message?.includes('ERR_BLOCKED_BY_CLIENT')) {
+        setShowAdBlockerWarning(true);
+        setError('広告ブロッカーが有効になっているため、認証に失敗しました');
+      } else if (error.code === 'auth/invalid-custom-token') {
+        setError('無効な認証トークンです');
+      } else if (error.code === 'auth/custom-token-mismatch') {
+        setError('トークンが一致しません');
+      } else if (error.code === 'auth/invalid-credential') {
+        setError('認証情報が無効です。再度ログインしてください');
+      } else {
+        setError('認証に失敗しました。再度お試しください');
+      }
+    };
+
+    // 一般エラーハンドリング
+    const handleError = (error: any) => {
+      let errorMessage = '認証処理中にエラーが発生しました';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      setError(errorMessage);
     };
 
     verifyAuth();
