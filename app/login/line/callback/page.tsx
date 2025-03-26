@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signInWithCustomToken } from 'firebase/auth'
-import { auth } from '../../../firebase/client'
+import { auth } from '../../../firebase/config'
 
 export default function LineCallback() {
   const router = useRouter()
@@ -44,6 +44,9 @@ export default function LineCallback() {
         const { customToken } = await response.json()
 
         // Firebaseにサインイン
+        if (!auth) {
+          throw new Error('Firebase認証が初期化されていません')
+        }
         await signInWithCustomToken(auth, customToken)
 
         // ホームページにリダイレクト
