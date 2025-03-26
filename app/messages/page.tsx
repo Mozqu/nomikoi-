@@ -413,7 +413,7 @@ export default function MessagesPage() {
       ) : (
         <div className="text-center py-8 border rounded-lg">
           <p className="mb-4">メッセージはまだありません</p>
-          <Button onClick={() => router.push("/discover")}>
+          <Button onClick={() => router.push("/home")}>
             ユーザーを探す
           </Button>
         </div>

@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button'
 import LineAuthButton from '@/app/components/LineAuthButton'
 
 export default function LoginPage() {
-  console.log("===============")
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

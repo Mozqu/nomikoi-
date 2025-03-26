@@ -672,7 +672,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                         ))
                     ) : (
                         <Image
-                            src="/home-background.jpg"
+                            src="/placeholder-user.png"
                             alt="Profile"
                             width={500}
                             height={500}
