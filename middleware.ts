@@ -25,7 +25,10 @@ export function middleware(request: NextRequest) {
   }
 
   // 公開パスはスキップ
-  if (publicPaths.some(path => pathname.startsWith(path))) {
+  if (publicPaths.some(path => {
+    // 完全一致またはサブパスの場合のみマッチ
+    return pathname === path || pathname === `${path}/`
+  })) {
     console.log('Public path:', pathname)
     return NextResponse.next()
   }
