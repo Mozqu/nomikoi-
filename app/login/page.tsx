@@ -23,7 +23,11 @@ export default function LoginPage() {
     try {
       console.log('Creating session with token length:', idToken.length)
       
-      const response = await fetch('/api/login', {
+      // APIエンドポイントのURLを確認用に出力
+      const apiUrl = '/api/login'
+      console.log('Sending request to:', apiUrl)
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,15 +38,18 @@ export default function LoginPage() {
       
       // レスポンスの内容を確認
       const responseText = await response.text()
-      console.log('Raw response:', responseText)
-      console.log('Response status:', response.status)
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+      console.log('API Response Details:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        headers: Object.fromEntries(response.headers.entries()),
+        rawResponse: responseText
+      })
       
       let responseData
       try {
-        // 空でない場合のみJSONとしてパース
         responseData = responseText ? JSON.parse(responseText) : {}
-        console.log('Response data parsed successfully:', responseData)
+        console.log('Parsed response data:', responseData)
       } catch (e) {
         console.error('Failed to parse response:', e)
         console.error('Response text was:', responseText)
@@ -50,7 +57,12 @@ export default function LoginPage() {
       }
       
       if (!response.ok) {
-        throw new Error(`APIエラー (${response.status}): ${responseData.error || '不明なエラー'}`)
+        const errorDetail = `APIエラー (${response.status}): ${
+          response.status === 405 
+            ? 'APIエンドポイントへのアクセスに問題があります。URLとメソッドを確認してください。' 
+            : responseData.error || '不明なエラー'
+        }`
+        throw new Error(errorDetail)
       }
       
       if (responseData.status === 'error') {
