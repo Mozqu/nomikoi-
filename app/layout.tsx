@@ -3,9 +3,6 @@ import './globals.css'
 import { Inter } from 'next/font/google'
 import ClientLayout from './client-layout'
 import AuthCheck from "@/app/components/auth-check"
-import { db } from './firebase/config'
-import { auth } from './firebase/config'
-import { headers } from 'next/headers'
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
@@ -16,96 +13,11 @@ export const metadata: Metadata = {
   },
 }
 
-import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
-import { adminAuth } from './firebase/admin'
-import { getDoc, doc } from 'firebase/firestore'
-
-async function getProfileStatus(pathname: string) {
-  console.log('=== layout プロフィール状態の取得 ===')
-  const cookieStore = cookies()
-  const sessionCookie = cookieStore.get('session')
-
-  if (!sessionCookie) {
-    return null
-  }
-
-  try {
-    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie.value)
-    if (!db) {
-      console.error('Firestoreが初期化されていません');
-      return null;
-    }
-    const userDoc = await getDoc(doc(db, 'users', decodedToken.uid))
-    
-    if (!userDoc.exists()) {
-      if (pathname !== '/register/caution') {
-        redirect('/register/caution')
-      }
-      return 'unregistered'
-    }
-
-    const userData = userDoc.data()
-    const profileCompleted = userData.profileCompleted
-    const wayOfDrinking = userData.answers?.way_of_drinking || []
-    const favoriteAlcohol = userData.answers?.favorite_alcohol || []
-
-    console.log('profileCompleted', profileCompleted)
-    console.log('wayOfDrinking', wayOfDrinking)
-    console.log('favoriteAlcohol', favoriteAlcohol)
-
-    if (!profileCompleted) {
-      return 'caution'
-    }
-    if (wayOfDrinking.length === 0) {
-      return 'way_of_drinking'
-    }
-    if (favoriteAlcohol.length === 0) {
-      return 'favorite_drinking'
-    }
-    return 'home'
-
-  } catch (error) {
-    console.error('プロフィール状態の取得に失敗:', error)
-    return null
-  }
-}
-
-async function redirectBasedOnProfile(pathname: string) {
-  console.log('=== layout redirectBasedOnProfile ===')
-  const status = await getProfileStatus(pathname)
-
-  switch (status) {
-    case 'unregistered':
-      if (pathname !== '/signup') redirect('/signup')
-      break
-    case 'caution':
-      if (pathname !== '/caution') redirect('/caution')
-      break
-    case 'way_of_drinking':
-      if (pathname !== '/way_of_drinking') redirect('/way_of_drinking')
-      break
-    case 'favorite_drinking':
-      if (pathname !== '/favorite_drinking') redirect('/favorite_drinking')
-      break
-    case 'home':
-      if (pathname === '/caution' || 
-          pathname === '/way_of_drinking' || 
-          pathname === '/favorite_drinking') {
-        redirect('/home')
-      }
-      break
-  }
-}
-
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const pathname = headers().get('x-invoke-path') || '/'
-  
-  await redirectBasedOnProfile(pathname)
 
   return (
     <html lang="ja">
