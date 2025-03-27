@@ -35,6 +35,8 @@ export default function LoginPage() {
       // レスポンスの内容を確認
       const responseText = await response.text()
       console.log('Raw response:', responseText)
+      console.log('Response status:', response.status)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
       
       let responseData
       try {
@@ -44,20 +46,21 @@ export default function LoginPage() {
       } catch (e) {
         console.error('Failed to parse response:', e)
         console.error('Response text was:', responseText)
-        throw new Error('サーバーからの応答が不正です')
+        throw new Error(`サーバーからの応答が不正です (Status: ${response.status})`)
       }
       
-      console.log('API response status:', response.status)
-      console.log('API response data:', responseData)
+      if (!response.ok) {
+        throw new Error(`APIエラー (${response.status}): ${responseData.error || '不明なエラー'}`)
+      }
       
-      if (!response.ok || responseData.status === 'error') {
-        throw new Error(responseData.error || 'セッションの作成に失敗しました')
+      if (responseData.status === 'error') {
+        throw new Error(`セッション作成エラー: ${responseData.error || '不明なエラー'}`)
       }
       
       console.log('Session created successfully, redirecting to:', callbackUrl)
       router.push(callbackUrl)
     } catch (error) {
-      console.error('セッション作成エラー:', error)
+      console.error('セッション作成エラーの詳細:', error)
       setError('認証に失敗しました: ' + (error instanceof Error ? error.message : String(error)))
       setLoading(false)
     }
