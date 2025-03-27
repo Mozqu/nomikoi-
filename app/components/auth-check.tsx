@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { auth } from "@/app/firebase/config"
 import { onAuthStateChanged } from "firebase/auth"
-
+import { Spinner } from "./Spinner"
 const publicPaths = ["/", "/login", "/signup", "/register", "/register/drunk_personality", "/auth/verify"]
 
 export default function AuthCheck({ children }: { children: React.ReactNode }) {
@@ -24,7 +24,7 @@ export default function AuthCheck({ children }: { children: React.ReactNode }) {
 
   // 認証チェック中はローディング表示（オプション）
   if (isLoading) {
-    return <div>Loading...</div>
+    return <div><Spinner /></div>
   }
 
   return <>{children}</>
