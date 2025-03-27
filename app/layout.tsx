@@ -69,6 +69,7 @@ async function getProfileStatus() {
 }
 
 async function redirectBasedOnProfile(pathname: string) {
+  console.log('=== layout redirectBasedOnProfile ===')
   const status = await getProfileStatus()
 
   switch (status) {
