@@ -16,11 +16,14 @@ export function LikeAction({ targetId }: LikeActionProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentAction, setCurrentAction] = useState<'like' | 'nope' | null>(null)
-  const currentUserId = auth.currentUser?.uid
+  const currentUserId = auth?.currentUser?.uid
 
   useEffect(() => {
     const fetchCurrentAction = async () => {
-      if (!currentUserId) return
+      if (!currentUserId) {
+        console.log("currentUserIdがnullです")
+        return
+      }
       
       const q = query(
         collection(db, "user_likes"),
