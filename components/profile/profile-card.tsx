@@ -46,19 +46,25 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
     
     useEffect(() => {
         const fetchImages = async () => {
-            if (!userData?.uid) {
-                console.log('ユーザーIDが存在しません');
+            if (!userData) {
+                console.error('ユーザーデータが存在しません');
+                setImageUrls(['/placeholder-user.png']);
+                return;
+            }
+
+            const userId = userData.uid || userData.id;
+            if (!userId) {
+                console.error('ユーザーIDが見つかりません');
                 setImageUrls(['/placeholder-user.png']);
                 return;
             }
             
             try {
                 const storage = getStorage();
-                const imagesRef = ref(storage, `profile-image/${userData.uid}`);
-                console.log('画像の取得を試みます:', `profile-image/${userData.uid}`);
+                const imagesRef = ref(storage, `profile-image/${userId}`);
+                console.log('画像の取得を試みます:', `profile-image/${userId}`);
                 
                 const imagesList = await listAll(imagesRef);
-                console.log('フォルダ内の画像数:', imagesList.items.length);
                 
                 if (imagesList.items.length === 0) {
                     console.log('画像が見つかりませんでした');
@@ -71,17 +77,15 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                 );
 
                 console.log('画像の取得に成功しました:', urls);
-                
                 setImageUrls(urls);
             } catch (error) {
                 console.error('画像の取得に失敗しました:', error);
-                // デフォルト画像を設定
                 setImageUrls(['/placeholder-user.png']);
             }
         };
         
         fetchImages();
-    }, [userData?.uid]);
+    }, [userData]);
 
     const chartParam = userData?.answers?.way_of_drinking;
 
