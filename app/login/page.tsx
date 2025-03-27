@@ -98,7 +98,9 @@ export default function LoginPage() {
       
       // エラーメッセージをより具体的に
       let errorMessage = 'ログインに失敗しました'
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+      if (error.code === 'auth/user-not-found' || 
+          error.code === 'auth/wrong-password' || 
+          error.code === 'auth/invalid-credential') {
         errorMessage = 'メールアドレスまたはパスワードが正しくありません'
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = 'ログイン試行回数が多すぎます。しばらく時間をおいてから再度お試しください'
