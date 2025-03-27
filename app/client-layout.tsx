@@ -30,6 +30,7 @@ export default function ClientLayout({
         
         // ユーザードキュメントが存在しない場合
         if (!userDoc.exists() && pathname !== '/register/caution') {
+          console.log('=== userドキュメントが存在しません ===')
           router.push("/register/caution")
           return
         }
@@ -39,13 +40,20 @@ export default function ClientLayout({
         const wayOfDrinking = userData?.answers?.way_of_drinking || []
         const favoriteAlcohol = userData?.answers?.favorite_alcohol || []
 
-        // 各状態に応じたリダイレクト（該当ページ以外の場合のみ）
-        if (!userData?.profileCompleted && pathname !== '/caution') {
-          router.push("/register/caution")
-        } else if (wayOfDrinking.length === 0 && pathname !== '/way_of_drinking') {
-          router.push("/register/way_of_drinking")
-        } else if (favoriteAlcohol.length === 0 && pathname !== '/favorite_drinking') {
-          router.push("/register/favorite_alcohol")
+        if (pathname !== '/register/caution' && pathname !== '/register/way_of_drinking' && pathname !== '/register/favorite_alcohol') {
+          console.log('registerページではない')
+        
+          // 各状態に応じたリダイレクト（該当ページ以外の場合のみ）
+          if (!userData?.profileCompleted && pathname !== '/caution') {
+            console.log('=== profileCompletedがfalse ===')
+            router.push("/register/caution")
+          } else if (wayOfDrinking.length === 0 && pathname !== '/way_of_drinking') {
+            console.log('=== wayOfDrinkingが0 ===')
+            router.push("/register/way_of_drinking")
+          } else if (favoriteAlcohol.length === 0 && pathname !== '/favorite_drinking') {
+            console.log('=== favoriteAlcoholが0 ===')
+            router.push("/register/favorite_alcohol")
+          }
         }
       } catch (error) {
         console.error("登録状態の確認に失敗しました:", error)
