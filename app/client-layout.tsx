@@ -13,6 +13,7 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode
 }) {
+  console.log('=== client-layout ===')
   const pathname = usePathname()
   const router = useRouter()
   const shouldHideNav = hideNavPaths.includes(pathname)
@@ -24,16 +25,24 @@ export default function ClientLayout({
 
       try {
         const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid))
-        if (!userDoc.exists()) return
-
-        const userData = userDoc.data()
-        const isRegistrationComplete = userData.profileCompleted && userData.drinkingProfileCompleted && userData.agreement
-
-        if (!isRegistrationComplete && !pathname.startsWith('/register') && !pathname.startsWith('/login') && !pathname.startsWith('/signup') && pathname !== "/") {
-          setIsRegistrationComplete(false)
+        
+        // ユーザードキュメントが存在しない場合
+        if (!userDoc.exists() && !pathname.startsWith('/register') && pathname !== '/signup') {
           router.push("/register/caution")
-        } else {
-          setIsRegistrationComplete(true)
+          return
+        }
+
+        // ユーザードキュメントが存在する場合の各種チェック
+        const userData = userDoc.data()
+        const wayOfDrinking = userData.answers?.way_of_drinking || []
+        const favoriteAlcohol = userData.answers?.favorite_alcohol || []
+
+        if (!userData.profileCompleted && !pathname.startsWith('/caution')) {
+          router.push("/caution")
+        } else if (wayOfDrinking.length === 0 && !pathname.startsWith('/way_of_drinking')) {
+          router.push("/way_of_drinking")
+        } else if (favoriteAlcohol.length === 0 && !pathname.startsWith('/favorite_drinking')) {
+          router.push("/favorite_drinking")
         }
       } catch (error) {
         console.error("登録状態の確認に失敗しました:", error)
@@ -41,7 +50,7 @@ export default function ClientLayout({
     }
 
     checkRegistrationStatus()
-  }, [pathname, router])
+  }, [pathname, router, auth?.currentUser])
 
   return (
     <>
