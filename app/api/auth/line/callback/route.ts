@@ -55,12 +55,27 @@ export async function GET(request: Request) {
     const profile = await profileResponse.json();
     console.log('LINE profile fetched successfully');
 
-    // ランダムなUIDを生成
-    const uid = randomUUID();
+    // lineIdで既存ユーザーを検索
+    const existingUserQuery = await adminDb
+      .collection('users')
+      .where('lineId', '==', profile.userId)
+      .get();
+
+    let uid;
+    if (!existingUserQuery.empty) {
+      // 既存ユーザーの場合、そのUIDを使用
+      uid = existingUserQuery.docs[0].id;
+      console.log('Existing user found:', uid);
+    } else {
+      // 新規ユーザーの場合、新しいUIDを生成
+      uid = randomUUID();
+      console.log('Creating new user:', uid);
+    }
 
     // カスタムトークンの生成
     const customToken = await adminAuth.createCustomToken(uid, {
       line: {
+        lineId: profile.userId,
       },
     });
 
