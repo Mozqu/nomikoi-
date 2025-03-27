@@ -34,13 +34,14 @@ export function LikeAction({ targetId }: LikeActionProps) {
       }
       
       try {
+        console.log("currentUserId", currentUserId)
         const q = query(
           collection(db, "user_likes"),
           where("uid", "==", currentUserId),
           where("target_id", "==", targetId)
         )
         const querySnapshot = await getDocs(q)
-        
+        console.log("querySnapshot", querySnapshot)
         if (!querySnapshot.empty) {
           setCurrentAction(querySnapshot.docs[0].data().type)
         }
