@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { auth } from "@/app/firebase/config"
 import { onAuthStateChanged } from "firebase/auth"
 
-const publicPaths = ["/", "/login", "/signup", "/register", "/register/drunk_personality"]
+const publicPaths = ["/", "/login", "/signup", "/register", "/register/drunk_personality", "/auth/verify"]
 
 export default function AuthCheck({ children }: { children: React.ReactNode }) {
   const router = useRouter()
