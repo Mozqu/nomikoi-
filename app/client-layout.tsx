@@ -33,6 +33,8 @@ export default function ClientLayout({
           console.log('=== userドキュメントが存在しません ===')
           router.push("/register/caution")
           return
+        } else {
+          setIsRegistrationComplete(true)
         }
 
         // ユーザードキュメントが存在する場合の各種チェック
@@ -57,8 +59,6 @@ export default function ClientLayout({
             console.log('=== favoriteAlcoholが0 ===')
             router.push("/register/favorite_alcohol")
           }
-        } else {
-          setIsRegistrationComplete(true)
         }
       } catch (error) {
         console.error("登録状態の確認に失敗しました:", error)
