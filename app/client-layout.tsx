@@ -57,6 +57,8 @@ export default function ClientLayout({
             console.log('=== favoriteAlcoholが0 ===')
             router.push("/register/favorite_alcohol")
           }
+        } else {
+          setIsRegistrationComplete(true)
         }
       } catch (error) {
         console.error("登録状態の確認に失敗しました:", error)
@@ -85,7 +87,9 @@ export default function ClientLayout({
       </div>
       ) : (
         <div>
-          <div id="content" className="flex-1 flex flex-col overflow-hidden">
+          <div id="content" className="flex-1 flex flex-col overflow-hidden" style={{
+            height: "100svh",
+          }}>
             {children}
           </div>
         </div>
