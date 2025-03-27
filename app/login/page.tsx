@@ -29,22 +29,24 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ idToken }),
+        cache: 'no-store'
       })
       
       // レスポンスの詳細を確認
       let responseData
       try {
         responseData = await response.json()
+        console.log('Response data parsed successfully:', responseData)
       } catch (e) {
         console.error('Failed to parse response:', e)
-        throw new Error('Invalid response from server')
+        throw new Error('サーバーからの応答が不正です')
       }
       
       console.log('API response status:', response.status)
       console.log('API response data:', responseData)
       
-      if (!response.ok) {
-        throw new Error(`セッションの作成に失敗しました: ${responseData.error || response.statusText}`)
+      if (!response.ok || responseData.status === 'error') {
+        throw new Error(responseData.error || 'セッションの作成に失敗しました')
       }
       
       console.log('Session created successfully, redirecting to:', callbackUrl)
