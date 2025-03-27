@@ -63,12 +63,43 @@ export default function LoginPage() {
     setError('')
     
     try {
+      if (!auth) {
+        throw new Error('認証システムが初期化されていません')
+      }
+
+      console.log('ログイン開始:', { email })
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      console.log('Firebase認証成功:', {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email
+      })
+
       const idToken = await userCredential.user.getIdToken()
+      console.log('IDトークン取得成功:', {
+        tokenLength: idToken.length,
+        tokenPrefix: idToken.substring(0, 10) + '...'
+      })
+
       await createSession(idToken)
     } catch (error: any) {
-      console.error('ログインエラー:', error)
-      setError('メールアドレスまたはパスワードが正しくありません')
+      console.error('ログインエラーの詳細:', {
+        code: error.code,
+        message: error.message,
+        type: error.constructor.name,
+        stack: error.stack
+      })
+      
+      // エラーメッセージをより具体的に
+      let errorMessage = 'ログインに失敗しました'
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        errorMessage = 'メールアドレスまたはパスワードが正しくありません'
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'ログイン試行回数が多すぎます。しばらく時間をおいてから再度お試しください'
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください'
+      }
+      
+      setError(errorMessage)
       setLoading(false)
     }
   }
