@@ -4,10 +4,12 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { auth, db } from "@/app/firebase/config";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useAuth } from '@/app/hooks/useAuth';
 
 export default function Caution() {
+
+    
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isValid, setIsValid] = useState(false);
@@ -25,6 +27,27 @@ export default function Caution() {
             console.log('LINE Profile:', profile);
         }
     }, [searchParams]);
+
+    useEffect(() => {
+        const checkAgreement = async () => {
+            if (!auth?.currentUser || !db) return;
+            
+            try {
+                const userDoc = doc(db, "users", auth.currentUser.uid);
+                const docSnap = await getDoc(userDoc);
+                
+                if (docSnap.exists() && docSnap.data().agreement === true) {
+                    router.back();
+                }
+            } catch (error) {
+                console.error("Error checking agreement status:", error);
+            }
+        };
+
+        if (!isLoading && isAuthenticated) {
+            checkAgreement();
+        }
+    }, [isLoading, isAuthenticated, router]);
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
@@ -48,7 +71,8 @@ export default function Caution() {
             }
 
             await setDoc(doc(db, "users", auth.currentUser.uid), {
-                agreement: true
+                agreement: true,
+                createdAt: new Date(),
             }, { merge: true });
             
             router.push("/register");
