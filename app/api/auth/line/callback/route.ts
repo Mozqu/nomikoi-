@@ -84,7 +84,8 @@ export async function GET(request: Request) {
       lineId: profile.userId,
       createdAt: new Date(),
       updatedAt: new Date(),
-      provider: 'line'
+      provider: 'line',
+      uid: uid
     }, { merge: true });
 
     console.log('Custom token created successfully');

@@ -19,7 +19,7 @@ export function LikeAction({ targetId }: LikeActionProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth?.onAuthStateChanged((user) => {
       setCurrentUserId(user?.uid || null)
     })
 

@@ -32,13 +32,18 @@ export default function LoginPage() {
         cache: 'no-store'
       })
       
-      // レスポンスの詳細を確認
+      // レスポンスの内容を確認
+      const responseText = await response.text()
+      console.log('Raw response:', responseText)
+      
       let responseData
       try {
-        responseData = await response.json()
+        // 空でない場合のみJSONとしてパース
+        responseData = responseText ? JSON.parse(responseText) : {}
         console.log('Response data parsed successfully:', responseData)
       } catch (e) {
         console.error('Failed to parse response:', e)
+        console.error('Response text was:', responseText)
         throw new Error('サーバーからの応答が不正です')
       }
       
