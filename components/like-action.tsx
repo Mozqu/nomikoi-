@@ -34,7 +34,8 @@ export function LikeAction({ targetId }: LikeActionProps) {
       }
       
       try {
-        console.log("currentUserId", currentUserId)
+        console.log("currentUserId", targetId)
+
         const q = query(
           collection(db, "user_likes"),
           where("uid", "==", currentUserId),
