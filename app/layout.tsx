@@ -21,7 +21,7 @@ import { cookies } from 'next/headers'
 import { adminAuth } from './firebase/admin'
 import { getDoc, doc } from 'firebase/firestore'
 
-async function getProfileStatus() {
+async function getProfileStatus(pathname: string) {
   console.log('=== layout プロフィール状態の取得 ===')
   const cookieStore = cookies()
   const sessionCookie = cookieStore.get('session')
@@ -39,6 +39,9 @@ async function getProfileStatus() {
     const userDoc = await getDoc(doc(db, 'users', decodedToken.uid))
     
     if (!userDoc.exists()) {
+      if (pathname !== '/register/caution') {
+        redirect('/register/caution')
+      }
       return 'unregistered'
     }
 
@@ -70,7 +73,7 @@ async function getProfileStatus() {
 
 async function redirectBasedOnProfile(pathname: string) {
   console.log('=== layout redirectBasedOnProfile ===')
-  const status = await getProfileStatus()
+  const status = await getProfileStatus(pathname)
 
   switch (status) {
     case 'unregistered':
