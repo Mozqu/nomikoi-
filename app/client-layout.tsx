@@ -65,6 +65,8 @@ export default function ClientLayout({
       }
     }
 
+    console.log('=== isRegistrationComplete ===', isRegistrationComplete)
+
     checkRegistrationStatus()
   }, [pathname, router, auth?.currentUser])
 

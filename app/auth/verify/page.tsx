@@ -101,15 +101,6 @@ export default function VerifyAuth() {
             }
 
             // リダイレクト
-            
-            const isNewUserFlag = sessionData.user.isNewUser || isNewUser === 'true';
-            console.log('isNewUserFlag', isNewUserFlag)
-            // 以下のrouter.pushによる遷移処理を削除
-            // if (isNewUserFlag) {
-            //   router.push('/register/caution');
-            // } else {
-            //   rouer.push('/home');
-            // }
             router.push('/home');
           } catch (error) {
             console.error('認証エラー:', error);

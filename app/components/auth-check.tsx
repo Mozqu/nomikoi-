@@ -18,8 +18,10 @@ export default function AuthCheck({ children }: { children: React.ReactNode }) {
       
       // 現在のパスがパブリックパスでなく、ユーザーが未認証の場合
       if (!user && !publicPaths.includes(pathname)) {
-        console.log("Unauthorized access, redirecting to home")
+        console.error("Unauthorized access, redirecting to home")
         router.push("/")
+      } else {
+        console.error('=== userが存在する ===')
       }
     })
 
