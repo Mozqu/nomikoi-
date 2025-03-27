@@ -41,11 +41,11 @@ export default function ClientLayout({
 
         // 各状態に応じたリダイレクト（該当ページ以外の場合のみ）
         if (!userData?.profileCompleted && pathname !== '/caution') {
-          router.push("/caution")
+          router.push("/register/caution")
         } else if (wayOfDrinking.length === 0 && pathname !== '/way_of_drinking') {
-          router.push("/way_of_drinking")
+          router.push("/register/way_of_drinking")
         } else if (favoriteAlcohol.length === 0 && pathname !== '/favorite_drinking') {
-          router.push("/favorite_drinking")
+          router.push("/register/favorite_alcohol")
         }
       } catch (error) {
         console.error("登録状態の確認に失敗しました:", error)
