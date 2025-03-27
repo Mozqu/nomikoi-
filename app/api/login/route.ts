@@ -10,13 +10,27 @@ console.log('Environment variables exist:', {
   privateKey: !!process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
 })
 
-export const runtime = 'nodejs'; // Edge Runtimeを使用しないことを明示
+export const runtime = 'nodejs'
+
+// 許可するHTTPメソッドを明示的に指定
+export const dynamic = 'force-dynamic'
+export const allowedMethods = ['POST']
 
 const COOKIE_NAME = "session"
 const SESSION_EXPIRES_IN = 60 * 60 * 24 * 1000; // 24 hours in milliseconds
 
+// POSTメソッドのみを受け付けるように修正
 export async function POST(request: Request) {
   console.log('\n=== Login API Start ===')
+  
+  // メソッドの検証
+  if (request.method !== 'POST') {
+    return NextResponse.json(
+      { error: 'Method not allowed' },
+      { status: 405 }
+    )
+  }
+
   try {
     const { idToken } = await request.json()
     
@@ -86,4 +100,16 @@ export async function POST(request: Request) {
       { status: 401 }
     )
   }
+}
+
+// OPTIONSメソッドを追加してCORSプリフライトリクエストに対応
+export async function OPTIONS(request: Request) {
+  return NextResponse.json({}, {
+    status: 200,
+    headers: {
+      'Allow': 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  })
 }
