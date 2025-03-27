@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { adminAuth } from '@/app/firebase/admin';
+import { adminAuth, adminDb } from '@/app/firebase/admin';
+import { randomUUID } from 'crypto';
 
 export async function GET(request: Request) {
   console.log('\n=== LINE Callback Start ===');
@@ -54,15 +55,23 @@ export async function GET(request: Request) {
     const profile = await profileResponse.json();
     console.log('LINE profile fetched successfully');
 
-    console.log('Creating custom token...');
+    // ランダムなUIDを生成
+    const uid = randomUUID();
+
     // カスタムトークンの生成
-    const customToken = await adminAuth.createCustomToken(profile.userId, {
+    const customToken = await adminAuth.createCustomToken(uid, {
       line: {
-        userId: profile.userId,
-        displayName: profile.displayName,
-        pictureUrl: profile.pictureUrl,
       },
     });
+
+    // Firestoreにユーザー情報を保存
+    await adminDb.collection('users').doc(uid).set({
+      lineId: profile.userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      provider: 'line'
+    }, { merge: true });
+
     console.log('Custom token created successfully');
 
     // 認証ページにリダイレクト（カスタムトークンを渡す）
