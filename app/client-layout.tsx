@@ -44,8 +44,8 @@ export default function ClientLayout({
           console.log('registerページではない')
         
           // 各状態に応じたリダイレクト（該当ページ以外の場合のみ）
-          if (!userData?.profileCompleted && pathname !== '/caution') {
-            console.log('=== profileCompletedがfalse ===')
+          if (!userData?.agreement && pathname !== '/register/caution') {
+            console.log('===  agreementがfalse ===')
             router.push("/register/caution")
           } else if (wayOfDrinking.length === 0 && pathname !== '/way_of_drinking') {
             console.log('=== wayOfDrinkingが0 ===')
