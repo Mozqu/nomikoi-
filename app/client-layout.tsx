@@ -22,7 +22,7 @@ export default function ClientLayout({
   useEffect(() => {
     const checkRegistrationStatus = async () => {
       // ログイン関連ページではチェックをスキップ
-      if (pathname === '/login' || pathname === '/signup' || pathname === '/') return
+      if (pathname === '/login' || pathname === '/signup' || pathname === '/' || pathname === '/auth/verify') return
       if (!auth?.currentUser || !db) return
 
       try {
