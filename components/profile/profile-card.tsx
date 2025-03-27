@@ -56,6 +56,8 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                 const urls = await Promise.all(
                     imagesList.items.map(imageRef => getDownloadURL(imageRef))
                 );
+
+                console.log('画像の取得に成功しました:', urls);
                 
                 setImageUrls(urls);
             } catch (error) {
