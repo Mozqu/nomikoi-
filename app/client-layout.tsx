@@ -40,17 +40,20 @@ export default function ClientLayout({
         const wayOfDrinking = userData?.answers?.way_of_drinking || []
         const favoriteAlcohol = userData?.answers?.favorite_alcohol || []
 
-        if (pathname !== '/register/caution' && pathname !== '/register/way_of_drinking' && pathname !== '/register/favorite_alcohol') {
+        if (pathname !== '/register/caution' && pathname !== '/register' && pathname !== '/register/way_of_drinking' && pathname !== '/register/favorite_alcohol') {
           console.log('registerページではない')
         
           // 各状態に応じたリダイレクト（該当ページ以外の場合のみ）
           if (!userData?.agreement && pathname !== '/register/caution') {
             console.log('===  agreementがfalse ===')
             router.push("/register/caution")
-          } else if (wayOfDrinking.length === 0 && pathname !== '/way_of_drinking') {
+          } else if (!userData?.profileCompleted && pathname !== '/register') {
+            console.log('=== profileCompletedがfalse ===')
+            router.push("/register")
+          } else if (wayOfDrinking.length === 0 && pathname !== '/register/way_of_drinking') {
             console.log('=== wayOfDrinkingが0 ===')
             router.push("/register/way_of_drinking")
-          } else if (favoriteAlcohol.length === 0 && pathname !== '/favorite_drinking') {
+          } else if (favoriteAlcohol.length === 0 && pathname !== '/register/favorite_alcohol') {
             console.log('=== favoriteAlcoholが0 ===')
             router.push("/register/favorite_alcohol")
           }
