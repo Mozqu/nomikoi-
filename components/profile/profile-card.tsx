@@ -46,13 +46,26 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
     
     useEffect(() => {
         const fetchImages = async () => {
-            if (!userData?.uid) return;
+            if (!userData?.uid) {
+                console.log('ユーザーIDが存在しません');
+                setImageUrls(['/placeholder-user.png']);
+                return;
+            }
             
             try {
                 const storage = getStorage();
                 const imagesRef = ref(storage, `profile-image/${userData.uid}`);
-                const imagesList = await listAll(imagesRef);
+                console.log('画像の取得を試みます:', `profile-image/${userData.uid}`);
                 
+                const imagesList = await listAll(imagesRef);
+                console.log('フォルダ内の画像数:', imagesList.items.length);
+                
+                if (imagesList.items.length === 0) {
+                    console.log('画像が見つかりませんでした');
+                    setImageUrls(['/placeholder-user.png']);
+                    return;
+                }
+
                 const urls = await Promise.all(
                     imagesList.items.map(imageRef => getDownloadURL(imageRef))
                 );
@@ -63,7 +76,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
             } catch (error) {
                 console.error('画像の取得に失敗しました:', error);
                 // デフォルト画像を設定
-                setImageUrls(['/home-background.jpg']);
+                setImageUrls(['/placeholder-user.png']);
             }
         };
         
