@@ -21,27 +21,30 @@ export default function ClientLayout({
 
   useEffect(() => {
     const checkRegistrationStatus = async () => {
+      // ログイン関連ページではチェックをスキップ
+      if (pathname === '/login' || pathname === '/signup' || pathname === '/') return
       if (!auth?.currentUser || !db) return
 
       try {
         const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid))
         
         // ユーザードキュメントが存在しない場合
-        if (!userDoc.exists() && !pathname.startsWith('/register') && pathname !== '/signup') {
+        if (!userDoc.exists() && pathname !== '/register/caution') {
           router.push("/register/caution")
           return
         }
 
         // ユーザードキュメントが存在する場合の各種チェック
         const userData = userDoc.data()
-        const wayOfDrinking = userData.answers?.way_of_drinking || []
-        const favoriteAlcohol = userData.answers?.favorite_alcohol || []
+        const wayOfDrinking = userData?.answers?.way_of_drinking || []
+        const favoriteAlcohol = userData?.answers?.favorite_alcohol || []
 
-        if (!userData.profileCompleted && !pathname.startsWith('/caution')) {
+        // 各状態に応じたリダイレクト（該当ページ以外の場合のみ）
+        if (!userData?.profileCompleted && pathname !== '/caution') {
           router.push("/caution")
-        } else if (wayOfDrinking.length === 0 && !pathname.startsWith('/way_of_drinking')) {
+        } else if (wayOfDrinking.length === 0 && pathname !== '/way_of_drinking') {
           router.push("/way_of_drinking")
-        } else if (favoriteAlcohol.length === 0 && !pathname.startsWith('/favorite_drinking')) {
+        } else if (favoriteAlcohol.length === 0 && pathname !== '/favorite_drinking') {
           router.push("/favorite_drinking")
         }
       } catch (error) {
