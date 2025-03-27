@@ -16,24 +16,36 @@ export function LikeAction({ targetId }: LikeActionProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentAction, setCurrentAction] = useState<'like' | 'nope' | null>(null)
-  const currentUserId = auth?.currentUser?.uid
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUserId(user?.uid || null)
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   useEffect(() => {
     const fetchCurrentAction = async () => {
-      if (!currentUserId) {
-        console.log("currentUserIdがnullです")
+      if (!currentUserId || !db) {
+        console.log("ユーザーが未認証またはDBが初期化されていません")
         return
       }
       
-      const q = query(
-        collection(db, "user_likes"),
-        where("uid", "==", currentUserId),
-        where("target_id", "==", targetId)
-      )
-      const querySnapshot = await getDocs(q)
-      
-      if (!querySnapshot.empty) {
-        setCurrentAction(querySnapshot.docs[0].data().type)
+      try {
+        const q = query(
+          collection(db, "user_likes"),
+          where("uid", "==", currentUserId),
+          where("target_id", "==", targetId)
+        )
+        const querySnapshot = await getDocs(q)
+        
+        if (!querySnapshot.empty) {
+          setCurrentAction(querySnapshot.docs[0].data().type)
+        }
+      } catch (error) {
+        console.error("アクションの取得に失敗しました:", error)
       }
     }
 
@@ -41,7 +53,10 @@ export function LikeAction({ targetId }: LikeActionProps) {
   }, [currentUserId, targetId])
 
   const handleAction = async (type: 'like' | 'nope') => {
-    if (!currentUserId || isSubmitting) return
+    if (!currentUserId || !db || isSubmitting) {
+      console.log("アクションを実行できません")
+      return
+    }
     
     setIsSubmitting(true)
     try {
@@ -57,11 +72,9 @@ export function LikeAction({ targetId }: LikeActionProps) {
         const existingType = existingDoc.data().type
 
         if (existingType === type) {
-          // Like → 未選択 または Nope → 未選択 (取り消し)
           await deleteDoc(doc(db, "user_likes", existingDoc.id))
           setCurrentAction(null)
         } else {
-          // Like → Nope または Nope → Like (切り替え)
           await updateDoc(doc(db, "user_likes", existingDoc.id), {
             type: type,
             updated_at: new Date()
@@ -69,7 +82,6 @@ export function LikeAction({ targetId }: LikeActionProps) {
           setCurrentAction(type)
         }
       } else {
-        // 未選択 → Like または 未選択 → Nope (新規)
         await addDoc(collection(db, "user_likes"), {
           uid: currentUserId,
           target_id: targetId,
@@ -79,7 +91,7 @@ export function LikeAction({ targetId }: LikeActionProps) {
         setCurrentAction(type)
       }
     } catch (error) {
-      console.error("Error saving action:", error)
+      console.error("アクションの保存に失敗しました:", error)
     } finally {
       setIsSubmitting(false)
     }
