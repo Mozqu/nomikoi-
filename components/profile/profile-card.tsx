@@ -245,7 +245,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                         transition: "all 0.5s ease-in-out",
                     }}
                 >
-                    <LikeAction targetId={userData?.uid as string} />
+                    <LikeAction targetId={userData?.id as string} />
                 </div>
                 )}
 

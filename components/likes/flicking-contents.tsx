@@ -55,7 +55,7 @@ const LikeItem = ({ like, type }: { like: Like, type: string }) => {
       location: userData.userData?.location || ''
     }
 
-  
+    console.log("formattedUser", formattedUser)
     return <ProfileCardSmall user={formattedUser} />
   }
   
