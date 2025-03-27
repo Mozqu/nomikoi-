@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { Client } from '@line/bot-sdk'
+import { adminDb } from '@/app/firebase/admin'
 
 // LINEクライアントの初期化
 let client: Client | undefined
@@ -26,10 +27,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { message, lineUserId, senderName, messageRoomId } = await request.json()
-    console.log('Sending message to:', lineUserId)
+    const { message, partnerId, senderName, messageRoomId } = await request.json()
+    console.log('Sending message to:', partnerId)
     console.log('Message content:', message)
     
+    // FirestoreからLINE IDを取得
+    const userDoc = await adminDb.collection('users').doc(partnerId).get()
+    if (!userDoc.exists) {
+      throw new Error('User not found')
+    }
+    
+    const userData = userDoc.data()
+    const lineId = userData?.lineId
+    
+    if (!lineId) {
+      throw new Error('LINE ID not found')
+    }
+
     // メッセージが長い場合は省略表示
     const previewMessage = message.length > 30
       ? message.substring(0, 30) + '...' 
@@ -37,7 +51,7 @@ export async function POST(request: Request) {
     
     const appUrl = `https://nomikoi.vercel.app/messages/${messageRoomId}`
 
-    const result = await client.pushMessage(lineUserId, {
+    const result = await client.pushMessage(lineId, {
       type: 'text',
       text: `${senderName}さんから新しいメッセージ\n\n「${previewMessage}」\n\n▼続きを読む\n${appUrl}`
     })

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { ChevronLeft, Send, X } from "lucide-react"
 import { use } from "react"
 import Link from "next/link"
+
 import {
   Dialog,
   DialogContent,
@@ -168,21 +169,20 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
         console.log('user', user)
 
         // パートナーがLINE連携済みの場合、通知を送信
-        if (partnerData?.lineUserId) {
-          console.log("連携済みユーザー", partnerData.lineUserId)
-          await fetch('/api/line-message', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message: newMessage,
-              lineUserId: partnerData.lineUserId,
-              senderName: userName,
-              messageRoomId: id
-            })
+        console.log("連携済みユーザー", partnerData?.id)
+        await fetch('/api/line-message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: newMessage,
+            partnerId: partnerData?.id,
+            senderName: userName,
+            messageRoomId: id
           })
-        }
+        })
+        
       }
 
       setNewMessage("")
