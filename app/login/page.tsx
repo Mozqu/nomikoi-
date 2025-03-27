@@ -17,14 +17,15 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/home'
+  console.log('Callback URL:', callbackUrl) // デバッグ用
   
   // セッションクッキーを作成する関数
   const createSession = async (idToken: string) => {
     try {
       console.log('Creating session with token length:', idToken.length)
       
-      // APIエンドポイントのURLを確認用に出力
-      const apiUrl = '/api/login'
+      // 絶対パスでAPIエンドポイントを指定
+      const apiUrl = new URL('/api/login', window.location.origin).toString()
       console.log('Sending request to:', apiUrl)
       
       const response = await fetch(apiUrl, {
