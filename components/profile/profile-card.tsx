@@ -102,46 +102,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
     const [isShrinked, setIsShrinked] = useState(false);
     const startY = useRef<number | null>(null);
     const showContentsRef = useRef<HTMLDivElement>(null);
-    {/* タッチイベントハンドラーの追加 
-    // タッチイベントハンドラーの追加
-    const handleTouchStart = (e: React.TouchEvent) => {
-      startY.current = e.touches[0].clientY;
-      console.log('タッチ開始:', startY.current);
-    };
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-      if (!startY.current) return;
-      
-      const currentY = e.touches[0].clientY;
-      const diffY = currentY - startY.current; // 下スワイプが正の値になるように計算
-      
-      console.log('タッチ移動中:', {
-        startY: startY.current,
-        currentY,
-        diffY,
-        isExpanded
-      });
-      
-      // diffYが正の値なら下スワイプ、負の値なら上スワイプ
-      if (diffY > 50 && isExpanded) {
-        // 下スワイプで開いている状態なら閉じる
-        console.log('下にスワイプ: カードを閉じます');
-        setIsExpanded(false);
-        startY.current = null;
-      } else if (diffY < -50 && !isExpanded) {
-        // 上スワイプで閉じている状態なら開く
-        console.log('上にスワイプ: カードを開きます');
-        setIsExpanded(true);
-        startY.current = null;
-      }
-    };
-
-    const handleTouchEnd = () => {
-      console.log('タッチ終了');
-      startY.current = null;
-    };
-
-    */}
+    
     const handleClick = () => {
         console.log('クリックでの切り替え:', !isExpanded ? '開く' : '閉じる');
         if (isShrinked) {

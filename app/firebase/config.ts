@@ -21,6 +21,7 @@ const firebaseConfig = {
 };
 
 // 環境変数のデバッグ出力
+/*
 console.log('=== Firebase環境変数の検証 ===');
 console.log('API_KEY:', process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? '設定済み' : '未設定');
 console.log('AUTH_DOMAIN:', process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? '設定済み' : '未設定');
@@ -30,6 +31,7 @@ console.log('実際の設定値:', {
   authDomain: firebaseConfig.authDomain,
   projectId: firebaseConfig.projectId
 });
+*/
 
 // Firebaseの初期化を条件付きで行う
 let app = null;
