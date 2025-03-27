@@ -16,13 +16,7 @@ export default function AuthCheck({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsLoading(false)
       
-      // 現在のパスがパブリックパスでなく、ユーザーが未認証の場合
-      if (!user && !publicPaths.includes(pathname)) {
-        console.error("Unauthorized access, redirecting to home")
-        router.push("/")
-      } else {
-        console.error('=== userが存在する ===')
-      }
+
     })
 
     return () => unsubscribe()
