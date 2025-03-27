@@ -41,7 +41,7 @@ export default function ClientLayout({
         const favoriteAlcohol = userData?.answers?.favorite_alcohol || []
 
         if (pathname !== '/register/caution' && pathname !== '/register' && pathname !== '/register/way_of_drinking' && pathname !== '/register/favorite_alcohol') {
-          console.log('registerページではない')
+          console.log('registerページではない', pathname)
         
           // 各状態に応じたリダイレクト（該当ページ以外の場合のみ）
           if (!userData?.agreement && pathname !== '/register/caution') {
