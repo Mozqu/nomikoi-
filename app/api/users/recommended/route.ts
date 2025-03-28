@@ -254,15 +254,20 @@ export async function GET(request: Request) {
             let totalScore = 0;
 
             // ユーザー間の相性スコアを計算
+
             const compatibilityScore = calculateCompatibility(
               currentUserCharacter,
               userCharacter
             );
             totalScore += compatibilityScore;
             // 飲み方の相性スコアを計算
+
+            console.log('=== data ===')
+            console.log(data)
             const drinkingScore = calculateDrinkingCompatibility(
+              currentUserDrinking,
+
               data.answers?.way_of_drinking || {},
-              currentUserDrinking
             );
 
             totalScore += drinkingScore;
