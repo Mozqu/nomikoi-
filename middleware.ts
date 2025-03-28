@@ -6,6 +6,8 @@ const publicPaths = [
   '/',                    // トップページ
   '/login',              // ログインページ
   '/signup',             // サインアップ
+  '/api/login',          // ログインAPI
+  '/api/signup',         // サインアップAPI
 ]
 
 // 認証処理中のパス
