@@ -38,7 +38,6 @@ export async function GET(request: Request) {
       .where('gender', '==', currentUserGender === '女性' ? '男性' : '女性')
       .orderBy('createdAt', 'desc')
       .limit(50);
-
     const recommendedUsersSnapshot = await recommendedUsersQuery.get();
 
     // 現在のユーザーの性格診断結果を取得
@@ -58,6 +57,8 @@ export async function GET(request: Request) {
     const currentUserDrinking = currentUserData.docs[0]?.data().answers?.way_of_drinking || {};
 
     const currentUserPreference = currentUserData.docs[0]?.data().answers.favorite_alcohol || {};
+
+    
   
 
     // 相性計算のユーティリティ関数
@@ -269,6 +270,8 @@ export async function GET(request: Request) {
         };
       })
     );
+
+    
     
 
     // 最終的なレスポンスデータの構築

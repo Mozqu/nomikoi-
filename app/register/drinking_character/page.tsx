@@ -96,7 +96,7 @@ const questions: Questions = {
         priority_factor: "C",
         options: {
             A: { label: "決めた時間に帰る方だ", type: "C", value: 2 },
-            B: { label: "楽しくて予定より長くなることが多い", type: "R", value: 2 },
+            B: { label: "楽しくなると予定より遅くなることが多い", type: "R", value: 2 },
             C: { label: "どちらでもない", type: "R", value: 1 }
         }
     },
