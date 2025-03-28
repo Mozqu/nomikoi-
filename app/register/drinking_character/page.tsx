@@ -449,7 +449,7 @@ export default function DrinkingCharacter() {
         お酒の飲み方診断
       </h1>
       
-      <div className="w-full max-w-md space-y-8 mt-4">
+      <div className="w-full max-w-md space-y-8 mt-4 overflow-y-auto">
         {questionEntries.map(([key, question], index) => (
           <QuestionItem
             key={key}
