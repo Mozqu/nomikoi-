@@ -166,7 +166,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
         const partnerDoc = await getDoc(doc(db!, "users", partnerId))
         const partnerData = partnerDoc.data()
 
-        console.log('partnerData', partnerData)
+        console.log('partnerData', partnerData.uid)
 
         // パートナーがLINE連携済みの場合、通知を送信
         console.log("連携済みユーザー", partnerData?.uid)
