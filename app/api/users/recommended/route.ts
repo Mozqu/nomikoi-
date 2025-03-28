@@ -137,17 +137,29 @@ export async function GET(request: Request) {
       console.log('targetUserDrinking:', targetUserDrinking);
       let totalScore = 0;
 
+      let logData = {
+        currentUser: currentUserDrinking,
+        targetUser: targetUserDrinking,
+        ideal_drinking_time: 0,
+        drinking_amount: 0,
+        drinking_frequency: 0,
+        food_pairing_importance: 0,
+        alcohol_quality_preference: 0,
+        party_drink_preference: 0
+      }
+
       // 1. ideal_drinking_time（1つ離れごとに-2点）
       const timeDiff = Math.abs(currentUserDrinking.ideal_drinking_time - targetUserDrinking.ideal_drinking_time);
       const timeScore = Math.max(10 - (timeDiff * 2), 0);
       totalScore += timeScore;
-      console.log('timeScore:', timeScore);
+      logData.ideal_drinking_time = timeScore;
+
 
       // 2. drinking_amount（1つズレは減点なし、2つ以上でズレ×-2点）
       const amountDiff = Math.abs(currentUserDrinking.drinking_amount - targetUserDrinking.drinking_amount);
       const amountScore = amountDiff <= 1 ? 10 : Math.max(10 - ((amountDiff - 1) * 2), 0);
       totalScore += amountScore;
-      console.log('amountScore:', amountScore);
+      logData.drinking_amount = amountScore;
 
       // 3. drinking_frequency（1つ離れごとに-2点）
       const freqDiff = Math.abs(currentUserDrinking.drinking_frequency - targetUserDrinking.drinking_frequency);
@@ -159,13 +171,13 @@ export async function GET(request: Request) {
         freqScore = Math.max(10 - (freqDiff * 2), 0);
       }
       totalScore += freqScore;
-      console.log('freqScore:', freqScore);
+      logData.drinking_frequency = freqScore;
 
       // 4. food_pairing_importance（1つズレは減点なし、2つ以上でズレ×-2点）
       const foodDiff = Math.abs(currentUserDrinking.food_pairing_importance - targetUserDrinking.food_pairing_importance);
       const foodScore = foodDiff <= 1 ? 10 : Math.max(10 - ((foodDiff - 1) * 2), 0);
       totalScore += foodScore;
-      console.log('foodScore:', foodScore);
+      logData.food_pairing_importance = foodScore;
 
       // 5. alcohol_quality_preference
       const qualityDiff = Math.abs(currentUserDrinking.alcohol_quality_preference - targetUserDrinking.alcohol_quality_preference);
@@ -177,7 +189,7 @@ export async function GET(request: Request) {
         qualityScore = qualityDiff <= 1 ? 10 : Math.max(10 - ((qualityDiff - 1) * 2), 0);
       }
       totalScore += qualityScore;
-      console.log('qualityScore:', qualityScore);
+      logData.alcohol_quality_preference = qualityScore;
 
       // 6. party_drink_preference
       const partyDiff = Math.abs(currentUserDrinking.party_drink_preference - targetUserDrinking.party_drink_preference);
@@ -200,8 +212,9 @@ export async function GET(request: Request) {
         partyScore = Math.max(6 - (partyDiff * 2), 0);
       }
       totalScore += partyScore;
-      console.log('partyScore:', partyScore);
+      logData.party_drink_preference = partyScore;
 
+      console.log('logData:', logData);
       return totalScore;
     }
 
