@@ -103,7 +103,6 @@ export default function SignupPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <h1 className="text-2xl font-bold mb-4">新規登録</h1>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
