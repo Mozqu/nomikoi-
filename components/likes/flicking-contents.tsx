@@ -39,8 +39,6 @@ const LikeItem = ({ like, type }: { like: Like, type: string }) => {
     } else if (type === "like") {
         userData = useUser(like.target_id)
     }
-
-    console.log("userData", userData.userData)
   
     if (loading || !userData) {
       return <div className="w-[180px] h-[240px] bg-gray-200 animate-pulse rounded-xl" />
