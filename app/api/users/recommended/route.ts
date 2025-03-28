@@ -15,37 +15,67 @@ if (!getApps().length) {
 
 const db = getFirestore();
 
+console.log('=== recommended route ===')
+
 // ブロックの外に関数を移動し、constで宣言
 const isDrinkingHabitCompatible = (
-  currentUserAcceptable: number,
-  currentUserHabit: number,
-  targetUserHabit: string | number,
+  currentUserAcceptableDrinkingHabit: any,
+  currentUserDrinkingHabit: any,
+  targetUserHabit: any,
   targetUserDrinkingNonDrinker?: boolean
 ): boolean => {
-  // 非飲酒者の特別処理
-  if (!targetUserHabit || !currentUserHabit) {
+  
+  if (!targetUserHabit || !currentUserAcceptableDrinkingHabit) {
+    console.log("skip: missing data");
     return true;
+  } else {
+    console.log("continue: data is not missing");
+    console.log("targetUserHabit:", targetUserHabit);
+    console.log("currentUserAcceptableDrinkingHabit:", currentUserAcceptableDrinkingHabit);
   }
 
-  // 数値型に変換
-  const targetHabit = Number(targetUserHabit);
-  console.log('targetHabit:', targetHabit);
-  
-  // 許容度に基づくフィルタリング
-  switch (currentUserAcceptable) {
-    case 5:
-      return true;
-    case 4:
-      return targetHabit >= (currentUserHabit - 3);
-    case 3:
-      return targetHabit >= (currentUserHabit - 2);
-    case 2:
-      return targetHabit >= (currentUserHabit - 1);
-    case 1:
-      return targetHabit >= currentUserHabit;
-    default:
-      return false;
-  }
+  // 各IDに対してフィルタリングを実行
+  const drinkingIds = [
+    "drink_non_drinker",
+    "drink_turns_red",
+    "drink_gets_sleepy",
+    "drink_gets_wasted",
+    "drink_until_blackout",
+    "drink_forgets_after",
+    "drink_loses_memory",
+    "drink_laughs_hard",
+    "drink_talks_to_others",
+    "drink_gets_angry",
+    "drink_cries",
+    "drink_contacts_others",
+    "drink_outdoor_enjoy"
+  ];
+
+  return drinkingIds.every(id => {
+    const currentAcceptable = currentUserAcceptableDrinkingHabit[id]?.value || 0;
+    //const currentHabit = currentUserDrinkingHabit[id]?.value || 0;
+    const targetValue = targetUserHabit[id]?.value || 0;
+    console.log("id:", id, "currentAcceptable:", currentAcceptable, "targetValue:", targetValue)
+    // R（currentAcceptable）に基づくフィルタリング
+    switch (currentAcceptable) {
+      case 5:
+        return true; // どの相手ともマッチング可
+      case 4:
+        console.log(targetValue, currentAcceptable - 3)
+        return targetValue >= (currentAcceptable - 3);
+      case 3:
+        console.log(targetValue, currentAcceptable - 2)
+        return targetValue > 0 && targetValue >= (currentAcceptable - 2);
+      case 2:
+        console.log(targetValue, currentAcceptable - 1)
+        return targetValue > 0 && targetValue >= (currentAcceptable - 1);
+      case 1:
+        console.log(targetValue, currentAcceptable)
+        return targetValue >= currentAcceptable;
+      default:
+        return true; // 許容度が設定されていない場合はマッチング可
+    }
+  });
 };
 
 export async function GET(request: Request) {
@@ -54,7 +84,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const currentUserId = searchParams.get('userId');
     const currentUserGender = searchParams.get('gender');
-
 
     // パラメータのバリデーション
     if (!currentUserId || !currentUserGender) {
@@ -91,9 +120,6 @@ export async function GET(request: Request) {
     const currentUserDrinking = currentUserData.docs[0]?.data().answers?.way_of_drinking || {};
 
     const currentUserPreference = currentUserData.docs[0]?.data().answers.favorite_alcohol || {};
-
-    
-  
 
     // 相性計算のユーティリティ関数
     const calculateCompatibility = (user1Character: any, user2Character: any) => {
@@ -163,8 +189,6 @@ export async function GET(request: Request) {
           });
           return 0;
         }
-
-        console.log('Total compatibility score:', totalScore);
         
         return totalScore;
 
@@ -278,8 +302,7 @@ export async function GET(request: Request) {
         totalScore += 5;   // 1件の一致
       }
       // 0件の場合は0点を加算
-      
-
+    
       return totalScore;
     }
 
@@ -309,14 +332,24 @@ export async function GET(request: Request) {
       .filter(doc => {
         const data = doc.data();
         const targetUserHabit = data.answers?.drinking_habit;
-        const targetUserDrinkingNonDrinker = data.answers?.drinking_non_drinker;
-        
-        return isDrinkingHabitCompatible(
+        const targetUserAcceptableHabit = data.answers?.acceptable_drinking_habit;
+        console.log("=== ", data.name, " ===")
+        console.log("")
+        const isCompatible = isDrinkingHabitCompatible(
           currentUserData.docs[0]?.data().answers?.acceptable_drinking_habit,
           currentUserData.docs[0]?.data().answers?.drinking_habit,
           targetUserHabit,
-          targetUserDrinkingNonDrinker
+          targetUserAcceptableHabit
         );
+
+        if (!isCompatible) {
+          console.log('=== isCompatible ===')
+          console.log('currentUserData:', currentUserData.docs[0].data().name);
+          console.log('isCompatible:', isCompatible);
+        }
+
+        return isCompatible;
+
       })
       .map((doc: FirebaseFirestore.QueryDocumentSnapshot) => {
         const data = doc.data();

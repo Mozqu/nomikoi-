@@ -358,10 +358,7 @@ export default function drinkingHabit() {
         const questionData = questions[questionNumber];
         
         if (questionData) {
-          acc[questionNumber] = {
-            id: questionData.id,
-            value: questionData.options[option] || 0
-          };
+          acc[questionData.id] = questionData.options[option] || 0;
         }
         return acc;
       }, {} as Record<string, any>);
@@ -472,7 +469,7 @@ export default function drinkingHabit() {
           {isSubmitting 
             ? '送信中...' 
             : isAllQuestionsAnswered 
-              ? '診断結果を見る' 
+              ? '次へ' 
               : '全ての質問に回答してください'}
         </button>
       </div>
