@@ -468,7 +468,7 @@ export default function SettingsPage() {
                 className="w-full flex items-center justify-between p-4 rounded-full border"
                 onClick={() => router.push('/register/way_of_drinking')}
               >
-                <span>もう一度お酒の質問に答える</span>
+                <span>お酒の質問に答える</span>
                 <ArrowLeft size={20} className="rotate-180" />
               </button>
               <button 
@@ -476,6 +476,13 @@ export default function SettingsPage() {
                 onClick={() => router.push('/register/drinking_habit')}
               >
                 <span>酒癖フィルターの質問に答える</span>
+                <ArrowLeft size={20} className="rotate-180" />
+              </button>
+              <button 
+                className="w-full flex items-center justify-between p-4 rounded-full border"
+                onClick={() => router.push('/register/drinking_character')}
+              >
+                <span>酒癖タイプの質問に答える</span>
                 <ArrowLeft size={20} className="rotate-180" />
               </button>
             </div>
