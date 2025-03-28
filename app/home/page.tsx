@@ -67,7 +67,6 @@ interface UserCardProps {
 const UserCard: React.FC<UserCardProps> = ({ user, isNew }) => {
   const router = useRouter()
   const age = calculateAge(user.birthday)
-  console.log(user)
   const handleClick = () => {
     router.push(`/profile/${user.id}`)
   }

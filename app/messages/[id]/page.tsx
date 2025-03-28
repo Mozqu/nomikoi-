@@ -89,7 +89,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
       try {
         const userDoc = await getDoc(doc(db!, "users", user.uid))
         const userData = userDoc.data()
-        setHasLineConnection(!!userData?.lineUserId)
+        setHasLineConnection(!!userData?.lineId)
       } catch (error) {
         console.error("LINE連携状態の確認に失敗:", error)
       }
