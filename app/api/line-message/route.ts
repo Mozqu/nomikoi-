@@ -27,8 +27,21 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { message, partnerId, senderName, messageRoomId } = await request.json()
-    console.log('Sending message to:', partnerId)
+    const body = await request.json()
+    console.log('Full request body:', body)  // リクエスト全体をログ出力
+
+    const { message, partnerId, senderName, messageRoomId } = body
+    
+    // より詳細なバリデーションチェック
+    if (!partnerId || typeof partnerId !== 'string') {
+      console.error('Invalid partnerId:', partnerId)
+      return NextResponse.json(
+        { error: 'パートナーIDが無効です', receivedPartnerId: partnerId },
+        { status: 400 }
+      )
+    }
+
+    console.log('Validated partnerId:', partnerId)
     console.log('Message content:', message)
     
     // FirestoreからLINE IDを取得
