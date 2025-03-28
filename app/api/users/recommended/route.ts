@@ -128,6 +128,88 @@ export async function GET(request: Request) {
       }
     };
 
+    // 飲み方の相性を計算する関数
+    const calculateDrinkingCompatibility = (
+      currentUserDrinking: Record<string, any>,
+      targetUserDrinking: Record<string, any>
+    ): number => {
+      console.log('currentUserDrinking:', currentUserDrinking);
+      console.log('targetUserDrinking:', targetUserDrinking);
+      let totalScore = 0;
+
+      // 1. ideal_drinking_time（1つ離れごとに-2点）
+      const timeDiff = Math.abs(currentUserDrinking.ideal_drinking_time - targetUserDrinking.ideal_drinking_time);
+      const timeScore = Math.max(10 - (timeDiff * 2), 0);
+      totalScore += timeScore;
+      console.log('timeScore:', timeScore);
+
+      // 2. drinking_amount（1つズレは減点なし、2つ以上でズレ×-2点）
+      const amountDiff = Math.abs(currentUserDrinking.drinking_amount - targetUserDrinking.drinking_amount);
+      const amountScore = amountDiff <= 1 ? 10 : Math.max(10 - ((amountDiff - 1) * 2), 0);
+      totalScore += amountScore;
+      console.log('amountScore:', amountScore);
+
+      // 3. drinking_frequency（1つ離れごとに-2点）
+      const freqDiff = Math.abs(currentUserDrinking.drinking_frequency - targetUserDrinking.drinking_frequency);
+      let freqScore = 10;
+      if ((currentUserDrinking.drinking_frequency === 4 && targetUserDrinking.drinking_frequency === 5) ||
+          (currentUserDrinking.drinking_frequency === 5 && targetUserDrinking.drinking_frequency === 4)) {
+        freqScore = 10;
+      } else {
+        freqScore = Math.max(10 - (freqDiff * 2), 0);
+      }
+      totalScore += freqScore;
+      console.log('freqScore:', freqScore);
+
+      // 4. food_pairing_importance（1つズレは減点なし、2つ以上でズレ×-2点）
+      const foodDiff = Math.abs(currentUserDrinking.food_pairing_importance - targetUserDrinking.food_pairing_importance);
+      const foodScore = foodDiff <= 1 ? 10 : Math.max(10 - ((foodDiff - 1) * 2), 0);
+      totalScore += foodScore;
+      console.log('foodScore:', foodScore);
+
+      // 5. alcohol_quality_preference
+      const qualityDiff = Math.abs(currentUserDrinking.alcohol_quality_preference - targetUserDrinking.alcohol_quality_preference);
+      let qualityScore = 10;
+      if ((currentUserDrinking.alcohol_quality_preference === 3 && targetUserDrinking.alcohol_quality_preference === 4) ||
+          (currentUserDrinking.alcohol_quality_preference === 4 && targetUserDrinking.alcohol_quality_preference === 3)) {
+        qualityScore = Math.max(10 - qualityDiff, 0);
+      } else {
+        qualityScore = qualityDiff <= 1 ? 10 : Math.max(10 - ((qualityDiff - 1) * 2), 0);
+      }
+      totalScore += qualityScore;
+      console.log('qualityScore:', qualityScore);
+
+      // 6. party_drink_preference
+      const partyDiff = Math.abs(currentUserDrinking.party_drink_preference - targetUserDrinking.party_drink_preference);
+      let partyScore = 10;
+      
+      const getGroup = (value: number) => {
+        if (value <= 2) return 'A';
+        if (value === 3) return 'B';
+        return 'B_PRIME';
+      };
+      
+      const group1 = getGroup(currentUserDrinking.party_drink_preference);
+      const group2 = getGroup(targetUserDrinking.party_drink_preference);
+      
+      if (group1 === group2) {
+        partyScore = 10;
+      } else if ((group1 === 'B' && group2 === 'B_PRIME') || (group1 === 'B_PRIME' && group2 === 'B')) {
+        partyScore = 8;
+      } else if (group1 === 'A' || group2 === 'A') {
+        partyScore = Math.max(6 - (partyDiff * 2), 0);
+      }
+      totalScore += partyScore;
+      console.log('partyScore:', partyScore);
+
+      return totalScore;
+    }
+
+    // 現在のユーザーの飲み方を取得
+    const currentUserDrinking = recommendedUsersSnapshot.docs
+      .find(doc => doc.id === currentUserId)
+      ?.data()?.answers?.way_of_drinking || {};
+
     // おすすめユーザーの一覧から自分を除外してIDリストを作成
     const recommendedUserIds = recommendedUsersSnapshot.docs
       .filter(doc => doc.id !== currentUserId)
@@ -164,12 +246,19 @@ export async function GET(request: Request) {
               userCharacter
             );
 
+            // 飲み方の相性スコアを計算
+            const drinkingScore = calculateDrinkingCompatibility(
+              data.answers?.way_of_drinking || {},
+              currentUserDrinking
+            );
+
             return {
                 id: doc.id,
                 ...data,
                 createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
                 characterResult: userCharacter,
-                compatibilityScore: compatibilityScore
+                compatibilityScore: compatibilityScore,
+                drinkingScore: drinkingScore
             };
     });
 
