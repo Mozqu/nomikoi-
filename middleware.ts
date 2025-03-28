@@ -8,6 +8,7 @@ const publicPaths = [
   '/signup',             // サインアップ
   '/api/login',          // ログインAPI
   '/api/signup',         // サインアップAPI
+  '/adminLogin',         // 管理者ログイン
 ]
 
 // 認証処理中のパス
