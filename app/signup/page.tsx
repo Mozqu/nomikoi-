@@ -118,36 +118,8 @@ export default function SignupPage() {
           </p>
         ) : (
           <div className="space-y-4 flex flex-col">
-            {/* メールアドレスで登録 */}
-            <form onSubmit={handleSignup} className="space-y-4">
-              <Input
-                type="email"
-                placeholder="メールアドレス"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-gray-800 text-white"
-              />
-              <Input
-                type="password"
-                placeholder="パスワード"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-gray-800 text-white"
-              />
-              <Button type="submit" className="w-full bg-neon-purple hover:bg-neon-purple/80 text-white">
-                メールアドレスで登録
-              </Button>
-            </form>
             
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-700"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-900 text-gray-400">または</span>
-              </div>
-            </div>
 
             <LineLoginButton />
             
