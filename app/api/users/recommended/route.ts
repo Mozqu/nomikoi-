@@ -22,10 +22,6 @@ export async function GET(request: Request) {
     const currentUserId = searchParams.get('userId');
     const currentUserGender = searchParams.get('gender');
 
-    console.log('=== currentUserId ===')
-    console.log(currentUserId)
-    console.log('=== currentUserGender ===')
-    console.log(currentUserGender)
 
     // パラメータのバリデーション
     if (!currentUserId || !currentUserGender) {
@@ -54,8 +50,15 @@ export async function GET(request: Request) {
 
     const currentUserCharacter = currentUserCharacterResult.docs[0]?.data() || null;
 
-    console.log('=== currentUserCharacter ===')
-    console.log(currentUserCharacter)
+    // 現在のユーザーの飲み方を取得
+    const currentUserData = await db.collection('users')
+      .where('uid', '==', currentUserId)
+      .limit(1)
+      .get();
+    const currentUserDrinking = currentUserData.docs[0]?.data().answers?.way_of_drinking || {};
+
+    const currentUserPreference = currentUserData.docs[0]?.data().answers.favorite_alcohol || {};
+  
 
     // 相性計算のユーティリティ関数
     const calculateCompatibility = (user1Character: any, user2Character: any) => {
@@ -221,19 +224,31 @@ export async function GET(request: Request) {
       logData.party_drink_preference = partyScore;
 
 
-      //console.log('logData:', logData);
+      console.log('logData:', logData);
       return totalScore;
     }
 
-    // 現在のユーザーの飲み方を取得
-    const currentUserData = await db.collection('users')
-      .where('id', '==', currentUserId)
-      .limit(1)
-      .get();
-    const currentUserDrinking = currentUserData.docs[0]?.data() || {};
+    const calculateDrinkingPreference = (currentUserPreference: Record<string, any>, targetUserPreference: Record<string, any>) => {
+      let totalScore = 0;
+  
+      // 飲酒場所の相性を計算
+      const currentLocations = currentUserPreference.drinking_location_prefer || [];
+      const targetLocations = targetUserPreference.drinking_location_prefer || [];
+      
+      // 共通の場所の数を計算
+      const commonLocations = currentLocations.filter((loc: string) => targetLocations.includes(loc));
+      
+      // スコアの計算
+      if (commonLocations.length >= 2) {
+        totalScore += 10;  // 2件以上の一致
+      } else if (commonLocations.length === 1) { 
+        totalScore += 5;   // 1件の一致
+      }
+      // 0件の場合は0点を加算
+      
 
-    console.log('=== currentUserDrinking ===')
-    console.log(currentUserDrinking)
+      return totalScore;
+    }
 
     // おすすめユーザーの一覧から自分を除外してIDリストを作成
     const recommendedUserIds = recommendedUsersSnapshot.docs
@@ -275,13 +290,17 @@ export async function GET(request: Request) {
             totalScore += compatibilityScore;
             // 飲み方の相性スコアを計算
 
-
             const drinkingScore = calculateDrinkingCompatibility(
               currentUserDrinking,
               data.answers?.way_of_drinking || {}
             );
-
             totalScore += drinkingScore;
+
+            const drinkingPreferenceScore = calculateDrinkingPreference(
+              currentUserPreference,
+              data.answers?.favorite_alcohol || {}
+            );
+            totalScore += drinkingPreferenceScore;
 
             return {
                 id: doc.id,
