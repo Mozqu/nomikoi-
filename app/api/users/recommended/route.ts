@@ -23,8 +23,7 @@ const isDrinkingHabitCompatible = (
   targetUserDrinkingNonDrinker?: boolean
 ): boolean => {
   // 非飲酒者の特別処理
-  if (targetUserDrinkingNonDrinker) {
-    
+  if (!targetUserHabit || !currentUserHabit) {
     return true;
   }
 
