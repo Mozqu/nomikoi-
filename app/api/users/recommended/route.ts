@@ -230,7 +230,7 @@ export async function GET(request: Request) {
       .where('id', '==', currentUserId)
       .limit(1)
       .get();
-    const currentUserDrinking = currentUserData.docs[0]?.data()?.answers?.way_of_drinking || {};
+    const currentUserDrinking = currentUserData.docs[0]?.data() || {};
 
     console.log('=== currentUserDrinking ===')
     console.log(currentUserDrinking)
