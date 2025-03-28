@@ -230,9 +230,10 @@ export async function GET(request: Request) {
       .where('id', '==', currentUserId)
       .limit(1)
       .get();
-    console.log('=== currentUserData ===')
-    console.log(currentUserData)
     const currentUserDrinking = currentUserData.docs[0]?.data()?.answers?.way_of_drinking || {};
+
+    console.log('=== currentUserDrinking ===')
+    console.log(currentUserDrinking)
 
     // おすすめユーザーの一覧から自分を除外してIDリストを作成
     const recommendedUserIds = recommendedUsersSnapshot.docs
@@ -267,8 +268,6 @@ export async function GET(request: Request) {
             let totalScore = 0;
 
             // ユーザー間の相性スコアを計算
-            console.log('=== currentUserCharacter ===')
-            console.log(currentUserCharacter)
             const compatibilityScore = calculateCompatibility(
               currentUserCharacter,
               userCharacter
