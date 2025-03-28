@@ -22,6 +22,11 @@ export async function GET(request: Request) {
     const currentUserId = searchParams.get('userId');
     const currentUserGender = searchParams.get('gender');
 
+    console.log('=== currentUserId ===')
+    console.log(currentUserId)
+    console.log('=== currentUserGender ===')
+    console.log(currentUserGender)
+
     // パラメータのバリデーション
     if (!currentUserId || !currentUserGender) {
       return NextResponse.json(
