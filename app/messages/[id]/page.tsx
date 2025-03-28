@@ -177,7 +177,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
           },
           body: JSON.stringify({
             message: newMessage,
-            partnerId: partnerData?.id,
+            partnerId: partnerData?.uid,
             senderName: userName,
             messageRoomId: id
           })
