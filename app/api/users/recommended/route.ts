@@ -54,6 +54,9 @@ export async function GET(request: Request) {
 
     const currentUserCharacter = currentUserCharacterResult.docs[0]?.data() || null;
 
+    console.log('=== currentUserCharacter ===')
+    console.log(currentUserCharacter)
+
     // 相性計算のユーティリティ関数
     const calculateCompatibility = (user1Character: any, user2Character: any) => {
       if (!user1Character || !user2Character) return 0;
