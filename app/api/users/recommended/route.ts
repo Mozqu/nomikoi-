@@ -133,8 +133,6 @@ export async function GET(request: Request) {
       currentUserDrinking: Record<string, any>,
       targetUserDrinking: Record<string, any>
     ): number => {
-      console.log('currentUserDrinking:', currentUserDrinking);
-      console.log('targetUserDrinking:', targetUserDrinking);
       let totalScore = 0;
 
       let logData = {
@@ -253,25 +251,28 @@ export async function GET(request: Request) {
               char => char.userId === doc.id
             )?.character || null;
 
+            let totalScore = 0;
+
             // ユーザー間の相性スコアを計算
             const compatibilityScore = calculateCompatibility(
               currentUserCharacter,
               userCharacter
             );
-
+            totalScore += compatibilityScore;
             // 飲み方の相性スコアを計算
             const drinkingScore = calculateDrinkingCompatibility(
               data.answers?.way_of_drinking || {},
               currentUserDrinking
             );
 
+            totalScore += drinkingScore;
+
             return {
                 id: doc.id,
                 ...data,
                 createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
                 characterResult: userCharacter,
-                compatibilityScore: compatibilityScore,
-                drinkingScore: drinkingScore
+                compatibilityScore: totalScore,
             };
     });
 
