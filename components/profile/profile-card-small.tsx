@@ -55,8 +55,6 @@ return age
 export default function ProfileCardSmall({ user }: UserCardProps) {
     const router = useRouter()
     const age = calculateAge(user.birthday)
-
-    ", user)
     const handleClick = () => {
         router.push(`/profile/${user.id}`)
     }
