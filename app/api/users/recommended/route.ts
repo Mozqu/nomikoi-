@@ -222,9 +222,11 @@ export async function GET(request: Request) {
     }
 
     // 現在のユーザーの飲み方を取得
-    const currentUserDrinking = recommendedUsersSnapshot.docs
-      .find(doc => doc.id === currentUserId)
-      ?.data()?.answers?.way_of_drinking || {};
+    const currentUserData = await db.collection('users')
+      .where('id', '==', currentUserId)
+      .limit(1)
+      .get();
+    const currentUserDrinking = currentUserData.docs[0]?.data()?.answers?.way_of_drinking || {};
 
     // おすすめユーザーの一覧から自分を除外してIDリストを作成
     const recommendedUserIds = recommendedUsersSnapshot.docs
@@ -259,7 +261,8 @@ export async function GET(request: Request) {
             let totalScore = 0;
 
             // ユーザー間の相性スコアを計算
-
+            console.log('=== currentUserCharacter ===')
+            console.log(currentUserCharacter)
             const compatibilityScore = calculateCompatibility(
               currentUserCharacter,
               userCharacter
@@ -267,12 +270,10 @@ export async function GET(request: Request) {
             totalScore += compatibilityScore;
             // 飲み方の相性スコアを計算
 
-            console.log('=== data ===')
-            console.log(data)
+
             const drinkingScore = calculateDrinkingCompatibility(
               currentUserDrinking,
-
-              data.answers?.way_of_drinking || {},
+              data.answers?.way_of_drinking || {}
             );
 
             totalScore += drinkingScore;
