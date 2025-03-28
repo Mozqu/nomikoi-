@@ -52,16 +52,17 @@ const isDrinkingHabitCompatible = (
   ];
 
   return drinkingIds.every(id => {
-    const currentAcceptable = currentUserAcceptableDrinkingHabit[id]?.value || 0;
+    const currentAcceptable = currentUserAcceptableDrinkingHabit[id] || 0;
     //const currentHabit = currentUserDrinkingHabit[id]?.value || 0;
-    const targetValue = targetUserHabit[id]?.value || 0;
+    const targetValue = targetUserHabit[id] || 0;
     console.log("id:", id, "currentAcceptable:", currentAcceptable, "targetValue:", targetValue)
+
     // R（currentAcceptable）に基づくフィルタリング
     switch (currentAcceptable) {
       case 5:
         return true; // どの相手ともマッチング可
       case 4:
-        console.log(targetValue, currentAcceptable - 3)
+        console.log(targetValue, currentAcceptable - 3);
         return targetValue >= (currentAcceptable - 3);
       case 3:
         console.log(targetValue, currentAcceptable - 2)
