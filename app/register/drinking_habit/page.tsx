@@ -28,11 +28,11 @@ const questions: Record<number, Question> = {
     id: "drink_turns_red",
     title: "お酒を飲むとすぐ顔が赤くなる。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   },
@@ -40,11 +40,11 @@ const questions: Record<number, Question> = {
     id: "drink_gets_sleepy",
     title: "飲むと眠くなって寝ちゃうことが多い。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   },
@@ -52,11 +52,11 @@ const questions: Record<number, Question> = {
     id: "drink_gets_wasted",
     title: "気づいたらベロベロに酔ってることがある。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   },
@@ -64,11 +64,11 @@ const questions: Record<number, Question> = {
     id: "drink_until_blackout",
     title: "最近もつぶれるくらい飲んだことがある。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   },
@@ -76,11 +76,11 @@ const questions: Record<number, Question> = {
     id: "drink_forgets_after",
     title: "お酒を飲んだ後、記憶をなくすことが最近もある。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   },
@@ -88,11 +88,11 @@ const questions: Record<number, Question> = {
     id: "drink_loses_memory",
     title: "酔って記憶をなくすことがある。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   },
@@ -100,11 +100,11 @@ const questions: Record<number, Question> = {
     id: "drink_laughs_hard",
     title: "お酒を飲むと笑いが止まらない。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   },
@@ -112,11 +112,11 @@ const questions: Record<number, Question> = {
     id: "drink_talks_to_others",
     title: "店員さんや隣の席の人に絡みがち。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   },
@@ -124,11 +124,11 @@ const questions: Record<number, Question> = {
     id: "drink_gets_angry",
     title: "お酒を飲むとちょっと怒りっぽくなることがある。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   },
@@ -136,11 +136,11 @@ const questions: Record<number, Question> = {
     id: "drink_cries",
     title: "飲んで泣いちゃうことがある。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   },
@@ -148,11 +148,11 @@ const questions: Record<number, Question> = {
     id: "drink_contacts_others",
     title: "酔った勢いでSNS投稿したり連絡しちゃう。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   },
@@ -160,11 +160,11 @@ const questions: Record<number, Question> = {
     id: "drink_outdoor_enjoy",
     title: "屋外などの公共スペースでの飲酒を楽しめる。",
     options: {
-      "全く当てはまらない": 5,
-      "あまり当てはまらない": 4,
+      "よく当てはまる": 5,
+      "やや当てはまる": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 2,
-      "よく当てはまる": 1
+      "あまり当てはまらない": 2,
+      "全く当てはまらない": 1,
     },
     type: "radio"
   }
@@ -258,7 +258,7 @@ const QuestionItem = memo(({
 
 QuestionItem.displayName = 'QuestionItem';
 
-export default function acceptableDrinkingHabit() {
+export default function drinkingHabit() {
   const router = useRouter();
   const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);

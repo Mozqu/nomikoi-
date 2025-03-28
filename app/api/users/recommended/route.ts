@@ -15,6 +15,40 @@ if (!getApps().length) {
 
 const db = getFirestore();
 
+// ブロックの外に関数を移動し、constで宣言
+const isDrinkingHabitCompatible = (
+  currentUserAcceptable: number,
+  currentUserHabit: number,
+  targetUserHabit: string | number,
+  targetUserDrinkingNonDrinker?: boolean
+): boolean => {
+  // 非飲酒者の特別処理
+  if (targetUserDrinkingNonDrinker) {
+    
+    return true;
+  }
+
+  // 数値型に変換
+  const targetHabit = Number(targetUserHabit);
+  console.log('targetHabit:', targetHabit);
+  
+  // 許容度に基づくフィルタリング
+  switch (currentUserAcceptable) {
+    case 5:
+      return true;
+    case 4:
+      return targetHabit >= (currentUserHabit - 3);
+    case 3:
+      return targetHabit >= (currentUserHabit - 2);
+    case 2:
+      return targetHabit >= (currentUserHabit - 1);
+    case 1:
+      return targetHabit >= currentUserHabit;
+    default:
+      return false;
+  }
+};
+
 export async function GET(request: Request) {
   try {
     // URLパラメータから現在のユーザーIDと性別を取得
@@ -54,6 +88,7 @@ export async function GET(request: Request) {
       .where('uid', '==', currentUserId)
       .limit(1)
       .get();
+
     const currentUserDrinking = currentUserData.docs[0]?.data().answers?.way_of_drinking || {};
 
     const currentUserPreference = currentUserData.docs[0]?.data().answers.favorite_alcohol || {};
@@ -271,47 +306,56 @@ export async function GET(request: Request) {
       })
     );
 
-    
-    
-
-    // 最終的なレスポンスデータの構築
+    // メインのクエリ処理を修正
     const users = recommendedUsersSnapshot.docs
-        .filter(doc => doc.id !== currentUserId)
-        .map((doc: FirebaseFirestore.QueryDocumentSnapshot) => {
-            const data = doc.data();
-            const userCharacter = recommendedUsersCharacters.find(
-              char => char.userId === doc.id
-            )?.character || null;
+      .filter(doc => doc.id !== currentUserId)
+      .filter(doc => {
+        const data = doc.data();
+        const targetUserHabit = data.answers?.drinking_habit;
+        const targetUserDrinkingNonDrinker = data.answers?.drinking_non_drinker;
+        
+        return isDrinkingHabitCompatible(
+          currentUserData.docs[0]?.data().answers?.acceptable_drinking_habit,
+          currentUserData.docs[0]?.data().answers?.drinking_habit,
+          targetUserHabit,
+          targetUserDrinkingNonDrinker
+        );
+      })
+      .map((doc: FirebaseFirestore.QueryDocumentSnapshot) => {
+        const data = doc.data();
+        const userCharacter = recommendedUsersCharacters.find(
+          char => char.userId === doc.id
+        )?.character || null;
 
-            let totalScore = 0;
+        let totalScore = 0;
 
-            // ユーザー間の相性スコアを計算
-            const compatibilityScore = calculateCompatibility(
-              currentUserCharacter,
-              userCharacter
-            );
-            totalScore += compatibilityScore;
-            // 飲み方の相性スコアを計算
+        // ユーザー間の相性スコアを計算
+        const compatibilityScore = calculateCompatibility(
+          currentUserCharacter,
+          userCharacter
+        );
+        totalScore += compatibilityScore;
+        // 飲み方の相性スコアを計算
 
-            const drinkingScore = calculateDrinkingCompatibility(
-              currentUserDrinking,
-              data.answers?.way_of_drinking || {}
-            );
-            totalScore += drinkingScore;
+        const drinkingScore = calculateDrinkingCompatibility(
+          currentUserDrinking,
+          data.answers?.way_of_drinking || {}
+        );
+        totalScore += drinkingScore;
 
-            const drinkingPreferenceScore = calculateDrinkingPreference(
-              currentUserPreference,
-              data.answers?.favorite_alcohol || {}
-            );
-            totalScore += drinkingPreferenceScore;
+        const drinkingPreferenceScore = calculateDrinkingPreference(
+          currentUserPreference,
+          data.answers?.favorite_alcohol || {}
+        );
+        totalScore += drinkingPreferenceScore;
 
-            return {
-                id: doc.id,
-                ...data,
-                createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                characterResult: userCharacter,
-                compatibilityScore: totalScore,
-            };
+        return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+            characterResult: userCharacter,
+            compatibilityScore: totalScore,
+        };
     });
 
     // 相性スコアで降順にソート
