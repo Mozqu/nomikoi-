@@ -258,8 +258,6 @@ export async function GET(request: Request) {
       totalScore += partyScore;
       logData.party_drink_preference = partyScore;
 
-
-      console.log('logData:', logData);
       return totalScore;
     }
 
