@@ -4,7 +4,6 @@ import { useState, useCallback, useMemo, memo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/app/firebase/config";
 import { doc, setDoc, addDoc, collection } from "firebase/firestore";
-import { Users } from "lucide-react";
 
 // 質問の型定義を変更
 type Question = {
@@ -26,44 +25,44 @@ type OptionKey = 'A' | 'B' | 'C';
 
 const questions: Record<number, Question> = {
   1: {
-    id: "drink_non_drinker",
-    title: "お酒が飲めない相手でも、テンションが合えば一緒に楽しめる。",
+    id: "drink_turns_red",
+    title: "お酒を飲むとすぐ顔が赤くなる。",
     options: {
-      "全く当てはまらない": 1,
-      "あまり当てはまらない": 2, 
+      "全く当てはまらない": 5,
+      "あまり当てはまらない": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 4,
-      "よく当てはまる": 5
+      "やや当てはまる": 2,
+      "よく当てはまる": 1
     },
     type: "radio"
   },
   2: {
-    id: "drink_turns_red",
-    title: "相手が酔って顔が赤くなっても、気にしない。",
+    id: "drink_gets_sleepy",
+    title: "飲むと眠くなって寝ちゃうことが多い。",
     options: {
-      "全く当てはまらない": 1,
-      "あまり当てはまらない": 2,
+      "全く当てはまらない": 5,
+      "あまり当てはまらない": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 4,
-      "よく当てはまる": 5
+      "やや当てはまる": 2,
+      "よく当てはまる": 1
     },
     type: "radio"
   },
   3: {
-    id: "drink_gets_sleepy",
-    title: "途中で眠くなるタイプでも受け入れられる。",
+    id: "drink_gets_wasted",
+    title: "気づいたらベロベロに酔ってることがある。",
     options: {
-        "全く当てはまらない": 1,
-      "あまり当てはまらない": 2,
+      "全く当てはまらない": 5,
+      "あまり当てはまらない": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 4,
-      "よく当てはまる": 5
+      "やや当てはまる": 2,
+      "よく当てはまる": 1
     },
     type: "radio"
   },
   4: {
-    id: "drink_gets_wasted",
-    title: "泥酔するまで飲むタイプでも、対応できる方だと思う。",
+    id: "drink_until_blackout",
+    title: "最近もつぶれるくらい飲んだことがある。",
     options: {
       "全く当てはまらない": 5,
       "あまり当てはまらない": 4,
@@ -74,8 +73,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   5: {
-    id: "drink_until_blackout",
-    title: "潰れるまで飲むタイプでも対応できる方だと思う。",
+    id: "drink_forgets_after",
+    title: "お酒を飲んだ後、記憶をなくすことが最近もある。",
     options: {
       "全く当てはまらない": 5,
       "あまり当てはまらない": 4,
@@ -86,20 +85,20 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   6: {
-    id: "drink_forgets_after",
-    title: "記憶をなくすタイプでも、それを許せる方だと思う。",
+    id: "drink_loses_memory",
+    title: "酔って記憶をなくすことがある。",
     options: {
-      "全く当てはまらない": 1,
-      "あまり当てはまらない": 2,
+      "全く当てはまらない": 5,
+      "あまり当てはまらない": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 4,
-      "よく当てはまる": 5
+      "やや当てはまる": 2,
+      "よく当てはまる": 1
     },
     type: "radio"
   },
   7: {
-    id: "drink_loses_memory",
-    title: "相手が物を失くすタイプでも、許せる方だと思う。",
+    id: "drink_laughs_hard",
+    title: "お酒を飲むと笑いが止まらない。",
     options: {
       "全く当てはまらない": 5,
       "あまり当てはまらない": 4,
@@ -110,79 +109,66 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   8: {
-    id: "drink_laughs_hard",
-    title: "酔って笑いが止まらなくなるタイプでも楽しめると思う。",
+    id: "drink_talks_to_others",
+    title: "店員さんや隣の席の人に絡みがち。",
     options: {
-      "全く当てはまらない": 1,
-      "あまり当てはまらない": 2,
+      "全く当てはまらない": 5,
+      "あまり当てはまらない": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 4,
-      "よく当てはまる": 5
+      "やや当てはまる": 2,
+      "よく当てはまる": 1
     },
     type: "radio"
   },
   9: {
-    id: "drink_talks_to_others",
-    title: "酔って店員や隣の客に絡んでもその場を楽しめると思う。",
+    id: "drink_gets_angry",
+    title: "お酒を飲むとちょっと怒りっぽくなることがある。",
     options: {
-      "全く当てはまらない": 1,
-      "あまり当てはまらない": 2,
+      "全く当てはまらない": 5,
+      "あまり当てはまらない": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 4,
-      "よく当てはまる": 5
+      "やや当てはまる": 2,
+      "よく当てはまる": 1
     },
     type: "radio"
   },
   10: {
-    id: "drink_gets_angry",
-    title: "酔った相手の感情が爆発しても、冷静に対応できると思う。",
+    id: "drink_cries",
+    title: "飲んで泣いちゃうことがある。",
     options: {
-      "全く当てはまらない": 1,
-      "あまり当てはまらない": 2,
+      "全く当てはまらない": 5,
+      "あまり当てはまらない": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 4,
-      "よく当てはまる": 5
+      "やや当てはまる": 2,
+      "よく当てはまる": 1
     },
     type: "radio"
   },
   11: {
-    id: "drink_cries",
-    title: "泣き上戸でも、優しく対応できる方だと思う。",
+    id: "drink_contacts_others",
+    title: "酔った勢いでSNS投稿したり連絡しちゃう。",
     options: {
-      "全く当てはまらない": 1,
-      "あまり当てはまらない": 2,
+      "全く当てはまらない": 5,
+      "あまり当てはまらない": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 4,
-      "よく当てはまる": 5
+      "やや当てはまる": 2,
+      "よく当てはまる": 1
     },
     type: "radio"
   },
   12: {
-    id: "drink_contacts_others",
-    title: "酔ってしつこく連絡されても気にしない。",
-    options: {
-      "全く当てはまらない": 1,
-      "あまり当てはまらない": 2,
-      "どちらともいえない": 3,
-      "やや当てはまる": 4,
-      "よく当てはまる": 5
-    },
-    type: "radio"
-  },
-  13: {
     id: "drink_outdoor_enjoy",
-    title: "パートナーと屋外などの公共スペースでの飲酒を一緒に楽しめる。",
+    title: "屋外などの公共スペースでの飲酒を楽しめる。",
     options: {
-      "全く当てはまらない": 1,
-      "あまり当てはまらない": 2,
+      "全く当てはまらない": 5,
+      "あまり当てはまらない": 4,
       "どちらともいえない": 3,
-      "やや当てはまる": 4,
-      "よく当てはまる": 5
+      "やや当てはまる": 2,
+      "よく当てはまる": 1
     },
     type: "radio"
   }
-};  
-
+};
 // Optionコンポーネントを修正
 const Option = memo(({ 
   questionKey, 
@@ -281,11 +267,6 @@ export default function acceptableDrinkingHabit() {
 
   // 質問要素への参照を保持
   const questionRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  const userDocRef = doc(db, "users", auth.currentUser.uid);
-  console.log("===============")
-  console.log(userDocRef);
-
   
   // 質問リストのメモ化
   const questionEntries = useMemo(() => Object.entries(questions), []);
@@ -329,14 +310,14 @@ export default function acceptableDrinkingHabit() {
         let minDistance = Infinity;
 
         questionRefs.current.forEach((ref, index) => {
-            if (ref) {
-                const rect = ref.getBoundingClientRect();
-                const distance = Math.abs(rect.top + (rect.height / 2) - middleOfScreen);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closestQuestion = index;
-                }
+          if (ref) {
+            const rect = ref.getBoundingClientRect();
+            const distance = Math.abs(rect.top + (rect.height / 2) - middleOfScreen);
+            if (distance < minDistance) {
+              minDistance = distance;
+              closestQuestion = index;
             }
+          }
         });
 
         setCurrentQuestionIndex(closestQuestion);
@@ -387,20 +368,23 @@ export default function acceptableDrinkingHabit() {
 
       console.log(answersData);
 
+      // Firestoreに保存
+      
       // 現在のユーザーのドキュメントを取得して更新
       const userDocRef = doc(db, "users", auth.currentUser.uid);
       console.log(userDocRef);
       await setDoc(userDocRef, {
         userId: auth.currentUser.uid,
         answers: {
-          acceptable_drinking_habit: answersData
+          drinking_habit: answersData
         },
         timestamp: new Date(),
         status: 'pending'
       }, { merge: true });
-      
+
+
       // 確認ページへリダイレクト
-      router.push(`/settings`);
+      router.push(`/register/acceptable_drinking_habit`);
 
     } catch (error) {
       console.error("回答の保存に失敗しました:", error);
@@ -437,7 +421,7 @@ export default function acceptableDrinkingHabit() {
   return (
     <div className="flex flex-col items-center justify-start min-h-screen py-8 px-4">
       <h1 className="text-2xl font-bold mb-6 backdrop-blur-sm z-10 py-4 w-full text-center border-b border-gray-200">
-        フィルタリング診断
+        酒癖診断
       </h1>
       
       <div className="w-full max-w-md space-y-8 mt-4">

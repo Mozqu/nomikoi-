@@ -90,7 +90,7 @@ const UserCard: React.FC<UserCardProps> = ({ user, isNew }) => {
         } catch (error) {
             console.error('画像の取得に失敗しました:', error);
             // デフォルト画像を設定
-            setImageUrls(['/OIP.jpeg']);
+            setImageUrls(['/placeholder-user.png']);
         }
     };
     

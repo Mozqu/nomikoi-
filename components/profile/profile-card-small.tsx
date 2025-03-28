@@ -16,6 +16,9 @@ interface User {
     photoURL: string;
     birthday: Timestamp | null;
     location?: string;
+    profile: {
+        "居住地": string;
+    }
 }
 
 interface UserCardProps {
@@ -78,7 +81,7 @@ export default function ProfileCardSmall({ user }: UserCardProps) {
                 } catch (error) {
                     console.error('画像の取得に失敗しました:', error);
                     // デフォルト画像を設定
-                    setImageUrls(['/OIP.jpeg']);
+                    setImageUrls(['/placeholder-user.png']);
                 }
         };
         
@@ -140,21 +143,23 @@ export default function ProfileCardSmall({ user }: UserCardProps) {
           {/* ユーザー情報 */}
           <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 via-black/60 to-transparent">
             <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="text-base font-semibold text-white drop-shadow-lg">
+              <div className="">
+                <p className="text-base font-semibold text-white drop-shadow-lg">
                   {user.name}
-                </span>
-                {age && (
-                  <span className="text-sm font-medium text-white/90 drop-shadow-lg">
-                    {age}歳
-                  </span>
-                )}
+                </p>
+                  <div className="flex justify-between gap-1">
+                    {age && (
+                    <span className="text-xs font-medium text-white/90 drop-shadow-lg">
+                      {age}歳
+                    </span>
+                  )}
+                  {user.profile?.居住地 && (
+                    <span className="text-xs text-white/90 drop-shadow-lg">
+                      {user.profile.居住地}
+                    </span>
+                  )}
+                </div>
               </div>
-              {user.location && (
-                <span className="text-xs text-white/90 drop-shadow-lg">
-                  {user.location}
-                </span>
-              )}
             </div>
           </div>
         </div>
