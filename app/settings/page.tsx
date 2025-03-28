@@ -475,7 +475,7 @@ export default function SettingsPage() {
                 className="w-full flex items-center justify-between p-4 rounded-full border"
                 onClick={() => router.push('/register/drinking_habit')}
               >
-                <span>酒癖マッチ診断</span>
+                <span>酒癖フィルターの質問に答える</span>
                 <ArrowLeft size={20} className="rotate-180" />
               </button>
             </div>
