@@ -217,7 +217,8 @@ export async function GET(request: Request) {
       totalScore += partyScore;
       logData.party_drink_preference = partyScore;
 
-      console.log('logData:', logData);
+
+      //console.log('logData:', logData);
       return totalScore;
     }
 
@@ -226,6 +227,8 @@ export async function GET(request: Request) {
       .where('id', '==', currentUserId)
       .limit(1)
       .get();
+    console.log('=== currentUserData ===')
+    console.log(currentUserData)
     const currentUserDrinking = currentUserData.docs[0]?.data()?.answers?.way_of_drinking || {};
 
     // おすすめユーザーの一覧から自分を除外してIDリストを作成
