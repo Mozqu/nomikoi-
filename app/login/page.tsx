@@ -80,74 +80,6 @@ export default function LoginPage() {
     }
   }
   
-  // メールとパスワードでログイン
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    
-    try {
-      if (!auth) {
-        throw new Error('認証システムが初期化されていません')
-      }
-
-      console.log('ログイン開始:', { email })
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      console.log('Firebase認証成功:', {
-        uid: userCredential.user.uid,
-        email: userCredential.user.email
-      })
-
-      const idToken = await userCredential.user.getIdToken()
-      console.log('IDトークン取得成功:', {
-        tokenLength: idToken.length,
-        tokenPrefix: idToken.substring(0, 10) + '...'
-      })
-
-      await createSession(idToken)
-    } catch (error: any) {
-      console.error('ログインエラーの詳細:', {
-        code: error.code,
-        message: error.message,
-        type: error.constructor.name,
-        stack: error.stack
-      })
-      
-      // エラーメッセージをより具体的に
-      let errorMessage = 'ログインに失敗しました'
-      if (error.code === 'auth/user-not-found' || 
-          error.code === 'auth/wrong-password' || 
-          error.code === 'auth/invalid-credential') {
-        errorMessage = 'メールアドレスまたはパスワードが正しくありません'
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'ログイン試行回数が多すぎます。しばらく時間をおいてから再度お試しください'
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください'
-      }
-      
-      setError(errorMessage)
-      setLoading(false)
-    }
-  }
-  
-  // Googleでログイン
-  /*
-  const handleGoogleLogin = async () => {
-    setLoading(true)
-    setError('')
-    
-    try {
-      const provider = new GoogleAuthProvider()
-      const userCredential = await signInWithPopup(auth, provider)
-      const idToken = await userCredential.user.getIdToken()
-      await createSession(idToken)
-    } catch (error: any) {
-      console.error('Googleログインエラー:', error)
-      setError('Googleログインに失敗しました')
-      setLoading(false)
-    }
-  }
-  */
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-cyber-dark cyberpunk-bg">
@@ -164,39 +96,6 @@ export default function LoginPage() {
             {error}
           </div>
         )}
-
-        {/* メールアドレスとパスワードの入力 */}
-        <form onSubmit={handleEmailLogin}>
-          <div className="mb-4">
-            <label className="block mb-2">メールアドレス</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 border rounded text-black"
-              required
-            />
-          </div>
-          
-          <div className="mb-6">
-            <label className="block mb-2">パスワード</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 border rounded text-black"
-              required
-            />
-          </div>
-          
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
-          >
-            {loading ? 'ログイン中...' : 'ログイン'}
-          </button>
-        </form>
 
         <div className="mt-4">
           <LineAuthButton />
