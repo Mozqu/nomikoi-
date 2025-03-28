@@ -169,7 +169,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
         console.log('partnerData', partnerData)
 
         // パートナーがLINE連携済みの場合、通知を送信
-        console.log("連携済みユーザー", partnerData?.id)
+        console.log("連携済みユーザー", partnerData?.uid)
         await fetch('/api/line-message', {
           method: 'POST',
           headers: {
