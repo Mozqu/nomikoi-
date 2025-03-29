@@ -120,7 +120,7 @@ export async function GET(request: Request) {
 
     const currentUserDrinking = currentUserData.docs[0]?.data().answers?.way_of_drinking || {};
 
-    const currentUserPreference = currentUserData.docs[0]?.data().answers.favorite_alcohol || {};
+    const currentUserPreference = currentUserData.docs[0]?.data().answers?.favorite_alcohol || {};
 
     // 相性計算のユーティリティ関数
     const calculateCompatibility = (user1Character: any, user2Character: any) => {

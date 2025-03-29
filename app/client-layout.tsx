@@ -13,6 +13,7 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode
 }) {
+  console.log('=== client-layout ===')
   const pathname = usePathname()
   const router = useRouter()
   const shouldHideNav = hideNavPaths.includes(pathname)
