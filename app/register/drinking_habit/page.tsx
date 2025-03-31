@@ -418,7 +418,7 @@ export default function drinkingHabit() {
   return (
     <div className="flex flex-col items-center justify-start min-h-screen py-8 px-4">
       <h1 className="text-2xl font-bold mb-6 backdrop-blur-sm z-10 py-4 w-full text-center border-b border-gray-200">
-        酒癖診断
+        酒癖フィルター
       </h1>
       
       <div className="w-full max-w-md space-y-8 mt-4 overflow-y-auto">
