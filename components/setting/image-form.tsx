@@ -212,11 +212,39 @@ export default function ImageForm() {
     };
 
     // 使用例
-    const handleDeleteButtonClick = () => {
-        showDeleteConfirmationDialog(() => {
-            // 削除確認後の処理
-            console.log('画像を削除しました');
-            // ここに画像削除のロジックを追加
+    const handleDeleteButtonClick = (photo: any) => {
+        showDeleteConfirmationDialog(async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+
+                // Storageから画像を削除
+                const imageRef = ref(storage, `profile-image/${auth?.currentUser?.uid}/${photo.id}`);
+                await deleteObject(imageRef);
+
+                // Firestoreから画像情報を削除
+                if (!db || !auth?.currentUser?.uid) {
+                    throw new Error("データベースまたはユーザー情報が見つかりません");
+                }
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                await updateDoc(userRef, {
+                    photos: photos.filter((p: any) => p.id !== photo.id).map((p: any) => ({
+                        url: p.url,
+                        createdAt: p.createdAt,
+                        isMain: p.isMain
+                    }))
+                });
+
+                // ローカルのstate更新
+                setPhotos(photos.filter((p: any) => p.id !== photo.id));
+
+                console.log('画像を削除しました');
+            } catch (err) {
+                console.error("画像の削除に失敗しました:", err);
+                setError("画像の削除に失敗しました");
+            } finally {
+                setIsLoading(false);
+            }
         });
     };
 
@@ -246,10 +274,10 @@ export default function ImageForm() {
                       alt={`Photo ${index + 1}`}
                       fill
                       className="object-cover rounded-lg"
-                      onClick={handleDeleteButtonClick}
                     />
                     <button 
                       className="absolute top-2 right-2 p-1 bg-black/50 rounded-full z-index-10"
+                      onClick={() => handleDeleteButtonClick(photo)}
                     >
                       <X className="h-4 w-4 text-white" />
                     </button>
