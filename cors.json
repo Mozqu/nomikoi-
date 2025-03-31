@@ -1,8 +1,8 @@
 [
   {
-    "origin": ["http://localhost:3000", "http://localhost:3001", "https://nomikoi.vercel.app"],
-    "method": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+    "origin": ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "https://nomikoi.vercel.app"],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "x-goog-meta-*"]
+    "responseHeader": ["Content-Type", "Content-Length", "Content-MD5", "Content-Disposition", "Authorization", "User-Agent", "x-goog-meta-*"]
   }
 ] 

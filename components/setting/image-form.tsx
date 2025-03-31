@@ -1,5 +1,5 @@
 import { X } from "lucide-react"
-import { Shield, Camera, Plus, ArrowLeft } from "lucide-react"
+import { Shield, Camera, Plus, ArrowLeft, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { ref, getStorage, uploadBytes, getDownloadURL, listAll, getMetadata, uploadBytesResumable, deleteObject } from "firebase/storage"
@@ -8,44 +8,60 @@ import { arrayUnion, doc, updateDoc } from "firebase/firestore"
 import { db } from "@/app/firebase/config"
 import { useRouter } from "next/navigation"
 
+// 認証状態チェック用のカスタムフック
+const useAuthCheck = () => {
+    const router = useRouter();
+    
+    useEffect(() => {
+        if (!auth || !auth.currentUser) {
+            router.push('/login'); // ログインページへリダイレクト
+        }
+    }, [router]);
+
+    return auth?.currentUser;
+};
 
 export default function ImageForm() {
     const [photos, setPhotos] = useState<any[]>([])
     const [image, setImage] = useState<File | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({})
+    const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
     const storage = getStorage();
+    const currentUser = useAuthCheck();
+    const router = useRouter();
 
-
-
-    const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
         const file = event.target.files?.[0];
-        if (!file) return;
+        if (!file || !currentUser || !db) return;
+
+        const uploadId = Date.now().toString();
+        setUploadProgress(prev => ({ ...prev, [uploadId]: 0 }));
+        setUploadingIndex(index);
 
         try {
             setIsLoading(true);
             setError(null);
 
-            const storageRef = ref(storage, `profile-image/${auth.currentUser?.uid}/${Date.now()}_${file.name}`);
+            const storageRef = ref(storage, `profile-image/${currentUser.uid}/${Date.now()}_${file.name}`);
             
             const metadata = {
                 customMetadata: {
-                    userId: auth?.currentUser?.uid || "",
+                    userId: currentUser.uid,
                     uploadedAt: new Date().toISOString(),
                     fileName: file.name
                 }
             };
             
-            // uploadBytesResumableを使用して進捗状況をモニタリング
             const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
             uploadTask.on('state_changed',
                 (snapshot) => {
-                    // アップロードの進捗状況
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(prev => ({ ...prev, [uploadId]: progress }));
                     console.log('アップロード進捗: ' + progress + '%');
                     
-                    // 現在の状態も表示
                     switch (snapshot.state) {
                         case 'paused':
                             console.log('アップロード一時停止中');
@@ -60,14 +76,12 @@ export default function ImageForm() {
                     setError("画像のアップロードに失敗しました");
                 },
                 async () => {
-                    // アップロード完了時の処理
                     console.log('アップロード完了！');
                     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                     
                     setImage(file);
                     
-                    // Firestoreに画像情報を保存
-                    const userRef = doc(db, "users", auth.currentUser!.uid);
+                    const userRef = doc(db, "users", currentUser.uid);
                     await updateDoc(userRef, {
                         photos: arrayUnion({  
                             url: downloadURL,
@@ -75,13 +89,21 @@ export default function ImageForm() {
                             isMain: false
                         })
                     });
-                    // 新しい画像を写真リストに追加
+
                     setPhotos(prevPhotos => [...prevPhotos, {
                         url: downloadURL,
                         id: uploadTask.snapshot.ref.name,
                         isMain: false,
                         metadata: metadata.customMetadata
                     }]);
+
+                    // アップロード完了時にステートをリセット
+                    setUploadProgress(prev => {
+                        const newProgress = { ...prev };
+                        delete newProgress[uploadId];
+                        return newProgress;
+                    });
+                    setUploadingIndex(null);
                 }
             );
 
@@ -95,16 +117,13 @@ export default function ImageForm() {
 
     useEffect(() => {
         const fetchPhotos = async () => {
-            if (!auth.currentUser) return;
+            if (!currentUser) return;
             
             try {
-                // profile-imageフォルダ内のユーザーのディレクトリを参照
-                const storageRef = ref(storage, `profile-image/${auth.currentUser.uid}`);
+                const storageRef = ref(storage, `profile-image/${currentUser.uid}`);
                 
-                // ディレクトリ内のすべてのファイルを取得
                 const result = await listAll(storageRef);
                 
-                // 各ファイルのダウンロードURLとメタデータを取得
                 const photoPromises = result.items.map(async (item) => {
                     const url = await getDownloadURL(item);
                     const metadata = await getMetadata(item);
@@ -112,7 +131,7 @@ export default function ImageForm() {
                     return {
                         url,
                         id: item.name,
-                        isMain: false, // デフォルトはfalse
+                        isMain: false,
                         metadata: metadata.customMetadata
                     };
                 });
@@ -127,9 +146,12 @@ export default function ImageForm() {
         };
 
         fetchPhotos();
-    }, []);
+    }, [currentUser]);
 
-    const router = useRouter()
+    useEffect(() => {
+        console.log('Current auth state:', auth?.currentUser);
+        console.log('Current user:', currentUser);
+    }, [currentUser]);
 
     // 改善されたダイアログコンポーネント
     const showDeleteConfirmationDialog = (onConfirm: () => void) => {
@@ -219,14 +241,14 @@ export default function ImageForm() {
                 setError(null);
 
                 // Storageから画像を削除
-                const imageRef = ref(storage, `profile-image/${auth?.currentUser?.uid}/${photo.id}`);
+                const imageRef = ref(storage, `profile-image/${currentUser?.uid}/${photo.id}`);
                 await deleteObject(imageRef);
 
                 // Firestoreから画像情報を削除
-                if (!db || !auth?.currentUser?.uid) {
+                if (!db || !currentUser?.uid) {
                     throw new Error("データベースまたはユーザー情報が見つかりません");
                 }
-                const userRef = doc(db, "users", auth.currentUser.uid);
+                const userRef = doc(db, "users", currentUser.uid);
                 await updateDoc(userRef, {
                     photos: photos.filter((p: any) => p.id !== photo.id).map((p: any) => ({
                         url: p.url,
@@ -265,7 +287,7 @@ export default function ImageForm() {
             <div className="grid grid-cols-3 gap-2">
               {[...Array(6)].map((_, index) => {
                 const photo = photos[index];
-
+                const isUploading = uploadingIndex === index;
                 
                 return photo?.url ? (
                   <div key={photo.id} className="relative aspect-square">
@@ -279,9 +301,6 @@ export default function ImageForm() {
                       className="absolute top-2 right-2 p-1 bg-black/50 rounded-full z-index-10"
                       onClick={() => handleDeleteButtonClick(photo)}
                     >
-                      <X className="h-4 w-4 text-white" />
-                    </button>
-                    <button className="absolute top-2 right-2 p-1 bg-black/50 rounded-full">
                       <X className="h-4 w-4 text-white" />
                     </button>
                     {photo.isMain && (
@@ -305,9 +324,19 @@ export default function ImageForm() {
                         type="file" 
                         accept="image/*"
                         className="hidden"
-                        onChange={handleImageChange}
+                        onChange={(e) => handleImageChange(e, index)}
+                        disabled={uploadingIndex !== null}
                       />
-                      <Plus className="h-6 w-6 text-gray-400" />
+                      {isUploading ? (
+                        <div className="flex flex-col items-center">
+                          <Loader2 className="h-6 w-6 text-gray-400 animate-spin" />
+                          <span className="text-xs text-gray-400 mt-2">
+                            {Math.round(Object.values(uploadProgress)[0])}%
+                          </span>
+                        </div>
+                      ) : (
+                        <Plus className="h-6 w-6 text-gray-400" />
+                      )}
                     </label>
                   </div>
                 )
