@@ -304,7 +304,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto  relative">
-      {/* LINEモーダル */}
+      {/* LINEモーダル 
       {!hasLineConnection && (
       <Dialog open={!hasLineConnection && showLineModal} onOpenChange={setShowLineModal}>
         <DialogContent className="sm:max-w-md">
@@ -356,6 +356,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
           </DialogContent>
         </Dialog>
       )}
+      */}
 
       {/* ヘッダー */}
       <div className="w-full p-4 flex items-center border-b">
