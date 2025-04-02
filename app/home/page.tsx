@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Heart, MessageCircle, User as UserIcon, Star } from "lucide-react"
+import { Home, Heart, MessageCircle, User as UserIcon, Star, Bell, SlidersHorizontal } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState, useCallback, useRef } from "react"
@@ -295,6 +295,32 @@ export default function Home() {
 
   return (
     <div className="min-h-screen overflow-y-auto" style={{ paddingBottom: '10rem' }}>
+
+      {/* ヘッダー */}
+      <div style={{height: '3rem'}} className="sticky top-0 z-10 container w-full px-4 py-2 bg-black/50 backdrop-blur-sm">
+        <div className="flex justify-between items-center">
+            <Image
+              src="/header-logo.png"
+              alt="logo"
+              width={100}
+              height={100}
+              style={{
+                height: '2.5rem',
+                width: 'auto',
+                objectFit: 'contain',
+              }}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+            >
+              <SlidersHorizontal className="h-5 w-5" />
+            </Button>
+          </div>
+      </div>
+
+
       <div className="container w-full px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">新規ユーザー</h1>
         <div className="relative">

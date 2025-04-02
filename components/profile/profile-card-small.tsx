@@ -4,7 +4,7 @@ import { useState } from "react"
 import { getDownloadURL, getStorage, listAll, ref } from "firebase/storage"
 import { Button } from "../ui/button"
 import { Star } from "lucide-react"
-import { collection, doc, serverTimestamp, setDoc, Timestamp } from "firebase/firestore"
+import { collection, doc, getDoc, serverTimestamp, setDoc, Timestamp, Firestore } from "firebase/firestore"
 import Image from "next/image"
 import { auth } from "@/app/firebase/config"
 import { db } from "@/app/firebase/config"
@@ -18,6 +18,26 @@ interface User {
     location?: string;
     profile: {
         "居住地": string;
+    }
+}
+
+interface DrinkingMood {
+    mood: string;
+    updatedAt: Timestamp;
+}
+
+const getMoodIcon = (mood: string): string => {
+    switch (mood) {
+        case 'daytime':
+            return '☀️';
+        case 'evening':
+            return '🌙';
+        case 'night':
+            return '🌃';
+        case 'morning':
+            return '🌅';
+        default:
+            return '';
     }
 }
 
@@ -58,11 +78,29 @@ return age
 export default function ProfileCardSmall({ user }: UserCardProps) {
     const router = useRouter()
     const age = calculateAge(user.birthday)
-    const handleClick = () => {
-        router.push(`/profile/${user.id}`)
-    }
-
     const [imageUrls, setImageUrls] = useState<string[]>([]);
+    const [drinkingMood, setDrinkingMood] = useState<DrinkingMood | null>(null);
+
+    useEffect(() => {
+        const fetchDrinkingMood = async () => {
+            if (!user?.id || !db) return;
+            
+            try {
+                const drinkingMoodRef = doc(db as Firestore, 'drinkingMoods', user.id);
+                const drinkingMoodDoc = await getDoc(drinkingMoodRef);
+                
+                if (drinkingMoodDoc.exists()) {
+
+                    
+                    setDrinkingMood(drinkingMoodDoc.data() as DrinkingMood);
+                }
+            } catch (error) {
+                console.error('飲酒ムードの取得に失敗しました:', error);
+            }
+        };
+        
+        fetchDrinkingMood();
+    }, [user?.id]);
 
     useEffect(() => {
         const fetchImages = async () => {
@@ -96,7 +134,7 @@ export default function ProfileCardSmall({ user }: UserCardProps) {
             width: '100%',
             aspectRatio: '3/4',
         }}
-        onClick={handleClick}
+        onClick={() => router.push(`/profile/${user.id}`)}
       >
         <div className="relative rounded-xl w-full h-full overflow-hidden aspect-[3/4] bg-white shadow cursor-pointer transition-transform hover:scale-105">
           {imageUrls[0] ? (
@@ -131,15 +169,15 @@ export default function ProfileCardSmall({ user }: UserCardProps) {
           </div>
           */}
     
-          {/* NEWバッジ 
-          {isNew && (
-            <div className="absolute top-2 left-2">
-              <span className="px-2 py-1 text-xs font-semibold bg-pink-500 text-white rounded-full shadow-md">
-                NEW
-              </span>
-            </div>
+          {/* NEWバッジ */}
+          {drinkingMood && (
+              <div className="absolute top-2 left-2">
+                  <span className="text-xs text-white/90 drop-shadow-lg bg-pink-500/80 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      {getMoodIcon(drinkingMood.mood)}
+                  </span>
+              </div>
           )}
-          */}
+      
           {/* ユーザー情報 */}
           <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 via-black/60 to-transparent">
             <div className="flex flex-col gap-1">
@@ -147,8 +185,8 @@ export default function ProfileCardSmall({ user }: UserCardProps) {
                 <p className="text-base font-semibold text-white drop-shadow-lg">
                   {user.name}
                 </p>
-                  <div className="flex justify-between gap-1">
-                    {age && (
+                <div className="flex justify-between gap-1">
+                  {age && (
                     <span className="text-xs font-medium text-white/90 drop-shadow-lg">
                       {age}歳
                     </span>
@@ -159,6 +197,7 @@ export default function ProfileCardSmall({ user }: UserCardProps) {
                     </span>
                   )}
                 </div>
+
               </div>
             </div>
           </div>
