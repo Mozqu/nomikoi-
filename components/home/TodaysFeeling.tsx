@@ -18,7 +18,7 @@ interface DrinkingMood {
   startTimeZone: string
   startTime: string
   timeStance: string
-  area: string
+  area: string[]
   companions: {
     male: number
     female: number
@@ -42,7 +42,7 @@ const TodaysFeeling = () => {
     startTimeZone: "",
     startTime: "",
     timeStance: "",
-    area: "",
+    area: [] as string[],
     companions: { male: 0, female: 0 },
     costStance: "",
     mealPreference: "",
@@ -82,7 +82,7 @@ const TodaysFeeling = () => {
             startTimeZone: todaysMood.startTimeZone || "",
             startTime: todaysMood.startTime || "",
             timeStance: todaysMood.timeStance || "",
-            area: todaysMood.area || "",
+            area: todaysMood.area || [],
             companions: todaysMood.companions || { male: 0, female: 0 },
             costStance: todaysMood.costStance || "",
             mealPreference: todaysMood.mealPreference || "",
@@ -215,6 +215,46 @@ const TodaysFeeling = () => {
         title: "エラー",
         description: "保存中にエラーが発生しました。もう一度お試しください。",
       })
+    }
+  }
+
+  // 駅名検索の状態管理を追加
+  const [searchQuery, setSearchQuery] = useState("")
+  const [stations, setStations] = useState<Array<{name: string, prefecture: string, line: string}>>([])
+  const [isSearching, setIsSearching] = useState(false)
+
+  // 駅名検索関数
+  const searchStations = async (query: string) => {
+    if (query.length < 2) return // 2文字以上で検索開始
+
+    setIsSearching(true)
+    try {
+      const response = await fetch(
+        `https://express.heartrails.com/api/json?method=getStations&name=${encodeURIComponent(query)}`
+      )
+      const data = await response.json()
+      setStations(data.response.station || [])
+    } catch (error) {
+      console.error('駅名検索エラー:', error)
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: "駅名の検索中にエラーが発生しました。",
+      })
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  // 駅名選択時の処理を修正
+  const handleStationSelect = (stationName: string) => {
+    if (!formData.area.includes(stationName)) {
+      setFormData({
+        ...formData, 
+        area: [...formData.area, stationName]
+      })
+      setSearchQuery("") // 入力フィールドをクリア
+      setStations([]) // 検索結果をクリア
     }
   }
 
@@ -442,8 +482,238 @@ const TodaysFeeling = () => {
                     </div>
                 </div>
 
-                {/* その他のセクションも同様に実装 */}
-                {/* ... */}
+                {/* 希望エリア */}
+                <div className="space-y-2">
+                    <Label>希望エリア（駅名）</Label>
+                    <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
+                            <Input 
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value)
+                                    searchStations(e.target.value)
+                                }}
+                                placeholder="駅名を入力"
+                            />
+                        </div>
+                        
+                        {/* 検索結果の表示 */}
+                        {isSearching && <div className="text-sm text-gray-400">検索中...</div>}
+                        
+                        {stations.length > 0 && (
+                            <div className="bg-gray-800 rounded-md p-2 max-h-40 overflow-y-auto">
+                                {stations.map((station, index) => (
+                                    <div
+                                        key={`${station.name}-${index}`}
+                                        className="px-3 py-2 hover:bg-gray-700 cursor-pointer rounded-sm"
+                                        onClick={() => handleStationSelect(station.name)}
+                                    >
+                                        {station.name}
+                                        <span className="text-sm text-gray-400 ml-2">
+                                            {station.prefecture} - {station.line}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* 選択された駅名の表示 */}
+                        {formData.area.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {formData.area.map((stationName) => (
+                                    <div 
+                                        key={stationName}
+                                        className="flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full text-sm"
+                                    >
+                                        {stationName}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setFormData({
+                                                    ...formData,
+                                                    area: formData.area.filter(name => name !== stationName)
+                                                })
+                                            }}
+                                            className="ml-2 hover:text-gray-200"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* 費用スタンス */}
+                <div className="space-y-2">
+                    <Label>費用スタンス</Label>
+                    <RadioGroup 
+                        value={formData.costStance}
+                        onValueChange={(value) => setFormData({...formData, costStance: value})}
+                    >
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                "ご馳走する",
+                                "ご馳走してほしい",
+                                "気分次第",
+                                "割り勘",
+                                "明朗会計"
+                            ].map((item) => (
+                                <div key={item} className="flex items-center">
+                                    <RadioGroupItem 
+                                        value={item} 
+                                        id={`cost-${item}`}
+                                        className="hidden"
+                                    />
+                                    <Label 
+                                        htmlFor={`cost-${item}`}
+                                        className={`
+                                            text-white px-3 py-2 rounded-full
+                                            ${formData.costStance === item 
+                                                ? 'border border-pink-500 text-white'     
+                                                : 'border border-gray-300 text-gray-300'}
+                                        `}
+                                    >
+                                        {item}
+                                    </Label>
+                                </div>
+                            ))}
+                        </div>
+                    </RadioGroup>
+                </div>
+
+                {/* 食事の有無 */}
+                <div className="space-y-2">
+                    <Label>食事の有無</Label>
+                    <RadioGroup 
+                        value={formData.mealPreference}
+                        onValueChange={(value) => setFormData({...formData, mealPreference: value})}
+                    >
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                "必要なし",
+                                "食事希望",
+                                "おつまみのみ"
+                            ].map((item) => (
+                                <div key={item} className="flex items-center">
+                                    <RadioGroupItem 
+                                        value={item} 
+                                        id={`meal-${item}`}
+                                        className="hidden"
+                                    />
+                                    <Label 
+                                        htmlFor={`meal-${item}`}
+                                        className={`
+                                            text-white px-3 py-2 rounded-full
+                                            ${formData.mealPreference === item 
+                                                ? 'border border-pink-500 text-white'     
+                                                : 'border border-gray-300 text-gray-300'}
+                                        `}
+                                    >
+                                        {item}
+                                    </Label>
+                                </div>
+                            ))}
+                        </div>
+                    </RadioGroup>
+                </div>
+
+                {/* 料理ジャンル */}
+                <div className="space-y-2">
+                    <Label>料理ジャンル（複数選択可）</Label>
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            "焼き鳥・手羽先", "海鮮・寿司", "焼肉", "鍋", "中華",
+                            "韓国料理", "アメリカン", "イタリアン", "エスニック",
+                            "ビストロ・バル", "メキシカン", "シュラスコ"
+                        ].map((item) => (
+                            <div key={item} className="flex items-center">
+                                <Checkbox 
+                                    id={`cuisine-${item}`}
+                                    checked={formData.cuisineTypes.includes(item)}
+                                    onCheckedChange={(checked) => {
+                                        if (checked) {
+                                            setFormData({
+                                                ...formData,
+                                                cuisineTypes: [...formData.cuisineTypes, item]
+                                            })
+                                        } else {
+                                            setFormData({
+                                                ...formData,
+                                                cuisineTypes: formData.cuisineTypes.filter(i => i !== item)
+                                            })
+                                        }
+                                    }}
+                                    className="hidden"
+                                />
+                                <Label 
+                                    htmlFor={`cuisine-${item}`}
+                                    className={`
+                                        rounded-full px-3 py-2 transition-all duration-200
+                                        ${formData.cuisineTypes.includes(item) 
+                                            ? 'border border-pink-500 text-white' 
+                                            : 'border border-gray-300 text-gray-300'}
+                                    `}
+                                >
+                                    {item}
+                                </Label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* ドリンク */}
+                <div className="space-y-2">
+                    <Label>ドリンク（複数選択可）</Label>
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            "ビール", "クラフトビール", "ワイン", "日本酒", "焼酎",
+                            "ホッピー", "ウイスキー", "ハイボール", "ブランデー",
+                            "ラム", "酎ハイ・サワー", "カクテル", "パーティードリンク",
+                            "紹興酒", "マッコリ"
+                        ].map((item) => (
+                            <div key={item} className="flex items-center">
+                                <Checkbox 
+                                    id={`drink-${item}`}
+                                    checked={formData.drinkTypes.includes(item)}
+                                    onCheckedChange={(checked) => {
+                                        if (checked) {
+                                            setFormData({
+                                                ...formData,
+                                                drinkTypes: [...formData.drinkTypes, item]
+                                            })
+                                        } else {
+                                            setFormData({
+                                                ...formData,
+                                                drinkTypes: formData.drinkTypes.filter(i => i !== item)
+                                            })
+                                        }
+                                    }}
+                                    className="hidden"
+                                />
+                                <Label 
+                                    htmlFor={`drink-${item}`}
+                                    className={`
+                                        rounded-full px-3 py-2 transition-all duration-200
+                                        ${formData.drinkTypes.includes(item) 
+                                            ? 'border border-pink-500 text-white' 
+                                            : 'border border-gray-300 text-gray-300'}
+                                    `}
+                                >
+                                    {item}
+                                </Label>
+                            </div>
+                        ))}
+                    </div>
+                    <Input 
+                        type="text"
+                        placeholder="その他のドリンク"
+                        value={formData.customNotes}
+                        onChange={(e) => setFormData({...formData, customNotes: e.target.value})}
+                    />
+                </div>
             </div>
         </div>
 
