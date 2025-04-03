@@ -13,6 +13,8 @@ import { getDocs } from 'firebase/firestore';
 import { auth, db } from '@/app/firebase/config';
 import { Button } from '../ui/button';
 import Link from 'next/link';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Beer, Coffee, Martini, Wine } from 'lucide-react';
 
 function calculateAge(birthday: any) {
     if (!birthday) return null;
@@ -41,8 +43,78 @@ function calculateAge(birthday: any) {
     }
 }
 
+const getLoginStatus = (lastLogin: any) => {
+    if (!lastLogin) return { color: "bg-gray-400", text: "24時間以上操作していません" };
+    
+    try {
+        // lastLoginは既にサーバータイムスタンプとして保存されている
+        const loginDate = lastLogin.toDate();
+        const now = new Date();
+        const hoursDiff = (now.getTime() - loginDate.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursDiff <= 1) {
+            return { color: "bg-green-400", text: "オンライン" };
+        } else if (hoursDiff <= 24) {
+            return { color: "bg-yellow-400", text: "最近オンライン" };
+        } else {
+            return { color: "bg-gray-400", text: "オフライン" };
+        }
+    } catch (error) {
+        console.error('ログイン状態の計算エラー:', error);
+        return { color: "bg-gray-400", text: "オフライン" };
+    }
+};
+
 export default function ProfileCard({ userData, isOwnProfile }: { userData: any, isOwnProfile: boolean }) {
     const [imageUrls, setImageUrls] = useState<string[]>([]);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [drinkingMood, setDrinkingMood] = useState<any>(null);
+
+    const getTimeZoneIcon = (timeZone: string) => {
+        switch(timeZone) {
+            case 'daytime':
+                return '☀️';
+            case 'evening':
+                return '🌙';
+            case 'night':
+                return '🌃';
+            case 'morning':
+                return '🌅';
+            default:
+                return '⏰';
+        }
+    };
+
+    const getTimeZoneLabel = (timeZone: string) => {
+        switch(timeZone) {
+            case 'daytime':
+                return '日中から';
+            case 'evening':
+                return '夕方から';
+            case 'night':
+                return '深夜から';
+            case 'morning':
+                return '早朝から';
+            default:
+                return '時間未設定';
+        }
+    };
+
+    const getDrinkIcon = (drinkTypes: string[] | undefined) => {
+        if (!drinkTypes || drinkTypes.length === 0) return <Coffee className="w-4 h-4" />;
+        
+        const firstDrink = drinkTypes[0];
+        switch(firstDrink) {
+            case 'ビール':
+                return <Beer className="w-4 h-4" />;
+            case 'ワイン':
+                return <Wine className="w-4 h-4" />;
+            case 'カクテル':
+                return <Martini className="w-4 h-4" />;
+            default:
+                return <Coffee className="w-4 h-4" />;
+        }
+    };
     
     useEffect(() => {
         const fetchImages = async () => {
@@ -86,6 +158,31 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
         
         fetchImages();
     }, [userData]);
+
+    useEffect(() => {
+        const fetchDrinkingMood = async () => {
+            if (!userData?.uid) return;
+
+            try {
+                const moodsRef = collection(db, 'drinkingMoods');
+                const q = query(
+                    moodsRef,
+                    where('uid', '==', userData.uid),
+                    where('createdAt', '>=', new Date(new Date().setHours(0, 0, 0, 0)))
+                );
+                
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    const moodData = querySnapshot.docs[0].data();
+                    setDrinkingMood(moodData);
+                }
+            } catch (error) {
+                console.error('飲み気分の取得に失敗:', error);
+            }
+        };
+
+        fetchDrinkingMood();
+    }, [userData?.uid]);
 
     const chartParam = userData?.answers?.way_of_drinking;
 
@@ -293,7 +390,6 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                             onTouchStart={(e) => {
                                 // イベントバブリングを防止せず、親要素のハンドラも実行されるようにする
                                 startY.current = e.touches[0].clientY;
-                                console.log('showContents タッチ開始:', startY.current);
                             }}
                             onTouchMove={(e) => {
                                 if (!startY.current) return;
@@ -301,12 +397,6 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 const currentY = e.touches[0].clientY;
                                 const diffY = currentY - startY.current;
                                 
-                                console.log('showContents タッチ移動:', {
-                                    startY: startY.current,
-                                    currentY,
-                                    diffY,
-                                    isExpanded
-                                });
                                 
                                 if (isExpanded) { // 普通の状態
                                     if (diffY > 30) {
@@ -329,7 +419,6 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
 
                             }}
                             onTouchEnd={() => {
-                                console.log('showContents タッチ終了');
                                 startY.current = null;
                             }}
                         >
@@ -337,19 +426,133 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 <span className="block h-1 w-10 bg-white rounded-full"></span>
                             </div>
 
-
-                                
+                            <div className="flex flex-row justify-between">
+                                {/* 基本情報 */}
+                                <div>
+                                    {/* 名前 */}
                             <p className=" text-2xl">
                                 {userData?.name || "Loading..."} (
                                     {calculateAge(userData?.birthday) || ""}
                                 )
                             </p>
 
+                                    {/* 居住地 */}
+                                <div className="flex flex-row">
+                                    <p className="text-sm">
+                                        {basicInfo?.居住地}
+                                    </p>
+                                        <div className="flex items-center gap-1.5 ml-2">
+                                            <span className={`inline-block w-2 h-2 rounded-full ${getLoginStatus(userData?.lastLogin).color}`}></span>
+                                            <p className="text-xs text-white/60">
+                                                {getLoginStatus(userData?.lastLogin).text}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
 
+                                {/* 飲み気分 */}
+                                <div className="">
+                                    {drinkingMood && (
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button 
+                                                variant="outline" 
+                                                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 py-1"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                }}
+                                            >
+                                                <span className="text-xl">{getTimeZoneIcon(drinkingMood.startTimeZone)}</span>
+                                                <span>{getTimeZoneLabel(drinkingMood.startTimeZone)} </span>
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent 
+                                            className="w-[calc(100vw-2rem)] max-w-[350px] bg-black/95 mx-2 text-white border border-white/20 shadow-lg shadow-purple-500/20 backdrop-blur-sm"
+                                            sideOffset={5}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                            }}
+                                        >
+                                            <div className="space-y-2 p-1.5">
+                                                <h3 className="text-sm font-semibold border-b border-white/20 pb-1.5 flex items-center gap-1.5">
+                                                    <span className="text-base">🍻</span>
+                                                    今日の飲み気分
+                                                </h3>
+                                                
+                                                <>
+                                                    {/* 時間に関する情報をグループ化 */}
+                                                    <div className="bg-white/5 p-1.5 rounded-lg space-y-1.5">
+                                                        <div className="flex items-center gap-1.5 border-b border-white/10 pb-1.5">
+                                                            <span className="text-base">{getTimeZoneIcon(drinkingMood.startTimeZone)}</span>
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="text-xs font-medium truncate">{getTimeZoneLabel(drinkingMood.startTimeZone)}</p>
+                                                                <p className="text-[10px] text-white/60">{drinkingMood.startTime || '時間未設定'}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-base">⏱️</span>
+                                                            <p className="text-xs">{drinkingMood.timeStance || '未設定'}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* 雰囲気 */}
+                                                    <div className="bg-white/5 p-1.5 rounded-lg">
+                                                        <div className="flex items-start gap-1.5">
+                                                            <span className="text-base">✨</span>
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="text-xs font-medium mb-1">お店の雰囲気</p>
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {drinkingMood.atmosphere?.map((atm: string) => (
+                                                                        <span key={atm} className="px-1.5 py-0.5 rounded-full bg-white/10 text-[10px]">
+                                                                            {atm}
+                                                                        </span>
+                                                                    )) || '未設定'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* 同伴者情報 */}
+                                                    {drinkingMood.companions && (
+                                                        <div className="bg-white/5 p-1.5 rounded-lg">
+                                                            <div className="flex items-start gap-1.5">
+                                                                <span className="text-base">👥</span>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-xs font-medium mb-0.5">同伴人数</p>
+                                                                    <div className="flex gap-2 text-[10px] text-white/80">
+                                                                        <p>男性 {drinkingMood.companions.male || 0}人</p>
+                                                                        <p>女性 {drinkingMood.companions.female || 0}人</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* メモ */}
+                                                    {drinkingMood.customNotes && (
+                                                        <div className="bg-white/5 p-1.5 rounded-lg">
+                                                            <div className="flex items-start gap-1.5">
+                                                                <span className="text-base">📝</span>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-xs font-medium mb-0.5">メモ</p>
+                                                                    <p className="text-[10px] text-white/80">{drinkingMood.customNotes}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="text-[10px] text-white/60 text-right flex items-center justify-end gap-1">
+                                                        <span>🕒</span>
+                                                        更新: {drinkingMood.createdAt?.toDate().toLocaleString() || '未設定'}
+                                                    </div>
+                                                </>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                    )}
+                                </div>
+                            </div>
                             
-                            <p className="text-sm">
-                                {basicInfo?.居住地}
-                            </p>
 
 
                         </div>

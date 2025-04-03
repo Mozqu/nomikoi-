@@ -129,6 +129,7 @@ const TodaysFeeling = () => {
         setIsExpanded(true)
       } else if (diff < -50) {
         console.log('下スワイプ')
+        setIsOpen(false)
         setIsExpanded(false)
       }
     }
