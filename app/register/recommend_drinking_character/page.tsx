@@ -21,7 +21,7 @@ export default function RecommendDrinkingCharacter() {
 
         {/* 飲みタイプ診断カード */}
         <div 
-          onClick={() => router.push('/register/drinking_type')}
+          onClick={() => router.push('/register/drinking')}
           className="relative overflow-hidden bg-black/30 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 cursor-pointer hover:bg-black/40 transition-all group"
         >
           <div className="flex items-start gap-4">
@@ -37,7 +37,7 @@ export default function RecommendDrinkingCharacter() {
               </p>
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Clock className="w-4 h-4" />
-                <span>所要時間: 約5分</span>
+                <span>所要時間: 約3分</span>
               </div>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-pink-400 transition-colors" />
