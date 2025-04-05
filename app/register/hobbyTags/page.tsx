@@ -215,7 +215,7 @@ export default function HobbyTagsPage() {
       await updateDoc(userRef, {
         hobbyTags: selectedTags
       })
-      router.push('/register/upload-profile-images')
+      router.push('/register/recommend_drinking_character')
     } catch (error) {
       console.error("Error saving hobby tags:", error)
     }

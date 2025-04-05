@@ -397,7 +397,7 @@ export default function acceptableDrinkingHabit() {
       }, { merge: true });
       
       // 確認ページへリダイレクト
-      router.push(`/settings`);
+      router.push(`/register/recommend_drinking_character`);
 
     } catch (error) {
       console.error("回答の保存に失敗しました:", error);

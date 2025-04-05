@@ -21,7 +21,7 @@ export default function RecommendDrinkingCharacter() {
 
         {/* 飲みタイプ診断カード */}
         <div 
-          onClick={() => router.push('/register/drinking')}
+          onClick={() => router.push('/register/drinking_habit')}
           className="relative overflow-hidden bg-black/30 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 cursor-pointer hover:bg-black/40 transition-all group"
         >
           <div className="flex items-start gap-4">
@@ -33,11 +33,11 @@ export default function RecommendDrinkingCharacter() {
                 飲みタイプ診断
               </h3>
               <p className="text-gray-300 mb-4">
-                あなたの飲み会での振る舞いや好みを分析し、最適な飲み仲間をマッチングします。
+               「4つの感性」×「8つのキャラ」の32タイプの性格に分類し、性格相性でマッチング。
               </p>
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Clock className="w-4 h-4" />
-                <span>所要時間: 約3分</span>
+                <span>所要時間: 約1分</span>
               </div>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-pink-400 transition-colors" />
@@ -46,7 +46,7 @@ export default function RecommendDrinkingCharacter() {
 
         {/* 酒癖フィルター診断カード */}
         <div 
-          onClick={() => router.push('/register/drinking_habit')}
+          onClick={() => router.push('/register/acceptable_drinking_habit')}
           className="relative overflow-hidden bg-black/30 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 cursor-pointer hover:bg-black/40 transition-all group"
         >
           <div className="flex items-start gap-4">
@@ -58,11 +58,11 @@ export default function RecommendDrinkingCharacter() {
                 酒癖フィルター診断
               </h3>
               <p className="text-gray-300 mb-4">
-                お酒を飲んだときの特徴や傾向を分析し、相性の良い飲み仲間を見つけます。
+                飲酒の行動とその許容度で相性をチェック。
               </p>
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Clock className="w-4 h-4" />
-                <span>所要時間: 約3分</span>
+                <span>所要時間: 約2分</span>
               </div>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-400 transition-colors" />

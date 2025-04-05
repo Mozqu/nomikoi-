@@ -196,7 +196,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
             { name: "飲み頻度", value: chartParam?.drinking_frequency || 0},
             { name: "食事との相性", value: chartParam?.food_pairing_importance || 0},
             { name: "酒こだわり", value: chartParam?.alcohol_quality_preference || 0},
-            { name: "パーティー", value: chartParam?.party_drink_preference || 0},
+            { name: "ショット", value: chartParam?.party_drink_preference || 0},
         ]
     }
     const [isExpanded, setIsExpanded] = useState(true);
