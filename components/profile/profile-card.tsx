@@ -629,7 +629,11 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 
 
 
-
+                                <section className="space-y-3 m-4">
+                                    <p className="text-sm">
+                                        {userData.bio}
+                                    </p>
+                                </section>
 
 
 
@@ -650,11 +654,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 </section>
                                 )}
 
-                                <section className="space-y-3 m-4">
-                                    <p className="text-sm">
-                                        {userData.bio}
-                                    </p>
-                                </section>
+
 
                                 {/* 苦手なお酒 */}
                                 {userData?.answers?.favorite_alcohol && (
