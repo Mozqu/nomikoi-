@@ -100,8 +100,14 @@ export default function VerifyAuth() {
               throw new Error('セッションの作成に失敗しました');
             }
 
-            // リダイレクト
-            router.push('/home');
+            // セッションデータからisNewUserを取得してリダイレクト
+            if (sessionData.user.isNewUser) {
+              console.log('新規ユーザーを登録ページにリダイレクト');
+              router.push('/register');
+            } else {
+              console.log('既存ユーザーをホームページにリダイレクト');
+              router.push('/home');
+            }
           } catch (error) {
             console.error('認証エラー:', error);
             handleAuthError(error);

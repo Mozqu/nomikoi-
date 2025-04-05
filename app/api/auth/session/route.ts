@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { adminAuth } from '@/app/firebase/admin';
+import { adminAuth, adminDb } from '@/app/firebase/admin';
 
 export async function POST(request: Request) {
   console.log('=== セッション作成開始 ===');
@@ -20,6 +20,12 @@ export async function POST(request: Request) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     console.log('IDトークン検証成功:', { uid: decodedToken.uid });
 
+    // Firestoreからユーザー情報を取得
+    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+    
+    // ドキュメントが存在しない場合は新規ユーザー
+    const isNewUser = !userDoc.exists;
+
     // セッションCookieを作成（有効期限: 24時間）
     const expiresIn = 60 * 60 * 24 * 1000; // 24時間（ミリ秒）
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
@@ -31,7 +37,7 @@ export async function POST(request: Request) {
         user: {
           uid: decodedToken.uid,
           email: decodedToken.email,
-          isNewUser: decodedToken.firebase?.sign_in_provider === 'custom'
+          isNewUser: isNewUser
         }
       },
       { status: 200 }

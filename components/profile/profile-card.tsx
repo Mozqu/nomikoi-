@@ -625,6 +625,14 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 height: isExpanded ? "0px" : "500px",
                                 transition: "all 0.5s ease-in-out",
                                 }}>
+                                    
+                                
+
+
+
+
+
+
                                 {userData?.answers?.favorite_alcohol && (
                                 <section className="space-y-3 m-4">
                                     <h2 className="text-xl font-semibold">好きなお酒</h2>
@@ -729,6 +737,41 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 </section>
                                 )}
 
+                                {/* 飲みタグ */}
+                                {userData?.drinkingTags && userData.drinkingTags.length > 0 && (
+                                <section className="m-4 space-y-3">
+                                    <h2 className="text-xl font-semibold">飲みタグ</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {userData.drinkingTags.map((tag: string, index: number) => (
+                                            <Badge
+                                                key={`drinking-tag-${index}`}
+                                                variant="secondary"
+                                                className="text-white border-white/20 bg-white/5"
+                                            >   
+                                                {tag}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </section>
+                                )}
+
+                                {/* 趣味タグ */}
+                                {userData?.hobbyTags && userData.hobbyTags.length > 0 && (
+                                <section className="m-4 space-y-3">
+                                    <h2 className="text-xl font-semibold">趣味タグ</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {userData.hobbyTags.map((tag: string, index: number) => (
+                                            <Badge
+                                                key={`hobby-tag-${index}`}
+                                                variant="secondary"
+                                                className="text-white border-white/20 bg-white/5"
+                                            >   
+                                                {tag}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </section>
+                                )}
 
                                 <section className="m-4 space-y-3">
                                     <h2 className="text-xl font-semibold">基本情報</h2>

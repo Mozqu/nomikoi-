@@ -7,9 +7,6 @@ import { auth } from '@/app/firebase/config'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import LineAuthButton from '@/app/components/LineAuthButton'
-import { getDoc, doc } from 'firebase/firestore'
-import { signOut } from 'firebase/auth'
-import { db } from '@/app/firebase/config'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -87,61 +84,48 @@ export default function LoginPage() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setError("")
-
+    setError('')
+    
     try {
-      if (!email || !password) {
-        throw new Error("メールアドレスとパスワードを入力してください")
+      if (!auth) {
+        throw new Error('認証システムが初期化されていません')
       }
 
-      if (!auth || !db) {
-        throw new Error("認証システムが初期化されていません")
-      }
-
+      console.log('ログイン開始:', { email })
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      if (!userCredential || !userCredential.user) {
-        throw new Error("ログインに失敗しました")
-      }
+      console.log('Firebase認証成功:', {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email
+      })
 
-      // 管理者権限の確認
-      const userDoc = await getDoc(doc(db, "users", userCredential.user.uid))
-      const userData = userDoc.data()
-      
-      if (!userData || !userData.isAdmin) {
-        await signOut(auth)
-        throw new Error("管理者権限がありません")
-      }
+      const idToken = await userCredential.user.getIdToken()
+      console.log('IDトークン取得成功:', {
+        tokenLength: idToken.length,
+        tokenPrefix: idToken.substring(0, 10) + '...'
+      })
 
-      router.push('/admin/dashboard')
-    } catch (error) {
-      let errorMessage = "ログインに失敗しました"
+      await createSession(idToken)
+    } catch (error: any) {
+      console.error('ログインエラーの詳細:', {
+        code: error.code,
+        message: error.message,
+        type: error.constructor.name,
+        stack: error.stack
+      })
       
-      if (error instanceof Error) {
-        // Firebase Auth のエラーコードに基づいてメッセージを設定
-        switch ((error as any)?.code) {
-          case 'auth/invalid-email':
-            errorMessage = "無効なメールアドレスです"
-            break
-          case 'auth/user-disabled':
-            errorMessage = "このアカウントは無効化されています"
-            break
-          case 'auth/user-not-found':
-            errorMessage = "ユーザーが見つかりません"
-            break
-          case 'auth/wrong-password':
-            errorMessage = "パスワードが間違っています"
-            break
-          case 'auth/too-many-requests':
-            errorMessage = "ログイン試行回数が多すぎます。しばらく時間をおいて再度お試しください"
-            break
-          default:
-            errorMessage = error.message || "予期せぬエラーが発生しました"
-        }
+      // エラーメッセージをより具体的に
+      let errorMessage = 'ログインに失敗しました'
+      if (error.code === 'auth/user-not-found' || 
+          error.code === 'auth/wrong-password' || 
+          error.code === 'auth/invalid-credential') {
+        errorMessage = 'メールアドレスまたはパスワードが正しくありません'
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'ログイン試行回数が多すぎます。しばらく時間をおいてから再度お試しください'
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください'
       }
       
-      console.error("ログインエラーの詳細:", { error, errorCode: (error as any)?.code, errorMessage })
       setError(errorMessage)
-    } finally {
       setLoading(false)
     }
   }
