@@ -872,6 +872,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                     align="center"
                     onMove={(e: MoveEvent) => {}}
                     onWillChange={(e: WillChangeEvent) => {handleImageIndex(e.index)}}
+                    onClick={() => {setIsShrinked(true)}}
                     horizontal={true}
                     circular={false}
                     bound={true}
