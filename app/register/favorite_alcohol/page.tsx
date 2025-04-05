@@ -311,7 +311,7 @@ export default function RegisterPage() {
               <QuestionStep
                 key={step}
                 question={questions[step]}
-                onNext={step === totalSteps ? () => handleSubmit((data) => router.push('/register/profile_image'))() : nextStep}
+                onNext={step === totalSteps ? () => handleSubmit((data) => router.push('/register/drinkingTags'))() : nextStep}
                 nextStep={nextStep}
                 prevStep={prevStep}
                 router={router}

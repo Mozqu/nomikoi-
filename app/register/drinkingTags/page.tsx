@@ -218,7 +218,7 @@ export default function DrinkingTagsPage() {
       await updateDoc(userRef, {
         drinkingTags: selectedTags
       })
-      router.push('/register/way_of_drinking')
+      router.push('/register/hobbyTags')
     } catch (error) {
       console.error("Error saving drinking tags:", error)
     }
