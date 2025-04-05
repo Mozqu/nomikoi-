@@ -25,8 +25,8 @@ type OptionKey = 'A' | 'B' | 'C';
 
 const questions: Record<number, Question> = {
   1: {
-    id: "drink_turns_red",
-    title: "お酒を飲むとすぐ顔が赤くなる。",
+    id: "face_turns_red",
+    title: "お酒を飲むと顔が赤くなりやすい。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -37,8 +37,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   2: {
-    id: "drink_gets_sleepy",
-    title: "飲むと眠くなって寝ちゃうことが多い。",
+    id: "gets_sleepy",
+    title: "お酒を飲むと眠くなりやすい。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -49,8 +49,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   3: {
-    id: "drink_gets_wasted",
-    title: "気づいたらベロベロに酔ってることがある。",
+    id: "drinks_until_wasted",
+    title: "泥酔するまで飲むことが多い。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -61,8 +61,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   4: {
-    id: "drink_until_blackout",
-    title: "最近もつぶれるくらい飲んだことがある。",
+    id: "drinks_until_morning",
+    title: "朝まで飲むことが多い。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -73,8 +73,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   5: {
-    id: "drink_forgets_after",
-    title: "お酒を飲んだ後、記憶をなくすことが最近もある。",
+    id: "loses_memory",
+    title: "酔って記憶をなくすことがよくある。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -85,8 +85,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   6: {
-    id: "drink_loses_memory",
-    title: "酔って記憶をなくすことがある。",
+    id: "loses_belongings",
+    title: "酔って物をなくすことがよくある。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -97,8 +97,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   7: {
-    id: "drink_laughs_hard",
-    title: "お酒を飲むと笑いが止まらない。",
+    id: "bothers_others",
+    title: "酔うと店員さんや隣の人に絡みやすい。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -109,8 +109,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   8: {
-    id: "drink_talks_to_others",
-    title: "店員さんや隣の席の人に絡みがち。",
+    id: "becomes_angry",
+    title: "お酒を飲むと怒りっぽくなりやすい。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -121,8 +121,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   9: {
-    id: "drink_gets_angry",
-    title: "お酒を飲むとちょっと怒りっぽくなることがある。",
+    id: "becomes_emotional",
+    title: "酔うと泣いてしまうことが多い。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -133,8 +133,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   10: {
-    id: "drink_cries",
-    title: "飲んで泣いちゃうことがある。",
+    id: "drunk_social_media",
+    title: "酔った勢いでSNS投稿したり連絡してしまう。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -145,8 +145,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   11: {
-    id: "drink_contacts_others",
-    title: "酔った勢いでSNS投稿したり連絡しちゃう。",
+    id: "drinks_in_public",
+    title: "屋外などの公共スペースでの飲酒をすることが多い。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -157,8 +157,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   12: {
-    id: "drink_outdoor_enjoy",
-    title: "屋外などの公共スペースでの飲酒を楽しめる。",
+    id: "hangover_next_day",
+    title: "二日酔いで翌日１日潰してしまうことがよくある。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,

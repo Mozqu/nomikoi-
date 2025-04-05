@@ -89,8 +89,8 @@ const questions: Record<number, Question> = {
     "options": {
       "あまり気にしない": 1,
       "不味くなければいい": 2,
-      "美味しいければいい": 3,
-      "好みがあり、色々試したい": 4,
+      "美味しければいい": 3,
+      "好みがあり色々試したい": 4,
       "品種名や産地を知っている": 5
     },
     "type": "radio"
@@ -107,19 +107,6 @@ const questions: Record<number, Question> = {
     },
     "type": "radio"
   },
-  7: {
-    "id": "smoking_motivation",
-    "title": "飲みの席でのあなたの希望は？",
-    "options": {
-      "喫煙席必須": 1,
-      "できれば喫煙席がいい": 2,
-      "吸うけど禁煙席OK": 3,
-      "吸わないけど喫煙席OK": 4,
-      "できれば禁煙席がいい": 5,
-      "禁煙席必須": 6,
-    },
-    "type": "radio"
-  }
 }
 
 // ウェルカムステップコンポーネント
@@ -133,18 +120,18 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
     >
       <h1 className="text-3xl font-bold">
         質問に答えて<br />
-        あなたのプロフィールを<br />
-        作成しましょう
+        「飲みプロフィール」を<br />
+        作成しましょう。
       </h1>
       <p className="text-gray-400">
-        質問に答えていくと、自動的にプロフィールが作成されます。
+        質問に答えていくと、「飲みモチベ」レーダーチャートが作成されます。
       </p>
       <div className="w-full mt-auto py-4">
         <Button
           onClick={onNext}
           className="w-full h-14 text-sm font-medium neon-bg"
         >
-          プロフィールを入力する
+          飲みモチベを入力する
         </Button>
       </div>
     </motion.div>

@@ -27,7 +27,7 @@ type OptionKey = 'A' | 'B' | 'C';
 const questions: Record<number, Question> = {
   1: {
     id: "drink_non_drinker",
-    title: "お酒が飲めない相手でも、テンションが合えば一緒に楽しめる。",
+    title: "お酒が飲めない相手でも一緒に楽しめる",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -38,8 +38,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   2: {
-    id: "drink_turns_red",
-    title: "相手が酔って顔が赤くなっても、気にしない。",
+    id: "face_turns_red",
+    title: "顔が赤くなるタイプでも気にしない。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -50,8 +50,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   3: {
-    id: "drink_gets_sleepy",
-    title: "途中で眠くなるタイプでも受け入れられる。",
+    id: " gets_sleepy",
+    title: "眠くなるタイプでも受け入れられる。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -62,8 +62,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   4: {
-    id: "drink_gets_wasted",
-    title: "泥酔するまで飲むタイプでも、対応できる方だと思う。",
+    id: "drink_until_wasted",
+    title: "泥酔するまで飲むタイプでも、対応できる。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -74,8 +74,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   5: {
-    id: "drink_until_blackout",
-    title: "潰れるまで飲むタイプでも対応できる方だと思う。",
+    id: "drink_until_mornig",
+    title: "朝帰りが多いタイプでも許せる。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -86,8 +86,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   6: {
-    id: "drink_forgets_after",
-    title: "記憶をなくすタイプでも、それを許せる方だと思う。",
+    id: "loses_memory",
+    title: "酔うと記憶をなくしやすいタイプでも許せる。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -98,8 +98,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   7: {
-    id: "drink_loses_memory",
-    title: "相手が物を失くすタイプでも、許せる方だと思う。",
+    id: "loses_belongings",
+    title: "酔うと物を失くすタイプでも、許せる。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -110,8 +110,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   8: {
-    id: "drink_laughs_hard",
-    title: "酔って笑いが止まらなくなるタイプでも楽しめると思う。",
+    id: "bothers_others",
+    title: "酔って店員や隣の席の人に絡むタイプでも一緒に楽しめる。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -122,8 +122,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   9: {
-    id: "drink_talks_to_others",
-    title: "酔って店員や隣の客に絡んでもその場を楽しめると思う。",
+    id: "becomes_angry",
+    title: "酔うと怒りっぽくなりやすいタイプでも冷静に対応できる。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -134,8 +134,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   10: {
-    id: "drink_gets_angry",
-    title: "酔った相手の感情が爆発しても、冷静に対応できると思う。",
+    id: "becomes_emotional",
+    title: "泣き上戸でも優しく対応できる。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -146,8 +146,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   11: {
-    id: "drink_cries",
-    title: "泣き上戸でも、優しく対応できる方だと思う。",
+    id: "drunk_social_media",
+    title: "酔った勢いの連絡が多くても許せる。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -158,8 +158,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   12: {
-    id: "drink_contacts_others",
-    title: "酔ってしつこく連絡されても気にしない。",
+    id: "drinks_in_public",
+    title: "屋外などの公共スペースでの飲酒一緒に楽しめる。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
@@ -170,8 +170,8 @@ const questions: Record<number, Question> = {
     type: "radio"
   },
   13: {
-    id: "drink_outdoor_enjoy",
-    title: "パートナーと屋外などの公共スペースでの飲酒を一緒に楽しめる。",
+    id: "hangover_next_day",
+    title: "二日酔いによる予定調整にも優しく対応できる。",
     options: {
       "よく当てはまる": 5,
       "やや当てはまる": 4,
