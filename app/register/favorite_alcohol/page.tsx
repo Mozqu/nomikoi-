@@ -223,7 +223,7 @@ const questions: Record<number, Question> = {
         },
   
           {
-            name: "全部好き！",
+            name: "特になし",
             subtypes: []
           },
           {
@@ -815,7 +815,7 @@ function QuestionStep({
                   if (isLastStep) {
                     const formData = watch();
                     console.log("formData", formData)
-                    await handleSubmitForm(formData, '/register/upload-profile-images', isLastStep, router);
+                    await handleSubmitForm(formData, '/register/drinkingTags', isLastStep, router);
                   } else {
                     nextStep()
                   }
