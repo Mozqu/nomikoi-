@@ -381,7 +381,7 @@ export default function drinkingHabit() {
 
 
       // 確認ページへリダイレクト
-      router.push(`/register/recommend_drinking_character`);
+      router.push(`/register/acceptable_drinking_habit`);
 
     } catch (error) {
       console.error("回答の保存に失敗しました:", error);

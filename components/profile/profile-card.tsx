@@ -332,6 +332,9 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
             transition={{ duration: 0.5 }}
             id="card-container" 
             className="w-full h-full overflow-hidden rounded-2xl relative"
+            style={{
+                overscrollBehavior: "none",
+            }}
             >
                 {/* like action */}
                 {!isOwnProfile && (
@@ -567,6 +570,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 transform: isShrinked ? "translateY(100%)" : "translateY(0)",
                                 opacity: isShrinked ? 0 : 1,
                                 position: "relative",
+                                overscrollBehavior: "none",
                             }}
                             onScroll={(e) => handleScroll(e)}
                         >
@@ -772,6 +776,8 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                     </div>
                                 </section>
                                 )}
+
+                                
 
                                 <section className="m-4 space-y-3">
                                     <h2 className="text-xl font-semibold">基本情報</h2>

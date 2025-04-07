@@ -25,7 +25,7 @@ export default function ClientLayout({
   useEffect(() => {
     const checkRegistrationStatus = async () => {
       // ログイン関連ページではチェックをスキップ
-      if (pathname === '/login' || pathname === '/signup' || pathname === '/' || pathname === '/auth/verify' || pathname === '/adminLogin' || pathname === '/adminLogin/signup' || pathname === '/register/recommend_drinking_character') return
+      if (pathname === '/login' || pathname === '/signup' || pathname === '/' || pathname === '/auth/verify' || pathname === '/adminLogin' || pathname === '/adminLogin/signup' || pathname === '/register/recommend_drinking_character' || pathname === '/register/drinking_character' || pathname === '/register/character_confirmation') return
       if (!auth?.currentUser || !db) return
 
       try {

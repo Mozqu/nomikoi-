@@ -118,6 +118,16 @@ export default function CharacterConfirmation() {
                 </div>
             </div>
         </div>
+
+        <div className="mt-8 flex flex-col items-center space-y-4">
+          <button
+            onClick={() => window.location.href = '/register/recommend_drinking_character'}
+            className="neon-bg text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors w-full max-w-xs"
+          >
+            ホームに戻る
+          </button>
+        </div>
+        
       </div>
     </div>
   );
