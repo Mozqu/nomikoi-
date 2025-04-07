@@ -224,7 +224,7 @@ export default function HobbyTagsPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <FormProvider {...methods}>
-        <div className="flex-1 container max-w-lg mx-auto px-4 py-8 flex flex-col">
+        <div className="flex-1 container max-w-lg mx-auto px-4 py-8 flex flex-col overflow-y-auto pb-24">
           {step === 0 ? (
             <WelcomeStep onNext={() => setStep(1)} />
           ) : (

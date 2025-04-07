@@ -44,7 +44,7 @@ export default function RecommendDrinkingCharacter() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen py-8 px-4">
+    <div className="flex flex-col items-center justify-start min-h-screen py-8 px-4 overflow-y-auto">
       <h1 className="text-2xl font-bold mb-6 backdrop-blur-sm z-10 py-4 w-full text-center border-b border-gray-200">
         飲みタイプ・酒癖フィルター診断
       </h1>

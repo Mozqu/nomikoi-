@@ -109,7 +109,7 @@ function TagSelectionStep({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="w-full flex flex-col"
+      className="w-full flex flex-col h-full overflow-y-auto pb-24"
     >
       <div className="mb-8">
         <h1 className="text-2xl font-bold mt-4">お酒に関するタグ</h1>
@@ -159,7 +159,7 @@ function TagSelectionStep({
         </div>
       </div>
 
-      <div className="flex-1 space-y-8 mb-24">
+      <div className="space-y-8">
         {Object.entries(drinkingTags).map(([category, tags]) => (
           <div key={category} className="space-y-3">
             <h2 className="text-lg font-semibold">{category}</h2>
@@ -182,7 +182,7 @@ function TagSelectionStep({
         ))}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-black bg-opacity-90 border-t border-gray-800 p-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-black bg-opacity-90 border-t border-gray-800 p-4 z-10">
         <div className="container max-w-lg mx-auto">
           <Button
             onClick={onNext}
@@ -227,12 +227,12 @@ export default function DrinkingTagsPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <FormProvider {...methods}>
-        <div className="flex-1 container max-w-lg mx-auto px-4 py-8 flex flex-col">
+        <div className="flex-1 container max-w-lg mx-auto px-4 py-8 flex flex-col h-screen">
           {step === 0 ? (
             <WelcomeStep onNext={() => setStep(1)} />
           ) : (
-            <>
-              <div className="w-full">
+            <div className="flex flex-col h-full">
+              <div className="w-full flex-shrink-0">
                 <div className="flex items-center mb-2">
                   <button onClick={() => setStep(0)} className="p-2 -ml-2">
                     <ChevronLeft className="w-6 h-6" />
@@ -249,12 +249,14 @@ export default function DrinkingTagsPage() {
                   />
                 </div>
               </div>
-              <TagSelectionStep 
-                selectedTags={selectedTags}
-                setSelectedTags={setSelectedTags}
-                onNext={handleSubmit}
-              />
-            </>
+              <div className="flex-1 overflow-y-auto">
+                <TagSelectionStep 
+                  selectedTags={selectedTags}
+                  setSelectedTags={setSelectedTags}
+                  onNext={handleSubmit}
+                />
+              </div>
+            </div>
           )}
         </div>
       </FormProvider>

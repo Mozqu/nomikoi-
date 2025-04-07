@@ -8,7 +8,7 @@ import { auth, db } from "./firebase/config"
 import TodaysFeeling from "@/components/home/TodaysFeeling"
 import { useAuth } from "./hooks/useAuth"
 
-const hideNavPaths = ["/", "/login", "/signup", "/register", "/register/acceptable_drinking_habit", "/register/way_of_drinking", "/register/favorite_alcohol", "/register/talking_stance", "/register/upload-profile-images", "/register/caution", "/register/drinking_character", "/register/drinkingTags", "/register/hobbyTags"]
+const hideNavPaths = ["/", "/login", "/signup", "/register", "/register/acceptable_drinking_habit", "/register/way_of_drinking", "/register/favorite_alcohol", "/register/talking_stance", "/register/upload-profile-images", "/register/caution", "/register/drinking_character", "/register/drinkingTags", "/register/hobbyTags", "/register/drinking_habit", "/register/recommend_drinking_character"]
 
 export default function ClientLayout({
   children,
