@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link"
-import { Home, Heart, MessageCircle, User } from "lucide-react"
+import { Home, Heart, MessageCircle, User, Search } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,13 @@ export default function BottomNav() {
             </motion.div>
           </Button>
         </Link>
+        <Link href="/search">
+          <Button variant="ghost" className={`text-[${pathname === '/search' ? '#ff2e93' : '#c2b5ff'}] hover:text-[#ff2e93]/80 hover:bg-white/5`}>
+            <motion.div whileHover={{ scale: 1.1 }}>
+              <Search className="w-6 h-6" />
+            </motion.div>
+          </Button>
+        </Link>
         <Link href="/interested">
           <Button variant="ghost" className={`text-[${pathname === '/interested' ? '#ff2e93' : '#c2b5ff'}] hover:text-white hover:bg-white/5`}>
             <motion.div whileHover={{ scale: 1.1 }}>
@@ -28,6 +35,7 @@ export default function BottomNav() {
             </motion.div>
           </Button>
         </Link>
+
         <Link href="/messages">
           <Button variant="ghost" className={`text-[${pathname === '/messages' ? '#ff2e93' : '#c2b5ff'}] hover:text-white hover:bg-white/5`}>
             <motion.div whileHover={{ scale: 1.1 }}>
