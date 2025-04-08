@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { Wine } from 'lucide-react'
+import { ChevronDown, ChevronUp, Wine } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -306,9 +306,20 @@ const TodaysFeeling = () => {
                     <h3 className="text-lg">本日の飲み気分</h3>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-400"  
-                    onClick={() => setIsExpanded(true)}
+                    onClick={() => {
+                        if (isExpanded) {
+                            setIsExpanded(false)
+                        } else {
+                            setIsExpanded(true)
+                        }
+                    }}
                 >
-                    <span>詳細を編集する↓</span>
+                    <span>詳細を編集する</span>
+                    {!isExpanded ? (
+                        <ChevronUp className="h-4 w-4" />
+                    ) : (
+                        <ChevronDown className="h-4 w-4" />
+                    )}
                 </div>
             </div>
             <RadioGroup 
