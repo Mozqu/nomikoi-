@@ -462,6 +462,9 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                                 variant="outline" 
                                                 className="flex items-center gap-2 bg-white/10 hover:bg-white/20 py-1"
                                                 onClick={(e) => {
+                                                    console.log('飲み気分をクリックしました');
+                                                    setIsExpanded(false);
+                                                    setIsShrinked(false);
                                                     e.stopPropagation();
                                                 }}
                                             >
@@ -471,82 +474,164 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                         </PopoverTrigger>
                                         <PopoverContent 
                                             className="w-[calc(100vw-2rem)] max-w-[350px] bg-black/95 mx-2 text-white border border-white/20 shadow-lg shadow-purple-500/20 backdrop-blur-sm"
-                                            sideOffset={5}
+                                            side="bottom"
+                                            sideOffset={3}
+                                            align="end"
+                                            alignOffset={-10}
+                                            avoidCollisions={false}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                             }}
                                         >
-                                            <div className="space-y-2 p-1.5">
-                                                <h3 className="text-sm font-semibold border-b border-white/20 pb-1.5 flex items-center gap-1.5">
+                                            <div className="space-y-2 p-1.5 max-h-[70vh] overflow-y-auto">
+                                                <h3 className="text-sm font-semibold border-b border-white/20 pb-1.5 flex items-center gap-1.5 sticky top-0 bg-black/95 z-10">
                                                     <span className="text-base">🍻</span>
                                                     今日の飲み気分
                                                 </h3>
                                                 
                                                 <>
                                                     {/* 時間に関する情報をグループ化 */}
-                                                    <div className="bg-white/5 p-1.5 rounded-lg space-y-1.5">
-                                                        <div className="flex items-center gap-1.5 border-b border-white/10 pb-1.5">
-                                                            <span className="text-base">{getTimeZoneIcon(drinkingMood.startTimeZone)}</span>
-                                                            <div className="min-w-0 flex-1">
-                                                                <p className="text-xs font-medium truncate">{getTimeZoneLabel(drinkingMood.startTimeZone)}</p>
-                                                                <p className="text-[10px] text-white/60">{drinkingMood.startTime || '時間未設定'}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-base">⏱️</span>
-                                                            <p className="text-xs">{drinkingMood.timeStance || '未設定'}</p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* 雰囲気 */}
-                                                    <div className="bg-white/5 p-1.5 rounded-lg">
-                                                        <div className="flex items-start gap-1.5">
-                                                            <span className="text-base">✨</span>
-                                                            <div className="min-w-0 flex-1">
-                                                                <p className="text-xs font-medium mb-1">お店の雰囲気</p>
-                                                                <div className="flex flex-wrap gap-1">
-                                                                    {drinkingMood.atmosphere?.map((atm: string) => (
-                                                                        <span key={atm} className="px-1.5 py-0.5 rounded-full bg-white/10 text-[10px]">
-                                                                            {atm}
-                                                                        </span>
-                                                                    )) || '未設定'}
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <div className="bg-white/5 p-1.5 rounded-lg space-y-1.5">
+                                                            <div className="flex items-center gap-1.5 border-b border-white/10 pb-1.5">
+                                                                <span className="text-base">{getTimeZoneIcon(drinkingMood.startTimeZone)}</span>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-xs font-medium truncate">{getTimeZoneLabel(drinkingMood.startTimeZone)}</p>
+                                                                    <p className="text-[10px] text-white/60">{drinkingMood.startTime || '時間未設定'}</p>
                                                                 </div>
                                                             </div>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="text-base">⏱️</span>
+                                                                <p className="text-xs">{drinkingMood.timeStance || '未設定'}</p>
+                                                            </div>
                                                         </div>
-                                                    </div>
 
-                                                    {/* 同伴者情報 */}
-                                                    {drinkingMood.companions && (
+                                                        {/* エリア */}
                                                         <div className="bg-white/5 p-1.5 rounded-lg">
                                                             <div className="flex items-start gap-1.5">
-                                                                <span className="text-base">👥</span>
+                                                                <span className="text-base">📍</span>
                                                                 <div className="min-w-0 flex-1">
-                                                                    <p className="text-xs font-medium mb-0.5">同伴人数</p>
-                                                                    <div className="flex gap-2 text-[10px] text-white/80">
-                                                                        <p>男性 {drinkingMood.companions.male || 0}人</p>
-                                                                        <p>女性 {drinkingMood.companions.female || 0}人</p>
+                                                                    <p className="text-xs font-medium mb-1">エリア</p>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {drinkingMood.area?.map((area: string) => (
+                                                                            <span key={area} className="px-1.5 py-0.5 rounded-full bg-white/10 text-[10px]">
+                                                                                {area}
+                                                                            </span>
+                                                                        )) || '未設定'}
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    )}
 
-                                                    {/* メモ */}
-                                                    {drinkingMood.customNotes && (
+                                                        {/* 予算 */}
                                                         <div className="bg-white/5 p-1.5 rounded-lg">
                                                             <div className="flex items-start gap-1.5">
-                                                                <span className="text-base">📝</span>
+                                                                <span className="text-base">💰</span>
                                                                 <div className="min-w-0 flex-1">
-                                                                    <p className="text-xs font-medium mb-0.5">メモ</p>
-                                                                    <p className="text-[10px] text-white/80">{drinkingMood.customNotes}</p>
+                                                                    <p className="text-xs font-medium mb-0.5">予算</p>
+                                                                    <p className="text-[10px] text-white/80">{drinkingMood.costStance || '未設定'}</p>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    )}
+
+                                                        {/* 食事 */}
+                                                        <div className="bg-white/5 p-1.5 rounded-lg">
+                                                            <div className="flex items-start gap-1.5">
+                                                                <span className="text-base">🍽️</span>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-xs font-medium mb-0.5">食事</p>
+                                                                    <p className="text-[10px] text-white/80">{drinkingMood.mealPreference || '未設定'}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* 雰囲気 */}
+                                                        <div className="bg-white/5 p-1.5 rounded-lg col-span-2">
+                                                            <div className="flex items-start gap-1.5">
+                                                                <span className="text-base">✨</span>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-xs font-medium mb-1">お店の雰囲気</p>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {drinkingMood.atmosphere?.map((atm: string) => (
+                                                                            <span key={atm} className="px-1.5 py-0.5 rounded-full bg-white/10 text-[10px]">
+                                                                                {atm}
+                                                                            </span>
+                                                                        )) || '未設定'}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* 料理のジャンル */}
+                                                        <div className="bg-white/5 p-1.5 rounded-lg col-span-2">
+                                                            <div className="flex items-start gap-1.5">
+                                                                <span className="text-base">🍳</span>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-xs font-medium mb-1">料理のジャンル</p>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {drinkingMood.cuisineTypes?.map((cuisine: string) => (
+                                                                            <span key={cuisine} className="px-1.5 py-0.5 rounded-full bg-white/10 text-[10px]">
+                                                                                {cuisine}
+                                                                            </span>
+                                                                        )) || '未設定'}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* お酒の種類 */}
+                                                        <div className="bg-white/5 p-1.5 rounded-lg col-span-2">
+                                                            <div className="flex items-start gap-1.5">
+                                                                <span className="text-base">🍶</span>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-xs font-medium mb-1">お酒の種類</p>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {drinkingMood.drinkTypes?.map((drink: string) => (
+                                                                            <span key={drink} className="px-1.5 py-0.5 rounded-full bg-white/10 text-[10px]">
+                                                                                {drink}
+                                                                            </span>
+                                                                        )) || '未設定'}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* 同伴者情報 */}
+                                                        {drinkingMood.companions && (
+                                                            <div className="bg-white/5 p-1.5 rounded-lg col-span-2">
+                                                                <div className="flex items-start gap-1.5">
+                                                                    <span className="text-base">👥</span>
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <p className="text-xs font-medium mb-0.5">同伴人数</p>
+                                                                        <div className="flex gap-2 text-[10px] text-white/80">
+                                                                            <p>男性 {drinkingMood.companions.male || 0}人</p>
+                                                                            <p>女性 {drinkingMood.companions.female || 0}人</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* メモ */}
+                                                        {drinkingMood.customNotes && (
+                                                            <div className="bg-white/5 p-1.5 rounded-lg col-span-2">
+                                                                <div className="flex items-start gap-1.5">
+                                                                    <span className="text-base">📝</span>
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <p className="text-xs font-medium mb-0.5">メモ</p>
+                                                                        <p className="text-[10px] text-white/80">{drinkingMood.customNotes}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
 
                                                     <div className="text-[10px] text-white/60 text-right flex items-center justify-end gap-1">
                                                         <span>🕒</span>
-                                                        更新: {drinkingMood.createdAt?.toDate().toLocaleString() || '未設定'}
+                                                        更新: {drinkingMood.createdAt?.toDate().toLocaleTimeString('ja-JP', {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        }) || '未設定'}
                                                     </div>
                                                 </>
                                             </div>
@@ -629,7 +714,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 height: isExpanded ? "0px" : "500px",
                                 transition: "all 0.5s ease-in-out",
                                 }}>
-                                    
+                                
                                 
 
 
