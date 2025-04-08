@@ -742,17 +742,17 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 )}
 
                                 {/* 飲みタグ */}
-                                {userData?.drinkingTags && userData.drinkingTags.length > 0 && (
+                                {userData?.profile?.tags?.drinking && userData.profile.tags.drinking.length > 0 && (
                                 <section className="m-4 space-y-3">
                                     <h2 className="text-xl font-semibold">飲みタグ</h2>
                                     <div className="flex flex-wrap gap-2">
-                                        {userData.drinkingTags.map((tag: string, index: number) => (
+                                        {userData.profile.tags.drinking.map((tag: string, index: number) => (
                                             <Badge
                                                 key={`drinking-tag-${index}`}
                                                 variant="secondary"
                                                 className="text-white border-white/20 bg-white/5"
                                             >   
-                                                {tag}
+                                                #{tag}
                                             </Badge>
                                         ))}
                                     </div>
@@ -760,17 +760,17 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                 )}
 
                                 {/* 趣味タグ */}
-                                {userData?.hobbyTags && userData.hobbyTags.length > 0 && (
+                                {userData?.profile?.tags?.hobby && userData.profile.tags.hobby.length > 0 && (
                                 <section className="m-4 space-y-3">
                                     <h2 className="text-xl font-semibold">趣味タグ</h2>
                                     <div className="flex flex-wrap gap-2">
-                                        {userData.hobbyTags.map((tag: string, index: number) => (
+                                        {userData.profile.tags.hobby.map((tag: string, index: number) => (
                                             <Badge
                                                 key={`hobby-tag-${index}`}
                                                 variant="secondary"
                                                 className="text-white border-white/20 bg-white/5"
                                             >   
-                                                {tag}
+                                                #{tag}
                                             </Badge>
                                         ))}
                                     </div>

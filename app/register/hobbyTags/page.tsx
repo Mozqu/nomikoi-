@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
-import { doc, updateDoc } from "firebase/firestore"
+import { doc, writeBatch, query, collection, where, getDocs } from "firebase/firestore"
 import { auth, db } from "@/app/firebase/config"
 
 type FormData = {
@@ -211,10 +211,59 @@ export default function HobbyTagsPage() {
     }
 
     try {
+      const batch = writeBatch(db)
+      const now = new Date()
+      
+      // #を除去したタグ名の配列を作成
+      const normalizedTags = selectedTags.map(tag => tag.replace(/^#/, ''))
+      
+      // 既存のタグを検索
+      const existingTagsQuery = query(
+        collection(db, "tags"),
+        where("tagName", "in", normalizedTags)
+      )
+      const existingTagsSnapshot = await getDocs(existingTagsQuery)
+      const existingTagNames = new Set(
+        existingTagsSnapshot.docs.map(doc => doc.data().tagName)
+      )
+
+      // 新規タグのみを作成
+      for (const tag of normalizedTags) {
+        if (!existingTagNames.has(tag)) {
+          const tagRef = doc(db, "tags", crypto.randomUUID())
+          batch.set(tagRef, {
+            tagName: tag,
+            createdAt: now.toISOString(),
+            updatedAt: now.toISOString(),
+            isDrink: false
+          })
+        }
+      }
+
+      // ユーザータグの関連付けを作成
+      for (const tag of normalizedTags) {
+        const userTagRef = doc(db, "userTags", `${auth.currentUser.uid}_${tag}`)
+        batch.set(userTagRef, {
+          userId: auth.currentUser.uid,
+          tagName: tag,
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+          isDrink: false
+        })
+      }
+
+      // usersコレクションのprofile.tagsに保存
       const userRef = doc(db, "users", auth.currentUser.uid)
-      await updateDoc(userRef, {
-        hobbyTags: selectedTags
-      })
+      batch.set(userRef, {
+        profile: {
+          tags: {
+            hobby: normalizedTags
+          }
+        },
+        updatedAt: now.toISOString()
+      }, { merge: true })
+
+      await batch.commit()
       router.push('/register/recommend_drinking_character')
     } catch (error) {
       console.error("Error saving hobby tags:", error)

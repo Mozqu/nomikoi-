@@ -300,9 +300,16 @@ const TodaysFeeling = () => {
                 <div className="w-12 h-1 bg-gray-400 rounded-full" />
             </div>
 
-            <div className="flex items-center gap-2 mb-4">
-                <Wine className="h-5 w-5" />
-                <h3 className="text-lg">本日の飲み気分</h3>
+            <div className="flex items-center justify-between gap-2 mb-4">
+                <div className="flex items-center gap-2">
+                    <Wine className="h-5 w-5" />
+                    <h3 className="text-lg">本日の飲み気分</h3>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-400"  
+                    onClick={() => setIsExpanded(true)}
+                >
+                    <span>詳細を編集する↓</span>
+                </div>
             </div>
             <RadioGroup 
                 value={formData.startTimeZone}
