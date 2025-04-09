@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       const userId = session.metadata.userId;
 
       if (userId && db) {
-        const userRef = doc(db, 'users', userId);
+        const userRef = doc(db as any, 'users', userId);
         await updateDoc(userRef, {
           isIdentityVerified: true,
           identityVerifiedAt: new Date().toISOString(),
