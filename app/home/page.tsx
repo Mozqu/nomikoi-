@@ -339,7 +339,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="container w-full px-4 py-8">
+      <div className="container w-full px-4 pt-8 pb-12">
         <h1 className="text-2xl font-bold mb-6">マッチしてるかも</h1>
         <div className="relative">
           <div className="flex overflow-x-scroll gap-4 pb-4 no-scrollbar"

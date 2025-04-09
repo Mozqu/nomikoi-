@@ -528,7 +528,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                                             <div className="flex items-start gap-1.5">
                                                                 <span className="text-base">💰</span>
                                                                 <div className="min-w-0 flex-1">
-                                                                    <p className="text-xs font-medium mb-0.5">予算</p>
+                                                                    <p className="text-xs font-medium mb-0.5">費用スタンス</p>
                                                                     <p className="text-[10px] text-white/80">{drinkingMood.costStance || '未設定'}</p>
                                                                 </div>
                                                             </div>
@@ -550,7 +550,7 @@ export default function ProfileCard({ userData, isOwnProfile }: { userData: any,
                                                             <div className="flex items-start gap-1.5">
                                                                 <span className="text-base">✨</span>
                                                                 <div className="min-w-0 flex-1">
-                                                                    <p className="text-xs font-medium mb-1">お店の雰囲気</p>
+                                                                    <p className="text-xs font-medium mb-1">雰囲気</p>
                                                                     <div className="flex flex-wrap gap-1">
                                                                         {drinkingMood.atmosphere?.map((atm: string) => (
                                                                             <span key={atm} className="px-1.5 py-0.5 rounded-full bg-white/10 text-[10px]">
