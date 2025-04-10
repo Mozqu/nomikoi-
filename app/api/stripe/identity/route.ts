@@ -5,6 +5,13 @@ export async function POST(req: Request) {
   try {
     const { userId } = await req.json();
 
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'ユーザーIDが必要です' },
+        { status: 400 }
+      );
+    }
+
     const verificationSession = await stripe.identity.verificationSessions.create({
       type: 'document',
       metadata: {
@@ -14,12 +21,13 @@ export async function POST(req: Request) {
         document: {
           require_id_number: true,
           require_matching_selfie: true,
+          require_live_capture: true,
         },
       },
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/identity-verification/complete`,
     });
 
     return NextResponse.json({
-      clientSecret: verificationSession.client_secret,
       url: verificationSession.url,
     });
   } catch (error) {

@@ -7,12 +7,14 @@ import { onAuthStateChanged } from "firebase/auth"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useUser } from "@/hooks/users"
-import { Badge, Settings } from "lucide-react"
+import { Badge, Settings, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import { fetchUserImage } from "@/hooks/fetch-image"
 import { getStorage, ref, getDownloadURL, listAll } from "firebase/storage"
+import IdentityVerification from "@/app/components/IdentityVerification"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface MessageRoom {
   id: string
@@ -101,6 +103,7 @@ export default function MessagesPage() {
   const [user, setUser] = useState<any>(null)
   const [messageRooms, setMessageRooms] = useState<MessageDisplay[]>([])
   const [loading, setLoading] = useState(true)
+  const [userData, setUserData] = useState<any>(null)
   const router = useRouter()
   const [partnerIds, setPartnerIds] = useState<string[]>([])
 
@@ -347,6 +350,24 @@ export default function MessagesPage() {
     }
   }, [user]);
 
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user) return;
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserData(userDoc.data());
+        }
+      } catch (error) {
+        console.error("ユーザーデータの取得に失敗:", error);
+      }
+    };
+
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
   if (!user) {
     return <div className="p-4">ログインが必要です</div>
   }
@@ -355,6 +376,45 @@ export default function MessagesPage() {
     return <div className="p-4">読み込み中...</div>
   }
 
+  // 本人確認が完了していない場合
+  if (!userData?.isIdentityVerified) {
+    return (
+      <div className="container mx-auto p-4 max-w-2xl">
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-6 h-6 text-yellow-500" />
+              <CardTitle>本人確認が必要です</CardTitle>
+            </div>
+            <CardDescription>
+              安全なコミュニティを維持するため、メッセージの送受信には本人確認が必要です。
+              以下の手順で本人確認を完了してください。
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="font-medium text-yellow-800 mb-2">本人確認が必要な理由</h3>
+                <ul className="list-disc list-inside text-sm text-yellow-700 space-y-1">
+                  <li>なりすまし防止のため</li>
+                  <li>安全なコミュニケーションの確保</li>
+                  <li>不正利用の防止</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <IdentityVerification 
+          userId={user.uid}
+          isVerified={userData?.isIdentityVerified}
+          verificationStatus={userData?.verificationStatus}
+        />
+      </div>
+    );
+  }
+
+  // 本人確認済みの場合は通常のメッセージ一覧を表示
   return (
     <div className="container mx-auto p-2">
       <h1 className="text-2xl font-bold mb-4">メッセージ</h1>
