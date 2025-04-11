@@ -24,7 +24,7 @@ export async function POST(req: Request) {
           require_live_capture: true,
         },
       },
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/identity-verification/complete`,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/messages`,
     });
 
     return NextResponse.json({

@@ -377,7 +377,7 @@ export default function MessagesPage() {
   }
 
   // 本人確認が完了していない場合
-  if (!userData?.isIdentityVerified) {
+  if (!userData?.stripe?.isIdentityVerified) {
     return (
       <div className="container mx-auto p-4 max-w-2xl">
         <Card className="mb-6">
@@ -407,8 +407,8 @@ export default function MessagesPage() {
         
         <IdentityVerification 
           userId={user.uid}
-          isVerified={userData?.isIdentityVerified}
-          verificationStatus={userData?.verificationStatus}
+          isVerified={userData?.stripe?.isIdentityVerified}
+          verificationStatus={userData?.stripe?.verificationStatus}
         />
       </div>
     );

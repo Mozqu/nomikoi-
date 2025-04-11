@@ -39,39 +39,51 @@ export async function POST(req: Request) {
       switch (event.type) {
         case 'identity.verification_session.verified':
           await userRef.update({
-            isIdentityVerified: true,
-            identityVerifiedAt: new Date().toISOString(),
-            verificationStatus: 'verified'
+            stripe: {
+              isIdentityVerified: true,
+              identityVerifiedAt: new Date().toISOString(),
+              verificationStatus: 'verified'
+            }
           });
           break;
 
         case 'identity.verification_session.processing':
           await userRef.update({
-            verificationStatus: 'processing'
+            stripe: {
+              verificationStatus: 'processing'
+            }
           });
           break;
 
         case 'identity.verification_session.requires_input':
           await userRef.update({
-            verificationStatus: 'requires_input'
+            stripe: {
+              verificationStatus: 'requires_input'
+            }
           });
           break;
 
         case 'identity.verification_session.canceled':
           await userRef.update({
-            verificationStatus: 'canceled'
+            stripe: {
+              verificationStatus: 'canceled'
+            }
           });
           break;
 
         case 'identity.verification_session.created':
           await userRef.update({
-            verificationStatus: 'created'
+            stripe: {
+              verificationStatus: 'created'
+            }
           });
           break;
 
         case 'identity.verification_session.redacted':
           await userRef.update({
-            verificationStatus: 'redacted'
+            stripe: {
+              verificationStatus: 'redacted'
+            }
           });
           break;
 
