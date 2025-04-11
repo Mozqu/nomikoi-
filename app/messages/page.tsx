@@ -99,56 +99,6 @@ const calculateAge = (birthday: Timestamp | null | any): number | null => {
     return age
 }
 
-const getStatusBackgroundColor = (status: string) => {
-  switch (status) {
-    case 'verified':
-      return 'bg-green-50';
-    case 'processing':
-      return 'bg-blue-50';
-    case 'requires_input':
-      return 'bg-yellow-50';
-    case 'canceled':
-    case 'redacted':
-      return 'bg-red-50';
-    default:
-      return 'bg-gray-50';
-  }
-};
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'verified':
-      return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-    case 'processing':
-      return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
-    case 'requires_input':
-      return <AlertCircle className="w-5 h-5 text-yellow-500" />;
-    case 'canceled':
-    case 'redacted':
-      return <XCircle className="w-5 h-5 text-red-500" />;
-    default:
-      return <HelpCircle className="w-5 h-5 text-gray-500" />;
-  }
-};
-
-const getStatusMessage = (status: string) => {
-  switch (status) {
-    case 'verified':
-      return '本人確認が完了しています';
-    case 'processing':
-      return '本人確認を処理中です';
-    case 'requires_input':
-      return '追加の情報が必要です';
-    case 'canceled':
-      return '本人確認がキャンセルされました';
-    case 'redacted':
-      return '本人確認情報が削除されました';
-    case 'created':
-      return '本人確認を開始してください';
-    default:
-      return '本人確認の状態が不明です';
-  }
-};
 
 export default function MessagesPage() {
   const [user, setUser] = useState<any>(null)
@@ -419,6 +369,8 @@ export default function MessagesPage() {
     }
   }, [user]);
 
+  console.log(userData?.stripe)
+
   if (!user) {
     return <div className="p-4">ログインが必要です</div>
   }
@@ -452,15 +404,6 @@ export default function MessagesPage() {
                   <li>不正利用の防止</li>
                 </ul>
               </div>
-              {userData?.stripe?.verificationStatus && (
-                <div className={`p-4 rounded-lg ${getStatusBackgroundColor(userData.stripe.verificationStatus)}`}>
-                  <h3 className="font-medium mb-2">現在の認証状態</h3>
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(userData.stripe.verificationStatus)}
-                    <span>{getStatusMessage(userData.stripe.verificationStatus)}</span>
-                  </div>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
