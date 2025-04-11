@@ -35,6 +35,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   const [user, setUser] = useState<any>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
+  const [isSending, setIsSending] = useState(false)
   const [hasLineConnection, setHasLineConnection] = useState<boolean | null>(null)
   const [showLineModal, setShowLineModal] = useState(true)
   const messagesEndRef = useRef<null | HTMLDivElement>(null)
@@ -128,7 +129,9 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   // メッセージ送信
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newMessage.trim() || !user) return
+    if (!newMessage.trim() || !user || isSending) return
+    
+    setIsSending(true)
 
     try {
       // ユーザー情報を取得
@@ -188,6 +191,8 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
       setNewMessage("")
     } catch (error) {
       console.error("Error sending message:", error)
+    } finally {
+      setIsSending(false)
     }
   }
 
@@ -421,15 +426,20 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="メッセージを入力..."
-            className="flex-1 rounded-full border-none "
+            className="flex-1 rounded-full border-none"
+            disabled={isSending}
             style={{
               outline: "none",
               boxShadow: "none",
               background: "rgba(255, 255, 255, 0.05)"
             }}
           />
-          <Button className="rounded-full neon-bg" type="submit">
-            <Send className="" />
+          <Button 
+            className="rounded-full neon-bg" 
+            type="submit"
+            disabled={isSending}
+          >
+            <Send className={isSending ? "opacity-50" : ""} />
           </Button>
         </div>
       </form>
