@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { stripe } from '@/app/lib/stripe';
-import { db } from '@/app/firebase/config';
+import { adminDb } from '@/app/firebase/admin';
 import { doc, updateDoc } from 'firebase/firestore';
 import Stripe from 'stripe';
 
@@ -29,16 +29,16 @@ export async function POST(req: Request) {
       const session = event.data.object as Stripe.Identity.VerificationSession;
       const userId = session.metadata?.userId;
 
-      if (!userId || !db) {
-        console.error('Missing userId or db connection');
+      if (!userId) {
+        console.error('Missing userId');
         return NextResponse.json({ error: 'Invalid session data' }, { status: 400 });
       }
 
-      const userRef = doc(db as any, 'users', userId);
+      const userRef = adminDb.collection('users').doc(userId);
 
       switch (event.type) {
         case 'identity.verification_session.verified':
-          await updateDoc(userRef, {
+          await userRef.update({
             isIdentityVerified: true,
             identityVerifiedAt: new Date().toISOString(),
             verificationStatus: 'verified'
@@ -46,31 +46,31 @@ export async function POST(req: Request) {
           break;
 
         case 'identity.verification_session.processing':
-          await updateDoc(userRef, {
+          await userRef.update({
             verificationStatus: 'processing'
           });
           break;
 
         case 'identity.verification_session.requires_input':
-          await updateDoc(userRef, {
+          await userRef.update({
             verificationStatus: 'requires_input'
           });
           break;
 
         case 'identity.verification_session.canceled':
-          await updateDoc(userRef, {
+          await userRef.update({
             verificationStatus: 'canceled'
           });
           break;
 
         case 'identity.verification_session.created':
-          await updateDoc(userRef, {
+          await userRef.update({
             verificationStatus: 'created'
           });
           break;
 
         case 'identity.verification_session.redacted':
-          await updateDoc(userRef, {
+          await userRef.update({
             verificationStatus: 'redacted'
           });
           break;
