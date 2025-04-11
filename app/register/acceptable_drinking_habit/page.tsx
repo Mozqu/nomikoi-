@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo, memo, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { auth, db } from "@/app/firebase/config";
 import { doc, setDoc, addDoc, collection } from "firebase/firestore";
 import { Users } from "lucide-react";
@@ -274,6 +274,7 @@ QuestionItem.displayName = 'QuestionItem';
 
 export default function acceptableDrinkingHabit() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -397,7 +398,11 @@ export default function acceptableDrinkingHabit() {
       }, { merge: true });
       
       // 確認ページへリダイレクト
-      router.push(`/register/recommend_drinking_character`);
+      if (searchParams.get('from') === 'settings') {
+        router.push(`/settings`);
+      } else {
+        router.push(`/register/recommend_drinking_character`);
+      }
 
     } catch (error) {
       console.error("回答の保存に失敗しました:", error);

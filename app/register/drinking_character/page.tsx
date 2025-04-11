@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, memo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/app/firebase/config";
 import { doc, setDoc, addDoc, collection } from "firebase/firestore";
+import { useSearchParams } from "next/navigation";
 
 // questionsオブジェクトに型定義を追加
 type Question = {
@@ -273,6 +274,7 @@ QuestionItem.displayName = 'QuestionItem';
 
 export default function DrinkingCharacter() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -409,7 +411,11 @@ export default function DrinkingCharacter() {
       }
 
       // 確認ページへリダイレクト
-      router.push(`/register/character_confirmation?id=${docRef.id}`);
+      if (searchParams.get('from') === 'settings') {
+        router.push(`/register/character_confirmation?id=${docRef.id}&from=settings`);
+      } else {
+        router.push(`/register/character_confirmation?id=${docRef.id}`);
+      }
 
     } catch (error) {
       console.error("回答の保存に失敗しました:", error);

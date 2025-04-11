@@ -474,14 +474,14 @@ export default function SettingsPage() {
               </button>
               <button 
                 className="w-full flex items-center justify-between p-4 rounded-full border"
-                onClick={() => router.push('/register/drinking_character')}
+                onClick={() => router.push('/register/drinking_character?from=settings')}
               >
                 <span>「飲みタイプ」の質問に答える</span>
                 <ArrowLeft size={20} className="rotate-180" />
               </button>
               <button 
                 className="w-full flex items-center justify-between p-4 rounded-full border"
-                onClick={() => router.push('/register/drinking_habit')}
+                onClick={() => router.push('/register/drinking_habit?from=settings')}
               >
                 <span>「酒癖フィルター」の質問に答える</span>
                 <ArrowLeft size={20} className="rotate-180" />

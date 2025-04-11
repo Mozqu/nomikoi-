@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo, memo, useRef, useEffect, forwardRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { auth, db } from "@/app/firebase/config";
 import { doc, setDoc, addDoc, collection } from "firebase/firestore";
 
@@ -260,6 +260,7 @@ QuestionItem.displayName = 'QuestionItem';
 
 export default function drinkingHabit() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -381,7 +382,11 @@ export default function drinkingHabit() {
 
 
       // 確認ページへリダイレクト
-      router.push(`/register/acceptable_drinking_habit`);
+      if (searchParams.get('from') === 'settings') {
+        router.push(`/register/acceptable_drinking_habit?from=settings`);
+      } else {
+        router.push(`/register/acceptable_drinking_habit`);
+      }
 
     } catch (error) {
       console.error("回答の保存に失敗しました:", error);
@@ -389,7 +394,7 @@ export default function drinkingHabit() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [selectedOptions, router]);
+  }, [selectedOptions, router, searchParams]);
 
   // 全ての質問に回答されたかチェック
   const isAllQuestionsAnswered = useMemo(() => {
