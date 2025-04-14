@@ -16,6 +16,8 @@ import { getStorage } from "firebase/storage"
 import ProfileCardSmall from "@/components/profile/profile-card-small"
 import LoadingSpinner from '@/app/components/LoadingSpinner'
 import { Firestore } from "firebase/firestore"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import GroupTab from "@/app/components/group/group-tab"
 
 // User型を定義
 interface User {
@@ -217,6 +219,7 @@ export default function Home() {
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [recommendedUsers, setRecommendedUsers] = useState<User[]>([]);
   const [userData, setUserData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("matching");
 
   useEffect(() => {
     const checkAuthAndFetchData = async () => {
@@ -320,42 +323,90 @@ export default function Home() {
           </div>
       </div>
 
-
-      <div className="container w-full px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">新規ユーザー</h1>
-        <div className="relative">
-          <div className="flex overflow-x-scroll gap-4 pb-4 no-scrollbar"
+      <Tabs 
+        defaultValue="matching" 
+        className="w-full relative"
+        onValueChange={setActiveTab}
+      >
+        <TabsList className="flex justify-between w-full bg-black/5 p-1 rounded-xl relative">
+          <div 
+            className="absolute inset-1 w-[33%] h-[calc(100%-8px)] border-b-2 border-white shadow-sm transition-transform duration-300 ease-out" 
             style={{
-              WebkitOverflowScrolling: 'touch',
-            }}>
-            <div className="flex gap-4">
-              {recentUsers.map(user => (
-                <div key={user.id} className="flex-none w-[160px]">
-                  <ProfileCardSmall user={user} />
+              transform: `translateX(${
+                activeTab === "matching" ? "0%" : 
+                activeTab === "group" ? "100%" : 
+                "200%"
+              })`
+            }}
+          />
+          <TabsTrigger 
+            className="w-[33%] relative z-10 rounded-lg px-3 py-2 text-sm font-medium transition-all" 
+            value="matching"
+          >
+            マッチング
+          </TabsTrigger>
+          <TabsTrigger 
+            className="w-[33%] relative z-10 rounded-lg px-3 py-2 text-sm font-medium transition-all" 
+            value="group"
+          >
+            グループ
+          </TabsTrigger>
+          <TabsTrigger 
+            className="w-[33%] relative z-10 px-3 py-2 text-sm font-medium transition-all" 
+            value="events"
+          >
+            イベント
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="matching">
+          <div className="container w-full px-4 py-8">
+            <h1 className="text-2xl font-bold mb-6">新規ユーザー</h1>
+            <div className="relative">
+              <div className="flex overflow-x-scroll gap-4 pb-4 no-scrollbar"
+                style={{
+                  WebkitOverflowScrolling: 'touch',
+                }}>
+                <div className="flex gap-4">
+                  {recentUsers.map(user => (
+                    <div key={user.id} className="flex-none w-[160px]">
+                      <ProfileCardSmall user={user} />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="container w-full px-4 pt-8 pb-12">
-        <h1 className="text-2xl font-bold mb-6">マッチしてるかも</h1>
-        <div className="relative">
-          <div className="flex overflow-x-scroll gap-4 pb-4 no-scrollbar"
-            style={{
-              WebkitOverflowScrolling: 'touch',
-            }}>
-            <div className="flex gap-4">
-              {recommendedUsers.map(user => (
-                <div key={user.id} className="flex-none w-[160px]">
-                  <ProfileCardSmall user={user} />
+          <div className="container w-full px-4 py-8">
+            <h1 className="text-2xl font-bold mb-6">マッチしてるかも</h1>
+            <div className="relative">
+              <div className="flex overflow-x-scroll gap-4 pb-4 no-scrollbar"
+                style={{
+                  WebkitOverflowScrolling: 'touch',
+                }}>
+                <div className="flex gap-4">
+                  {recommendedUsers.map(user => (
+                    <div key={user.id} className="flex-none w-[160px]">
+                      <ProfileCardSmall user={user} />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="group">
+          <GroupTab />
+        </TabsContent>
+
+        <TabsContent value="events">
+          <div className="container w-full px-4 py-8">
+            <h1 className="text-2xl font-bold mb-6">イベントマッチ</h1>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
