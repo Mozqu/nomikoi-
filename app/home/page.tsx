@@ -18,6 +18,7 @@ import LoadingSpinner from '@/app/components/LoadingSpinner'
 import { Firestore } from "firebase/firestore"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import GroupTab from "@/app/components/group/group-tab"
+import EventTab from "@/app/components/event/event-tab"
 
 // User型を定義
 interface User {
@@ -402,9 +403,7 @@ export default function Home() {
         </TabsContent>
 
         <TabsContent value="events">
-          <div className="container w-full px-4 py-8">
-            <h1 className="text-2xl font-bold mb-6">イベントマッチ</h1>
-          </div>
+          <EventTab />
         </TabsContent>
       </Tabs>
     </div>

@@ -30,6 +30,25 @@ interface Message {
   read: boolean
 }
 
+interface MessageRoom {
+  id: string
+  type: 'group' | 'direct'
+  permission: boolean
+  user_ids: string[]
+  submitBy?: string
+  submitByUser?: {
+    uid: string
+    name: string
+    photo: string
+  }
+  rejected?: boolean
+  groupData?: any
+  groupId?: string
+  created_at?: any
+  updated_at?: any
+  visitedUsers?: Record<string, any>
+}
+
 export default function ChatRoom({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [user, setUser] = useState<any>(null)
@@ -38,6 +57,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   const [isSending, setIsSending] = useState(false)
   const [hasLineConnection, setHasLineConnection] = useState<boolean | null>(null)
   const [showLineModal, setShowLineModal] = useState(true)
+  const [room, setRoom] = useState<MessageRoom | null>(null)
   const messagesEndRef = useRef<null | HTMLDivElement>(null)
   const router = useRouter()
   
@@ -169,23 +189,25 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
         const partnerDoc = await getDoc(doc(db!, "users", partnerId))
         const partnerData = partnerDoc.data()
 
-        console.log('partnerData', partnerData.uid)
+        if (partnerData) {
+          console.log('partnerData', partnerData.uid)
 
-        // パートナーがLINE連携済みの場合、通知を送信
-        console.log("連携済みユーザー", partnerData?.uid)
-        await fetch('/api/line-message', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: newMessage,
-            partnerId: partnerData?.uid,
-            senderName: userName,
-            messageRoomId: id
+          // パートナーがLINE連携済みの場合、通知を送信
+          console.log("連携済みユーザー", partnerData.uid)
+          await fetch('/api/line-message', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: newMessage,
+              partnerId: partnerData?.uid,
+              senderName: userName,
+              messageRoomId: id
+            })
           })
-        })
-        
+          
+        }
       }
 
       setNewMessage("")
@@ -266,6 +288,133 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
     updateVisitHistory();
   }, [id, user]);
 
+  // メッセージルーム情報の取得
+  useEffect(() => {
+    if (!id) return
+
+    const fetchRoomData = async () => {
+      try {
+        console.log("Fetching room data for ID:", id)
+        const roomDoc = await getDoc(doc(db!, "message_rooms", id))
+        
+        if (roomDoc.exists()) {
+          const roomData = roomDoc.data()
+          console.log("Room data:", roomData)
+          
+          let submitByUser = undefined
+          let groupData = undefined
+          
+          if (roomData.submitBy) {
+            console.log("Fetching submitter data for:", roomData.submitBy)
+            const userDoc = await getDoc(doc(db!, "users", roomData.submitBy))
+            
+            if (userDoc.exists()) {
+              const userData = userDoc.data()
+              console.log("User data:", userData)
+              submitByUser = {
+                uid: roomData.submitBy,
+                name: userData.name || "匿名ユーザー",
+                photo: userData.photos?.[0]?.url || "/placeholder.svg"
+              }
+
+              // groupデータを取得
+              const groupsRef = collection(db!, "groups")
+              const q = query(groupsRef, where("createdBy", "==", roomData.submitBy))
+              const groupSnapshot = await getDocs(q)
+              
+              if (!groupSnapshot.empty) {
+                const groupDoc = groupSnapshot.docs[0]
+                groupData = {
+                  id: groupDoc.id,
+                  ...groupDoc.data()
+                }
+                console.log("Group data:", groupData)
+              }
+            }
+          }
+
+          setRoom({
+            id: roomDoc.id,
+            type: roomData.type || 'direct',
+            permission: roomData.permission || false,
+            user_ids: roomData.user_ids || [],
+            submitBy: roomData.submitBy,
+            submitByUser,
+            groupData,
+            groupId: roomData.groupId,
+            created_at: roomData.created_at,
+            updated_at: roomData.updated_at,
+            visitedUsers: roomData.visitedUsers,
+            rejected: roomData.rejected
+          } as MessageRoom)
+        }
+      } catch (error) {
+        console.error("Error fetching room data:", error)
+      }
+    }
+
+    fetchRoomData()
+  }, [id])
+
+  // グループチャットの許可を更新
+  const handleAcceptChat = async () => {
+    if (!id || !room?.submitBy) return
+    try {
+      const roomRef = doc(db!, "message_rooms", id)
+      const roomDoc = await getDoc(roomRef)
+      
+      if (roomDoc.exists()) {
+        const roomData = roomDoc.data()
+        const currentUserIds = roomData.user_ids || []
+        const updatedUserIds = currentUserIds.includes(room.submitBy) 
+          ? currentUserIds 
+          : [...currentUserIds, room.submitBy]
+        
+        await updateDoc(roomRef, {
+          permission: true,
+          rejected: false,
+          user_ids: updatedUserIds
+        })
+
+        // roomの状態を更新
+        setRoom(prevRoom => ({
+          ...prevRoom!,
+          permission: true,
+          user_ids: updatedUserIds,
+          rejected: false
+        }))
+
+        // 承認メッセージを送信
+        const messagesRef = collection(db!, "message_rooms", id, "messages")
+        await addDoc(messagesRef, {
+          text: "チャットを解放しました",
+          created_at: serverTimestamp(),
+          user_id: user.uid,
+          user_name: user.displayName || "ユーザー",
+          user_photo: user.photoURL || "/placeholder.svg",
+          read: false
+        })
+        
+        console.log("チャットを承認し、ユーザーを追加しました")
+      }
+    } catch (error) {
+      console.error("チャットの許可に失敗:", error)
+    }
+  }
+
+  const handleRejectChat = async () => {
+    const roomRef = doc(db!, "message_rooms", id)
+    const roomDoc = await getDoc(roomRef)
+    if (roomDoc.exists()) {
+      const roomData = roomDoc.data()
+      await updateDoc(roomRef, {
+        rejected: true
+      })
+    }
+    
+    router.push("/messages")
+  }
+
   const formatRelativeTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -305,6 +454,86 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
 
   if (!user) {
     return <div className="p-4">ログインが必要です</div>
+  }
+
+  // グループチャットで許可が必要な場合の表示
+  if (room?.type === "group" && !room.permission) {
+    console.log("Rendering group invitation UI with room data:", room)
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-4 space-y-6">
+        {room.submitByUser && (
+          <div className="flex items-center space-y-2  relative">
+            <div className="relative w-20 h-20 bg-gray-100 rounded-xl overflow-hidden">
+              <Link href={`/profile/${room.submitByUser.uid}`}>
+                <Image
+                  src={room.submitByUser.photo}
+                  alt={room.submitByUser.name}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </Link>
+            </div>
+
+            <div className="flex flex-col gap-2 px-4">
+              {room.groupData && (
+                <>
+                  <div className="flex flex-col">
+                    <h3 className="font-semibold text-lg">{room.groupData.name}</h3>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-wrap gap-2 absolute top-[-1rem] right-[-1rem]">
+                        {room.groupData.preferences?.favoriteArea?.map((area: string, index: number) => (
+                          <span
+                            key={index}
+                            className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-sm"
+                          >
+                            {area}
+                          </span>
+                        )) || <span className="text-sm text-gray-400">未設定</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <p className="text-sm text-gray-400">{room.groupData.description}</p>
+                  </div>
+                </>
+              )}
+              <div className="flex items-center gap-2">
+                <p>{room.submitByUser.name}</p>
+                <p className="text-gray-500">からの招待</p>
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-semibold"
+            style={{
+              color: room.rejected ? "red" : ""
+            }}
+          >{room.rejected ? "お誘いを拒否しています。" : "グループにお誘いが届きました"}</h2>
+          {room.rejected && <p className="text-gray-500">※相手には通知されません</p>}
+          <p className="text-gray-500">チャットを解放しますか？</p>
+        </div>
+        <div className="flex gap-4">
+          <Button
+            onClick={handleAcceptChat}
+            className="bg-sky hover:bg-sky/90 text-white px-6"
+          >
+            承認する
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleRejectChat}
+            className="border-white/10 px-6"
+            style={{
+              color: room.rejected ? "red" : ""
+            }}
+          >
+            拒否する
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
