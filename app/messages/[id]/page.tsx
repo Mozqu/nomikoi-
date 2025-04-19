@@ -32,7 +32,7 @@ interface Message {
 
 interface MessageRoom {
   id: string
-  type: 'group' | 'direct'
+  type: 'group' | 'direct' | 'event'
   permission: boolean
   user_ids: string[]
   submitBy?: string
@@ -42,6 +42,7 @@ interface MessageRoom {
     photo: string
   }
   rejected?: boolean
+  verify?: 'permited' | 'processing' | 'rejected'
   groupData?: any
   groupId?: string
   created_at?: any
@@ -345,7 +346,8 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
             created_at: roomData.created_at,
             updated_at: roomData.updated_at,
             visitedUsers: roomData.visitedUsers,
-            rejected: roomData.rejected
+            rejected: roomData.rejected,
+            verify: roomData.verify
           } as MessageRoom)
         }
       } catch (error) {
@@ -457,7 +459,7 @@ export default function ChatRoom({ params }: { params: Promise<{ id: string }> }
   }
 
   // グループチャットで許可が必要な場合の表示
-  if (room?.type === "group" && !room.permission) {
+  if (room?.type === "group" && !room.permission || room?.type === "event" && room.verify !== "permited") {
     console.log("Rendering group invitation UI with room data:", room)
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-4 space-y-6">

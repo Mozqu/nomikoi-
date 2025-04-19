@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { auth, db } from "@/app/firebase/config"
-import { collection, query, orderBy, limit, getDocs, startAfter, QueryDocumentSnapshot, doc, getDoc } from "firebase/firestore"
+import { collection, query, orderBy, limit, getDocs, startAfter, QueryDocumentSnapshot, doc, getDoc, runTransaction, serverTimestamp, where } from "firebase/firestore"
 import { LoadingSpinner } from "@/app/components/ui/loading-spinner"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -85,6 +85,8 @@ export default function EventList({ refreshTrigger }: { refreshTrigger?: number 
   const [hasMore, setHasMore] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isCreateGroupDialogOpen, setIsCreateGroupDialogOpen] = useState(false)
+  const [currentUserGender, setCurrentUserGender] = useState<string | null>(null)
 
   const fetchUserData = async (uid: string): Promise<User | null> => {
     try {
@@ -108,77 +110,201 @@ export default function EventList({ refreshTrigger }: { refreshTrigger?: number 
     }
   }
 
+  // 現在のユーザーの性別を取得する関数
+  const fetchCurrentUserGender = async () => {
+    try {
+      if (!auth) return null;
+      const currentUser = auth.currentUser;
+      if (!currentUser || !db) return null;
+
+      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+      if (userDoc.exists()) {
+        const gender = userDoc.data().gender;
+        setCurrentUserGender(gender);
+        return gender;
+      }
+      return null;
+    } catch (err) {
+      console.error("ユーザーの性別の取得に失敗しました:", err);
+      return null;
+    }
+  };
+
   const fetchEvents = async () => {
     try {
-      if (!db) return
+      if (!db) return;
 
-      const eventsRef = collection(db, "events")
+      // 現在のユーザーの性別を取得
+      const userGender = await fetchCurrentUserGender();
+      if (!userGender) {
+        setError("ユーザー情報の取得に失敗しました");
+        return;
+      }
+
+      const eventsRef = collection(db, "events");
       const q = query(
         eventsRef,
         orderBy("createdAt", "desc"),
         limit(10)
-      )
+      );
 
-      const snapshot = await getDocs(q)
+      const snapshot = await getDocs(q);
       const eventData = await Promise.all(
         snapshot.docs.map(async (doc) => {
-          const data = doc.data()
-          const creator = await fetchUserData(data.createdBy)
+          const data = doc.data();
+          const creator = await fetchUserData(data.createdBy);
           return {
             id: doc.id,
             ...data,
             creator
-          }
+          };
         })
-      ) as Event[]
+      ) as Event[];
 
-      setEvents(eventData)
-      setLastDoc(snapshot.docs[snapshot.docs.length - 1] || null)
-      setHasMore(snapshot.docs.length === 10)
+      // 異なる性別のイベントのみをフィルタリング
+      const filteredEvents = eventData.filter(event => event.gender !== userGender);
+
+      setEvents(filteredEvents);
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1] || null);
+      setHasMore(snapshot.docs.length === 10);
     } catch (err) {
-      console.error("イベントの取得に失敗しました:", err)
-      setError("イベントの取得に失敗しました")
+      console.error("イベントの取得に失敗しました:", err);
+      setError("イベントの取得に失敗しました");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const loadMore = async () => {
-    if (!lastDoc || !hasMore || !db) return
+    if (!lastDoc || !hasMore || !db) return;
 
     try {
-      setLoading(true)
-      const eventsRef = collection(db, "events")
+      setLoading(true);
+      const eventsRef = collection(db, "events");
       const q = query(
         eventsRef,
         orderBy("createdAt", "desc"),
         startAfter(lastDoc),
         limit(10)
-      )
+      );
 
-      const snapshot = await getDocs(q)
+      const snapshot = await getDocs(q);
       const newEventData = await Promise.all(
         snapshot.docs.map(async (doc) => {
-          const data = doc.data()
-          const creator = await fetchUserData(data.createdBy)
+          const data = doc.data();
+          const creator = await fetchUserData(data.createdBy);
           return {
             id: doc.id,
             ...data,
             creator
-          }
+          };
         })
-      ) as Event[]
+      ) as Event[];
 
-      setEvents(prev => [...prev, ...newEventData])
-      setLastDoc(snapshot.docs[snapshot.docs.length - 1] || null)
-      setHasMore(snapshot.docs.length === 10)
+      // 異なる性別のイベントのみをフィルタリング
+      const filteredEvents = newEventData.filter(event => event.gender !== currentUserGender);
+
+      setEvents(prev => [...prev, ...filteredEvents]);
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1] || null);
+      setHasMore(snapshot.docs.length === 10);
     } catch (err) {
-      console.error("追加のイベント取得に失敗しました:", err)
-      setError("追加のイベント取得に失敗しました")
+      console.error("追加のイベント取得に失敗しました:", err);
+      setError("追加のイベント取得に失敗しました");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  // イベント参加処理
+  const handleJoinEvent = async (event: Event) => {
+    try {
+      if (!auth?.currentUser || !db) {
+        setError("ログインが必要です");
+        return;
+      }
+
+      const currentUser = auth.currentUser;
+      
+      // イベントのinvitedByを更新
+      const eventRef = doc(db, "events", event.id);
+      
+      // message_roomを作成
+      const messageRoomRef = collection(db, "message_rooms");
+      
+      // トランザクションで処理
+      await runTransaction(db, async (transaction) => {
+        // イベントドキュメントを取得
+        const eventDoc = await transaction.get(eventRef);
+        if (!eventDoc.exists()) {
+          throw new Error("イベントが存在しません");
+        }
+
+        // ユーザーのグループ情報を取得
+        if (!db) {
+          throw new Error("データベース接続が確立されていません");
+        }
+
+        // groupsコレクションからユーザーのグループを検索
+        const groupsRef = collection(db, "groups");
+        const q = query(groupsRef, where("createdBy", "==", currentUser.uid));
+        const groupSnapshot = await getDocs(q);
+        
+        if (groupSnapshot.empty) {
+          setIsCreateGroupDialogOpen(true);
+          throw new Error("グループを作成してください");
+        }
+
+        const groupId = groupSnapshot.docs[0].id;
+
+        // 既に参加済みかチェック
+        const currentInvitedBy = eventDoc.data().invitedBy || [];
+        if (currentInvitedBy.includes(currentUser.uid)) {
+          throw new Error("既に参加済みです");
+        }
+
+        // invitedByを更新
+        transaction.update(eventRef, {
+          invitedBy: [...currentInvitedBy, currentUser.uid]
+        });
+
+        // message_roomを作成
+        const messageRoomData = {
+          type: "event",
+          submitBy: groupId,  // グループIDを設定
+          user_ids: [event.createdBy],
+          eventId: event.id,
+          createdAt: serverTimestamp(),
+          verify: "processing",
+
+        };
+
+        transaction.set(doc(messageRoomRef), messageRoomData);
+      });
+
+      // イベントリストを更新
+      setEvents(prevEvents => 
+        prevEvents.map(e => 
+          e.id === event.id 
+            ? { ...e, invitedBy: [...(e.invitedBy || []), currentUser.uid] }
+            : e
+        )
+      );
+
+      // 成功メッセージ
+      console.log("イベントに参加しました");
+      
+    } catch (err) {
+      console.error("イベント参加に失敗しました:", err);
+      setError(err instanceof Error ? err.message : "イベント参加に失敗しました");
+    }
+  };
+
+  // グループ作成ダイアログを開く関数
+  const openGroupCreateDialog = () => {
+    setIsCreateGroupDialogOpen(false);
+    // TODO: グループ作成ページへの遷移を実装
+    window.location.href = "/mygroup/create";
+  };
 
   useEffect(() => {
     fetchEvents()
@@ -259,13 +385,20 @@ export default function EventList({ refreshTrigger }: { refreshTrigger?: number 
                 
                 <div className="flex justify-end gap-2">
                     <button
-                        className="bg-pink-600 hover:bg-pink-700 text-white text-xs px-2 py-1 rounded-full"
+                        className={`${
+                          auth?.currentUser && event.invitedBy?.includes(auth.currentUser.uid)
+                            ? "bg-gray-600 cursor-not-allowed"
+                            : "bg-pink-600 hover:bg-pink-700"
+                        } text-white text-xs px-2 py-1 rounded-full`}
                         onClick={(e) => {
-                            e.stopPropagation()
-                            console.log("イベントに参加する")
+                            e.stopPropagation();
+                            handleJoinEvent(event);
                         }}
+                        disabled={Boolean(auth?.currentUser && event.invitedBy?.includes(auth.currentUser.uid))}
                     >
-                        イベントに参加する
+                        {auth?.currentUser && event.invitedBy?.includes(auth.currentUser.uid) 
+                          ? "参加済み" 
+                          : "イベントに参加する"}
                     </button>
                 </div>
             </div>
@@ -286,12 +419,12 @@ export default function EventList({ refreshTrigger }: { refreshTrigger?: number 
                 {/* プロフィール情報 */}
                 <div className="relative w-24 h-24">
                     <Image 
-                    src={selectedEvent.creator?.profileImage || "/default-profile.png"} 
-                    alt="プロフィール画像" 
-                    width={50} 
-                    height={50} 
-                    className="rounded-xl relative w-full h-full" 
-                    style={{ objectFit: "cover" }}    
+                      src={selectedEvent.creator?.profileImage || "/default-profile.png"} 
+                      alt="プロフィール画像" 
+                      width={50} 
+                      height={50} 
+                      className="rounded-xl relative w-full h-full" 
+                      style={{ objectFit: "cover" }}
                     />
                     <span className="text-sm bg-blue-400 text-white px-2 py-1 rounded-full absolute top-[-10px] left-[-10px] whitespace-nowrap">
                         {formatDate(selectedEvent.startedAt)}〜 {selectedEvent.memberNum}人
@@ -357,6 +490,34 @@ export default function EventList({ refreshTrigger }: { refreshTrigger?: number 
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* グループ作成を促すダイアログ */}
+      <Dialog open={isCreateGroupDialogOpen} onOpenChange={setIsCreateGroupDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-center">グループの作成が必要です</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-center mb-4">他のグループとマッチングするには、まずあなたのグループを作成する必要があります。</p>
+            <p className="text-center text-sm text-gray-400 mb-6">グループを作成して、素敵な出会いを見つけましょう！</p>
+            <div className="flex justify-center gap-4">
+              <Button
+                onClick={openGroupCreateDialog}
+                className="neon-bg hover:bg-pink-700 text-white px-8"
+              >
+                グループを作成する
+              </Button>
+              <Button
+                onClick={() => setIsCreateGroupDialogOpen(false)}
+                variant="outline"
+                className="text-gray-400 hover:text-white"
+              >
+                キャンセル
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

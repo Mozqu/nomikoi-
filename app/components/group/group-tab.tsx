@@ -97,7 +97,7 @@ const hobbyTags = {
 const groupFormSchema = z.object({
   description: z.string().min(1, "グループの説明を入力してください"),
   memberNum: z.number().min(2, "2人以上を指定してください").max(10, "10人以下を指定してください"),
-  gender: z.enum(["male", "female", "both"], {
+  gender: z.enum(["男性", "女性"], {
     required_error: "性別を選択してください",
   }),
   preferences: z.object({
@@ -120,7 +120,7 @@ interface Group {
   updatedAt: any;
   description: string;
   memberNum: number;
-  gender: "male" | "female" | "both";
+  gender: "男性" | "女性";
   invitedBy: string[];
   preferences: {
     drinkingTags: string[];
@@ -144,7 +144,7 @@ export default function GroupTab() {
   const [isSearching, setIsSearching] = useState(false)
   const [selectedStations, setSelectedStations] = useState<string[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [userGender, setUserGender] = useState<"male" | "female" | null>(null)
+  const [userGender, setUserGender] = useState<"男性" | "女性" | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [hasExistingGroup, setHasExistingGroup] = useState(false)
   const [existingGroupId, setExistingGroupId] = useState<string | null>(null)
@@ -404,7 +404,21 @@ export default function GroupTab() {
       if (existingGroupId) {
         // 既存のグループを更新
         const groupRef = doc(groupsRef, existingGroupId)
-        await batch.update(groupRef, groupData)
+        const existingGroupDoc = await getDoc(groupRef)
+        const existingData = existingGroupDoc.data()
+        
+        // 既存のデータと新しいデータをマージ
+        const updatedGroupData = {
+          ...existingData,
+          ...groupData,
+          createdBy: existingData.createdBy,
+          createdAt: existingData.createdAt,
+          invitedBy: existingData.invitedBy || [],
+        }
+        
+        batch.update(groupRef, updatedGroupData)
+        await batch.commit()
+        
         toast({
           title: "グループを更新しました",
           description: "グループ情報が更新されました。",
@@ -419,10 +433,10 @@ export default function GroupTab() {
         }
         await batch.commit()
         await addDoc(groupsRef, newGroupData)
-      toast({
-        title: "グループを作成しました",
-        description: "新しいグループが作成されました。",
-      })
+        toast({
+          title: "グループを作成しました",
+          description: "新しいグループが作成されました。",
+        })
       }
       
       handleFormReset()
@@ -439,6 +453,18 @@ export default function GroupTab() {
       setIsLoading(false)
     }
   }
+
+  // イベントリスナーを追加
+  useEffect(() => {
+    const handleOpenDialog = () => {
+      setIsDialogOpen(true)
+    }
+
+    window.addEventListener('openGroupCreateDialog', handleOpenDialog)
+    return () => {
+      window.removeEventListener('openGroupCreateDialog', handleOpenDialog)
+    }
+  }, [])
 
   return (
     <div className="container w-full p-4">
@@ -457,298 +483,182 @@ export default function GroupTab() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>グループの説明</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
+                {/* 募集人数 */}  
                 <FormField
                   control={form.control}
                   name="memberNum"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>メンバー数</FormLabel>
+                    <FormItem className="flex gap-2">
+                      <FormLabel className="w-1/2 flex justify-center items-center"><span className="">募集人数</span></FormLabel>
                       <FormControl>
-                        <Input {...field} type="number" />
+                        <Input
+                          className="form-input"
+                          type="number"
+                          min={2}
+                          max={10}
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {/* favoriteArea */}
                 <FormField
                   control={form.control}
                   name="gender"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>性別</FormLabel>
+                      <FormLabel>エリアを選択</FormLabel>
                       <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex-row"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="male" id="gender-male" />
-                            <Label htmlFor="gender-male">男性</Label>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex gap-2">
+                            <Input 
+                              className="form-input flex-1"
+                              type="text"
+                              value={searchQuery}
+                              onChange={(e) => {
+                                setSearchQuery(e.target.value)
+                                searchStations(e.target.value)
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault() // フォームの送信を防ぐ
+                                }
+                              }}
+                              placeholder="駅名を入力"
+                            />
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="female" id="gender-female" />
-                            <Label htmlFor="gender-female">女性</Label>
+                          
+                          {/* 検索結果の表示 */}
+                          {isSearching && <div className="text-sm text-gray-400">検索中...</div>}
+                          
+                          {stations.length > 0 && (
+                            <div className="bg-gray-800 rounded-md p-2 max-h-40 overflow-y-auto">
+                              {stations.map((station, index) => (
+                                <div
+                                  key={`${station.name}-${index}`}
+                                  className="px-3 py-2 hover:bg-gray-700 cursor-pointer rounded-sm"
+                                  onClick={() => handleStationSelect(station.name)}
+                                >
+                                  {station.name}
+                                  <span className="text-sm text-gray-400 ml-2">
+                                    {station.prefecture} - {station.line}
+                                  </span>
                                 </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="both" id="gender-both" />
-                            <Label htmlFor="gender-both">両方</Label>
+                              ))}
                             </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="preferences.drinkingTags"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>お酒の好み・こだわり</FormLabel>
-                      <FormControl>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                "w-full justify-between",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value?.[0] || "選択してください"}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
-                            <Command>
-                              <CommandInput placeholder="検索..." />
-                              <CommandEmpty>見つかりません</CommandEmpty>
-                              <CommandGroup>
-                                {drinkingTags["お酒の好み・こだわり"].map((tag) => (
-                                  <CommandItem
-                                    key={tag}
-                                    value={tag}
-                                    onSelect={() => field.onChange([tag])}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        field.value?.[0] === tag ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    {tag}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="preferences.hobbyTags"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>アウトドア・スポーツ</FormLabel>
-                      <FormControl>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                "w-full justify-between",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value?.[0] || "選択してください"}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
-                            <Command>
-                              <CommandInput placeholder="検索..." />
-                              <CommandEmpty>見つかりません</CommandEmpty>
-                              <CommandGroup>
-                                {hobbyTags["アウトドア・スポーツ"].map((tag) => (
-                                  <CommandItem
-                                    key={tag}
-                                    value={tag}
-                                    onSelect={() => field.onChange([tag])}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        field.value?.[0] === tag ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    {tag}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="preferences.groupTypeTag"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>飲みの生活スタイル</FormLabel>
-                      <FormControl>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                "w-full justify-between",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value?.[0] || "選択してください"}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
-                            <Command>
-                              <CommandInput placeholder="検索..." />
-                              <CommandEmpty>見つかりません</CommandEmpty>
-                              <CommandGroup>
-                                {Object.keys(drinkingTags).map((key) => (
-                                  <CommandItem
-                                    key={key}
-                                    value={key}
-                                    onSelect={() => field.onChange([key])}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        field.value?.[0] === key ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    {key}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="preferences.favoriteArea"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>飲む場所・空間のこだわり</FormLabel>
-                      <FormControl>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                "w-full justify-between",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value?.[0] || "選択してください"}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
-                            <Command>
-                              <CommandInput 
-                                placeholder="駅名を検索..." 
-                                value={searchQuery}
-                                onValueChange={setSearchQuery}
-                              />
-                              <CommandEmpty>見つかりません</CommandEmpty>
-                              <CommandGroup>
-                                {stations.map((station) => (
-                                  <CommandItem
-                                    key={station.name}
-                                    value={station.name}
-                                    onSelect={() => {
-                                      field.onChange([station.name])
-                                      handleStationSelect(station.name)
+                          )}
+
+                          {/* 選択された駅名の表示 */}
+                          {selectedStations.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {selectedStations.map((stationName) => (
+                                <div 
+                                  key={stationName}
+                                  className="flex items-center gap-1 bg-pink-500 text-white px-3 py-1 rounded-full text-sm"
+                                >
+                                  {stationName}
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      handleStationRemove(stationName)
                                     }}
+                                    className="ml-2 hover:text-gray-200"
                                   >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        field.value?.[0] === station.name ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    {station.name}
-                                    <span className="ml-2 text-sm text-gray-500">
-                                      {station.prefecture} - {station.line}
-                                    </span>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {/* グループコメント */}
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>グループコメント</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          className="form-input"
+                          placeholder="グループの説明を入力してください"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* favoriteMood */}
+                <FormField
+                  control={form.control}
+                  name="preferences.favoriteMood"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>好みの雰囲気（複数選択可）</FormLabel>
+                      <FormControl>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            "しっぽり", "わいわい", "カジュアルに", "おしゃれに",
+                            "パーっと", "飲み歩き", "食事にこだわりたい", "お酒にこだわりたい",
+                            "立ち飲み系", "居酒屋系", "レストラン系", "バー系",
+                            "歌いたい", "クラブ系", "アミューズメント系", "オンライン呑み"
+                          ].map((item) => (
+                            <div key={item} className="flex items-center">
+                              <Checkbox 
+                                id={`mood-${item}`}
+                                checked={field.value?.includes(item)}
+                                onCheckedChange={(checked) => {
+                                  const currentValue = field.value || []
+                                  if (checked) {
+                                    field.onChange([...currentValue, item])
+                                  } else {
+                                    field.onChange(currentValue.filter(i => i !== item))
+                                  }
+                                }}
+                                className="hidden"
+                              />
+                              <Label 
+                                htmlFor={`mood-${item}`}
+                                className={`
+                                  rounded-full px-3 py-2 transition-all duration-200
+                                  ${field.value?.includes(item)
+                                    ? 'border border-pink-500 text-white' 
+                                    : 'border border-gray-300 text-gray-300'}
+                                `}
+                              >
+                                {item}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* favoriteTime */}
                 <FormField
                   control={form.control}
                   name="preferences.favoriteTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>飲む時間</FormLabel>
+                      <FormLabel>好みの時間帯（複数選択可）</FormLabel>
                       <FormControl>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                "w-full justify-between",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value?.[0] || "選択してください"}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
-                            <Command>
-                              <CommandInput placeholder="検索..." />
-                              <CommandEmpty>見つかりません</CommandEmpty>
-                              <CommandGroup>
+                        <div className="flex flex-wrap gap-2">
                           {[
                             "平日の昼OK",
                             "平日の夜OK",
@@ -756,88 +666,141 @@ export default function GroupTab() {
                             "土/日/祝の昼OK",
                             "土/日/祝の夜OK",
                             "いつでも合わせられる"
-                                ].map((time) => (
-                                  <CommandItem
-                                    key={time}
-                                    value={time}
-                                    onSelect={() => field.onChange([time])}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        field.value?.[0] === time ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    {time}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
+                          ].map((item) => (
+                            <div key={item} className="flex items-center">
+                              <Checkbox 
+                                id={`time-${item}`}
+                                checked={field.value?.includes(item)}
+                                onCheckedChange={(checked) => {
+                                  const currentValue = field.value || []
+                                  if (checked) {
+                                    field.onChange([...currentValue, item])
+                                  } else {
+                                    field.onChange(currentValue.filter(i => i !== item))
+                                  }
+                                }}
+                                className="hidden"
+                              />
+                              <Label 
+                                htmlFor={`time-${item}`}
+                                className={`
+                                  rounded-full px-3 py-2 transition-all duration-200
+                                  ${field.value?.includes(item)
+                                    ? 'border border-pink-500 text-white' 
+                                    : 'border border-gray-300 text-gray-300'}
+                                `}
+                              >
+                                {item}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="preferences.favoriteMood"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>飲む気分</FormLabel>
-                      <FormControl>
-                        <Popover>
-                          <PopoverTrigger asChild>
+
+                {/* ドリンクタグ */}
+                <div className="space-y-2 ">
+                  <h3 className="font-semibold">お酒に関するタグ</h3>
+                  <div className="flex gap-2 mb-4 bg-black p-2 rounded-md">
+                    <Input
+                      type="text"
+                      placeholder="カスタムタグを追加（#は不要）"
+                      value={customDrinkingTag}
+                      onChange={(e) => setCustomDrinkingTag(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleAddCustomDrinkingTag()
+                        }
+                      }}
+                      className="form-input flex-1"
+                    />
                     <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                "w-full justify-between",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value?.[0] || "選択してください"}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      type="button"
+                      onClick={handleAddCustomDrinkingTag}
+                      disabled={!customDrinkingTag}
+                      className="bg-pink-600 text-white px-3 py-1.5 rounded-md text-sm flex items-center gap-1"
+                    >
+                      <Plus className="w-4 h-4" />
                     </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
-                            <Command>
-                              <CommandInput placeholder="検索..." />
-                              <CommandEmpty>見つかりません</CommandEmpty>
-                              <CommandGroup>
-                                {[
-                                  "しっぽり", "わいわい", "カジュアルに", "おしゃれに",
-                                  "パーっと", "飲み歩き", "食事にこだわりたい", "お酒にこだわりたい",
-                                  "立ち飲み系", "居酒屋系", "レストラン系", "バー系",
-                                  "歌いたい", "クラブ系", "アミューズメント系", "オンライン呑み"
-                                ].map((mood) => (
-                                  <CommandItem
-                                    key={mood}
-                                    value={mood}
-                                    onSelect={() => field.onChange([mood])}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        field.value?.[0] === mood ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    {mood}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full rounded-full neon-bg">
-                  {isLoading ? "保存中..." : (hasExistingGroup ? "グループを更新" : "グループを作成")}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {selectedDrinkingTags.map(tag => (
+                      <div
+                        key={tag}
+                        className="bg-pink-600 text-white px-3 py-1.5 rounded-full text-sm flex items-center gap-1"
+                      >
+                        {tag}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleDrinkingTagSelect(tag)
+                          }}
+                          className="hover:text-gray-300"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+
+                {/* 趣味タグ */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold">趣味に関するタグ</h3>
+                  <div className="flex gap-2 mb-4 bg-black p-2 rounded-md">
+                    <Input
+                      type="text"
+                      placeholder="カスタムタグを追加（#は不要）"
+                      value={customHobbyTag}
+                      onChange={(e) => setCustomHobbyTag(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleAddCustomHobbyTag()
+                        }
+                      }}
+                      className="form-input flex-1"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleAddCustomHobbyTag}
+                      disabled={!customHobbyTag}
+                      className="bg-pink-600 text-white px-3 py-1.5 rounded-md text-sm flex items-center gap-1"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {selectedHobbyTags.map(tag => (
+                      <div
+                        key={tag}
+                        className="bg-purple-600 text-white px-3 py-1.5 rounded-full text-sm flex items-center gap-1"
+                      >
+                        {tag}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleHobbyTagSelect(tag)
+                          }}
+                          className="hover:text-gray-300"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+
+                <Button className="w-full rounded-full neon-bg" type="submit" disabled={isLoading}>
+                  {hasExistingGroup ? (isLoading ? "編集中..." : "グループを編集") : (isLoading ? "作成中..." : "グループを作成")}
                 </Button>
+
               </form>
             </Form>
           </DialogContent>

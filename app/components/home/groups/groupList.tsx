@@ -9,6 +9,7 @@ import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
 
 interface User {
   id: string;
@@ -83,7 +84,7 @@ interface Group {
   creator?: User; // 取得したユーザー情報を保持
 }
 
-export default function GroupList({ refreshTrigger }: { refreshTrigger?: number }) {
+export default function GroupList({ refreshTrigger }: { refreshTrigger: number }) {
   const router = useRouter()
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
@@ -93,6 +94,15 @@ export default function GroupList({ refreshTrigger }: { refreshTrigger?: number 
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [myGroupId, setMyGroupId] = useState<string | null>(null)
+  const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false)
+  const { toast } = useToast()
+
+  // グループ作成ダイアログを開くためのイベントを発行
+  const openGroupCreateDialog = () => {
+    const event = new CustomEvent('openGroupCreateDialog')
+    window.dispatchEvent(event)
+    setShowCreateGroupDialog(false)
+  }
 
   const fetchUserData = async (uid: string): Promise<User | null> => {
     try {
@@ -250,8 +260,10 @@ export default function GroupList({ refreshTrigger }: { refreshTrigger?: number 
   }
 
   useEffect(() => {
-    fetchGroups()
-  }, [refreshTrigger])
+    if (db && auth?.currentUser) {
+      fetchGroups()
+    }
+  }, [refreshTrigger, db, auth?.currentUser])
 
   useEffect(() => {
     fetchMyGroupId()
@@ -259,7 +271,22 @@ export default function GroupList({ refreshTrigger }: { refreshTrigger?: number 
 
   const handleInviteGroup = async (group: Group, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!auth?.currentUser || !db || !myGroupId) return
+
+    console.log('Auth:', auth?.currentUser)
+    console.log('MyGroupId:', myGroupId)
+    console.log('SelectedGroup:', group)
+    console.log('InvitedBy:', group.invitedBy)
+
+    if (!auth?.currentUser || !db) {
+      console.log('認証またはデータベースの接続に問題があります')
+      return
+    }
+
+    if (!myGroupId) {
+      console.log('自分のグループがありません')
+      setShowCreateGroupDialog(true)
+      return
+    }
 
     try {
       // ターゲットグループのinvitedByを更新
@@ -380,13 +407,13 @@ export default function GroupList({ refreshTrigger }: { refreshTrigger?: number 
                 
                 <div className="flex justify-end gap-2">
                     <button
-                        className={`${
-                            auth?.currentUser && myGroupId && group.invitedBy?.includes(myGroupId)
-                            ? "bg-gray-600 hover:bg-gray-700"
-                            : "bg-pink-600 hover:bg-pink-700"
-                        } text-white text-xs px-2 py-1 rounded-full`}
-                        onClick={(e) => handleInviteGroup(group, e)}
-                        disabled={!!(auth?.currentUser && myGroupId && group.invitedBy?.includes(myGroupId))}
+                      className={`${
+                          auth?.currentUser && myGroupId && group.invitedBy?.includes(myGroupId)
+                          ? "bg-gray-600 hover:bg-gray-700"
+                          : "bg-pink-600 hover:bg-pink-700"
+                      } text-white text-xs px-2 py-1 rounded-full`}
+                      onClick={(e) => handleInviteGroup(group, e)}
+                      disabled={!!(auth?.currentUser && myGroupId && group.invitedBy?.includes(myGroupId))}
                     >
                         {auth?.currentUser && myGroupId && group.invitedBy?.includes(myGroupId)
                             ? "招待済み"
@@ -397,6 +424,34 @@ export default function GroupList({ refreshTrigger }: { refreshTrigger?: number 
           </motion.div>
         ))}
       </AnimatePresence>
+
+      {/* グループ作成促進ダイアログ */}
+      <Dialog open={showCreateGroupDialog} onOpenChange={setShowCreateGroupDialog}>
+        <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-center">グループの作成が必要です</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-center mb-4">他のグループとマッチングするには、まずあなたのグループを作成する必要があります。</p>
+            <p className="text-center text-sm text-gray-400 mb-6">グループを作成して、素敵な出会いを見つけましょう！</p>
+            <div className="flex justify-center gap-4">
+              <Button
+                onClick={openGroupCreateDialog}
+                className="neon-bg hover:bg-pink-700 text-white px-8"
+              >
+                グループを作成する
+              </Button>
+              <Button
+                onClick={() => setShowCreateGroupDialog(false)}
+                variant="outline"
+                className="text-gray-400 hover:text-white"
+              >
+                キャンセル
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 詳細ダイアログ */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -542,6 +597,7 @@ export default function GroupList({ refreshTrigger }: { refreshTrigger?: number 
                           : "neon-bg hover:bg-pink-700"
                       } text-white rounded-full`}
                       onClick={(e) => {
+                        console.log('clicked')
                         handleInviteGroup(selectedGroup, e)
                         setIsDialogOpen(false)
                       }}

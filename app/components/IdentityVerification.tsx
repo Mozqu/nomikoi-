@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { loadStripe } from '@stripe/stripe-js';
@@ -21,13 +21,14 @@ export default function IdentityVerification({
   verificationStatus = '' 
 }: IdentityVerificationProps) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleVerification = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-
-      const response = await fetch('/api/stripe/identity', {
+      const response = await fetch('/api/create-verification-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,14 +41,10 @@ export default function IdentityVerification({
       }
 
       const { url } = await response.json();
-
-      if (url) {
-        // Stripeホストされたページにリダイレクト
-        window.location.href = url;
-      }
-    } catch (error) {
-      console.error('本人確認の開始に失敗:', error);
-      alert('本人確認の開始に失敗しました。もう一度お試しください。');
+      window.location.href = url;
+    } catch (err) {
+      console.error('本人確認エラー:', err);
+      setError(err instanceof Error ? err.message : '予期せぬエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -83,6 +80,24 @@ export default function IdentityVerification({
   };
 
   const status = getStatusDisplay();
+
+  if (error) {
+    return (
+      <div className="bg-red-50 p-4 rounded-lg mb-4">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="w-6 h-6 text-red-500" />
+          <p className="text-red-700">{error}</p>
+        </div>
+        <Button 
+          onClick={() => setError(null)} 
+          variant="outline" 
+          className="mt-2"
+        >
+          再試行
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">

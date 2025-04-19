@@ -17,6 +17,9 @@ import IdentityVerification from "@/app/components/IdentityVerification"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Flicking from "@egjs/react-flicking"
 import { create } from "domain"
+import { ErrorBoundary } from "react-error-boundary"
+import { motion } from "framer-motion"
+import { formatDate } from "date-fns"
 
 interface MessageRoom {
   id: string
@@ -49,6 +52,8 @@ interface MessageDisplay extends MessageRoom {
   groupId?: string
   submitBy?: string
   rejected?: boolean
+  verify?: 'permited' | 'processing' | 'rejected'  // 追加：verifyプロパティ
+  eventId?: string  // イベントメッセージ用のID
 }
 
 // メッセージルームの種類を定義
@@ -335,42 +340,175 @@ const GroupMessageItem = ({ room, userId }: { room: MessageDisplay; userId: stri
 
 // イベントメッセージ用のコンポーネント
 const EventMessageItem = ({ room, userId }: { room: MessageDisplay; userId: string }) => {
+  const [eventData, setEventData] = useState<any>(null)
+  const [creatorData, setCreatorData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  
+  // 日付をフォーマットする関数
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('ja-JP', {
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      weekday: 'short'
+    }).format(date);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!room.eventId) return
+      
+      try {
+        // イベントデータを取得
+        const eventDoc = await getDoc(doc(db!, "events", room.eventId))
+        if (eventDoc.exists()) {
+          const data = eventDoc.data()
+          setEventData(data)
+          
+          // イベント作成者のデータを取得
+          if (data.createdBy) {
+            const userDoc = await getDoc(doc(db!, "users", data.createdBy))
+            if (userDoc.exists()) {
+              const userData = userDoc.data()
+              setCreatorData({
+                profileImage: userData.photos?.[0]?.url || "/default-profile.png",
+                name: userData.name || "名無しユーザー",
+                age: calculateAge(userData.birthday) || 0,
+                address: userData.profile?.居住地 || "",
+                job: userData.profile?.職種 || ""
+              })
+            }
+          }
+        }
+      } catch (error) {
+        console.error("データの取得に失敗:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [room.eventId])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <Loader2 className="animate-spin" />
+      </div>
+    )
+  }
+
+  if (!eventData || !creatorData) {
+    return null
+  }
+
+  // パーミッションの状態に応じたメッセージを取得
+  const getStatusMessage = () => {
+    console.log("room.verify", room)
+    if (room.verify === "permited") {
+      return "イベントへの参加を許可しました"
+    }
+    if (room.verify === "processing") {
+      return "イベントへの参加申請中です"
+    }
+    if (room.verify === "rejected") {
+      return "イベントへの参加が拒否されました"
+    }
+    return null
+  }
+
+  // パーミッションの状態に応じたスタイルを取得
+  const getStatusStyle = () => {
+    if (room.verify === "rejected") {
+      return "text-red-400"
+    }
+    if (room.verify === "processing") {
+      return "text-yellow-400"
+    }
+    return ""
+  }
+
   return (
     <Link href={`/messages/${room.id}`} className="block p-1">
-      <div className="flex items-center gap-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border border-orange-100">
-        <div className="relative w-16 h-16">
-          <Image
-            src={room.partner_photo || "/placeholder.svg"}
-            alt={room.partner_name || "イベント"}
-            fill
-            className="rounded-xl object-cover"
+      <motion.div
+        key={eventData.id}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3 }}
+        className="bg-gray-800 rounded-lg shadow-lg flex cursor-pointer hover:bg-gray-700 transition-colors"
+      >
+        {/* createdByのユーザーのプロフィール画像を表示 */}
+        <div className="relative w-24 h-24">
+          <Image 
+            src={creatorData.profileImage} 
+            alt="プロフィール画像" 
+            width={50} 
+            height={50} 
+            className="rounded-xl relative w-full h-full" 
+            style={{ objectFit: "cover" }} 
           />
-          <div className="absolute -bottom-2 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full px-2 py-1">
-            イベント
+          <span className="text-xs bg-blue-400 text-white px-2 py-1 rounded-full absolute top-[-10px] left-[-10px] whitespace-nowrap">
+            {formatDate(eventData.startedAt)}〜 {eventData.memberNum}人
+          </span>
+
+          <div className="absolute bottom-0 right-0 bg-black/50 rounded-lg p-1 w-full">
+            <div className="flex flex-wrap space-x-1">   
+              <span style={{ fontSize: "8px" }}>
+                {creatorData.age}歳
+              </span>
+              <span style={{ fontSize: "8px" }}>
+                {creatorData.address}
+              </span>
+              <span style={{ fontSize: "8px" }}>
+                {creatorData.job}
+              </span>
+            </div>
           </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-orange-900">{room.partner_name || "イベント"}</h3>
-          <p className="text-sm text-orange-600/70 truncate">
-            {room.lastMessage ? (
+        <div className="flex-1 p-2">
+          <div className="flex justify-between items-start">
+            <h3 className="font-medium text-gray-200">{eventData.title}</h3>
+            <div className="text-xs text-gray-400">
+              {room.lastMessage?.created_at ? formatRelativeTime(room.lastMessage.created_at) : ""}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-2">
+            {eventData.eventArea?.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {eventData.eventArea.map((area: string, index: number) => (
+                  <span
+                    key={index}
+                    className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-xs"
+                  >
+                    {area}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <p className="text-sm text-gray-400 mt-2 truncate">
+            {getStatusMessage() || (room.lastMessage ? (
               <>
                 {room.lastMessage.user_id === userId ? "あなた: " : ""}
                 {room.lastMessage.text}
               </>
-            ) : "メッセージはありません"}
+            ) : "メッセージはありません")}
           </p>
-        </div>
-        <div className="flex flex-col items-end">
-          <div className="text-xs text-orange-500">
-            {room.lastMessage?.created_at ? formatRelativeTime(room.lastMessage.created_at) : ""}
+
+          <div className="flex justify-end items-center gap-2 mt-1">
+            {room.unreadCount > 0 && (
+              <div className="bg-pink-600 text-white text-xs rounded-full px-2 py-1">
+                {room.unreadCount}件の未読
+              </div>
+            )}
           </div>
-          {room.unreadCount > 0 && (
-            <div className="bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center mt-1">
-              {room.unreadCount}
-            </div>
-          )}
         </div>
-      </div>
+      </motion.div>
     </Link>
   )
 }
@@ -620,6 +758,10 @@ export default function MessagesPage() {
               groupId: roomData.groupId,
               submitBy: roomData.submitBy,
               permission: roomData.permission
+            }),
+            ...(roomData.type === 'event' && {
+              eventId: roomData.eventId,
+              verify: roomData.verify || 'processing'
             })
           };
           
@@ -854,11 +996,23 @@ export default function MessagesPage() {
           </CardContent>
         </Card>
         
-        <IdentityVerification 
-          userId={user.uid}
-          isVerified={userData?.stripe?.isIdentityVerified}
-          verificationStatus={userData?.stripe?.verificationStatus}
-        />
+        <ErrorBoundary fallback={
+          <div className="bg-red-50 p-4 rounded-lg mb-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-6 h-6 text-red-500" />
+              <p className="text-red-700">本人確認システムの読み込みに失敗しました。</p>
+            </div>
+            <p className="text-sm text-red-600 mt-2">
+              ページを再読み込みするか、しばらく時間をおいて再度お試しください。
+            </p>
+          </div>
+        }>
+          <IdentityVerification 
+            userId={user.uid}
+            isVerified={userData?.stripe?.isIdentityVerified}
+            verificationStatus={userData?.stripe?.verificationStatus}
+          />
+        </ErrorBoundary>
       </div>
     );
   }
